@@ -11,8 +11,6 @@ export default defineNuxtConfig({
     enabled: true
   },
 
-  css: ['~/assets/css/main.css'],
-
   // عربي + RTL بالكامل (مبدأ حاكم في البريف §2)
   app: {
     head: {
@@ -23,11 +21,7 @@ export default defineNuxtConfig({
     }
   },
 
-  // Supabase: المفاتيح من .env (SUPABASE_URL / SUPABASE_KEY).
-  // redirect معطّل الآن — سنبني حماية المسارات حسب الدور كـ middleware خاص بنا (المهمة 7).
-  supabase: {
-    redirect: false
-  },
+  css: ['~/assets/css/main.css'],
 
   routeRules: {
     '/': { prerender: true }
@@ -42,5 +36,11 @@ export default defineNuxtConfig({
         braceStyle: '1tbs'
       }
     }
+  },
+
+  // Supabase: المفاتيح من .env (SUPABASE_URL / SUPABASE_KEY).
+  // redirect معطّل الآن — سنبني حماية المسارات حسب الدور كـ middleware خاص بنا (المهمة 7).
+  supabase: {
+    redirect: false
   }
 })
