@@ -54,6 +54,8 @@ _(لا شيء بعد — التالي: المكوّنات الأساسية §5،
 -->
 
 ### 2026-06-22
+- **fix(ci):** إصلاح ترتيب مفاتيح `nuxt.config.ts` ليمرّ فحص lint (سير عمل GitHub Actions CI)
+- **chore(assets):** إضافة نسخ اللوغو الأربع في `public/logo/` (navy/white/blue/green)
 - **chore:** سَقالة Nuxt 4 (قالب Nuxt UI) + إضافة Pinia و@nuxtjs/supabase
 - **chore:** بنية مجلدات `app/` (composables, constants, layouts, middleware, stores, types, components/ui) + `server/` + `supabase/migrations/`
 - **chore:** نقل المشروع إلى `~/Developer/turjuman` + تهيئة git (فرع main) + `.gitignore`/`.env.example` آمنان
