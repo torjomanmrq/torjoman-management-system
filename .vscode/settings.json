@@ -1,0 +1,18 @@
+{
+  // لا تنسيق تلقائي عام (نعتمد على إصلاح ESLint)
+  "editor.formatOnSave": false,
+
+  // أصلِح بـ ESLint عند كل حفظ (= eslint --fix)
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+
+  // ESLint flat config (إعداد Nuxt الحديث)
+  "eslint.useFlatConfig": true,
+
+  // عطّل Prettier في هذا المشروع نهائياً (يتعارض مع نمطنا)
+  "prettier.enable": false,
+
+  // لو احتجت زرّ Format صراحةً، اجعله ESLint
+  "editor.defaultFormatter": "dbaeumer.vscode-eslint"
+}
