@@ -54,6 +54,9 @@ _(لا شيء بعد — التالي: المكوّنات الأساسية §5،
 -->
 
 ### 2026-06-22
+- **feat(landing):** بناء صفحة Landing (§4.0) كـ Nuxt نظيف من التصميم — RTL، تبديل الوضع، SEO، تجاوب، بالتوكنز. الأخبار بيانات وهمية (تُربط بـ §4.26 لاحقاً)
+- **feat(design):** تطبيق أول migration على Supabase (المخطّط كامل + RLS) + توسيع `main.css` لمجموعة توكنز التصميم v1.0 الكاملة (فاتح/ليلي) + أصول العلامة في `public/`
+- **chore:** تنظيف القالب (حذف AppLogo/TemplateMenu) + جذر `app.vue` نظيف (UApp فقط)
 - **fix(ci):** إصلاح ترتيب مفاتيح `nuxt.config.ts` ليمرّ فحص lint (سير عمل GitHub Actions CI)
 - **chore(assets):** إضافة نسخ اللوغو الأربع في `public/logo/` (navy/white/blue/green)
 - **chore:** سَقالة Nuxt 4 (قالب Nuxt UI) + إضافة Pinia و@nuxtjs/supabase
