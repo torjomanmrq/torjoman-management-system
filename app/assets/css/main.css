@@ -11,13 +11,16 @@
   font-style: normal;
   font-display: swap;
 }
+
 @font-face {
   font-family: 'Lama Sans';
   src: url('../fonts/LamaSans-Medium.ttf') format('truetype');
-  font-weight: 400; /* 400 يُربط بـ Medium (البريف §5) */
+  font-weight: 400;
+  /* 400 يُربط بـ Medium (البريف §5) */
   font-style: normal;
   font-display: swap;
 }
+
 @font-face {
   font-family: 'Lama Sans';
   src: url('../fonts/LamaSans-Medium.ttf') format('truetype');
@@ -25,6 +28,7 @@
   font-style: normal;
   font-display: swap;
 }
+
 @font-face {
   font-family: 'Lama Sans';
   src: url('../fonts/LamaSans-SemiBold.ttf') format('truetype');
@@ -32,10 +36,12 @@
   font-style: normal;
   font-display: swap;
 }
+
 @font-face {
   font-family: 'Lama Sans';
   src: url('../fonts/LamaSans-SemiBold.ttf') format('truetype');
-  font-weight: 700; /* 700 يُربط بـ SemiBold (البريف §5) */
+  font-weight: 700;
+  /* 700 يُربط بـ SemiBold (البريف §5) */
   font-style: normal;
   font-display: swap;
 }
@@ -54,8 +60,10 @@
   --color-navy-100: #d3e5f2;
   --color-navy-200: #a7cbe6;
   --color-navy-300: #6fa9d2;
-  --color-navy-400: #2b7bbe; /* ليلي (البريف) */
-  --color-navy-500: #094064; /* فاتح (البريف) */
+  --color-navy-400: #2b7bbe;
+  /* ليلي (البريف) */
+  --color-navy-500: #094064;
+  /* فاتح (البريف) */
   --color-navy-600: #083a5b;
   --color-navy-700: #07304a;
   --color-navy-800: #06283c;
@@ -67,8 +75,10 @@
   --color-blue-100: #d9e8f4;
   --color-blue-200: #b7d3e9;
   --color-blue-300: #8db8da;
-  --color-blue-400: #6ba6dd; /* ليلي */
-  --color-blue-500: #4c8bc9; /* فاتح */
+  --color-blue-400: #6ba6dd;
+  /* ليلي */
+  --color-blue-500: #4c8bc9;
+  /* فاتح */
   --color-blue-600: #3e72a8;
   --color-blue-700: #335c88;
   --color-blue-800: #2a4a6e;
@@ -80,8 +90,10 @@
   --color-green-100: #d2f4e6;
   --color-green-200: #a8e9cd;
   --color-green-300: #79dbb1;
-  --color-green-400: #5fcba4; /* ليلي */
-  --color-green-500: #54bf99; /* فاتح */
+  --color-green-400: #5fcba4;
+  /* ليلي */
+  --color-green-500: #54bf99;
+  /* فاتح */
   --color-green-600: #3fa17e;
   --color-green-700: #338065;
   --color-green-800: #2b6651;
@@ -93,8 +105,10 @@
   --color-err-100: #f6dad6;
   --color-err-200: #edb8b1;
   --color-err-300: #e2938a;
-  --color-err-400: #e58579; /* ليلي */
-  --color-err-500: #d26458; /* فاتح */
+  --color-err-400: #e58579;
+  /* ليلي */
+  --color-err-500: #d26458;
+  /* فاتح */
   --color-err-600: #b84b40;
   --color-err-700: #973c33;
   --color-err-800: #7b322b;
@@ -102,71 +116,162 @@
   --color-err-950: #371513;
 
   /* محايد — مشتقّ من ink/surface/line في البريف */
-  --color-neutral-50: #f4f8fc;  /* surface-2 */
-  --color-neutral-100: #edf2f7; /* bg (فاتح) */
-  --color-neutral-200: #e2eaf1; /* line */
-  --color-neutral-300: #cfdbe6; /* line-2 */
-  --color-neutral-400: #859aac; /* ink-3 */
+  --color-neutral-50: #f4f8fc;
+  /* surface-2 */
+  --color-neutral-100: #edf2f7;
+  /* bg (فاتح) */
+  --color-neutral-200: #e2eaf1;
+  /* line */
+  --color-neutral-300: #cfdbe6;
+  /* line-2 */
+  --color-neutral-400: #859aac;
+  /* ink-3 */
   --color-neutral-500: #5e788c;
-  --color-neutral-600: #42607a; /* ink-2 */
+  --color-neutral-600: #42607a;
+  /* ink-2 */
   --color-neutral-700: #2e4a60;
-  --color-neutral-800: #0e3852; /* surface-2 ليلي */
-  --color-neutral-900: #0b2c42; /* ink (فاتح) */
-  --color-neutral-950: #06202f; /* bg (ليلي) */
+  --color-neutral-800: #0e3852;
+  /* surface-2 ليلي */
+  --color-neutral-900: #0b2c42;
+  /* ink (فاتح) */
+  --color-neutral-950: #06202f;
+  /* bg (ليلي) */
 }
 
 /* ============================================================
-   توكنز البريف §5 الحرفية — مصدر واحد لمكوّناتنا الخاصة
-   (Nuxt UI يدير مكوّناته عبر التدرّجات أعلاه؛ هذه لعناصرنا)
+   توكنز الهوية (نظام التصميم v1.0) — مصدر واحد لمكوّناتنا الخاصة
+   القيم مطابقة حرفيّاً لملف التصميم (فاتح + ليلي).
+   ملاحظة: --ring لونٌ يُطبَّق هكذا: box-shadow:0 0 0 4px var(--ring)
    ============================================================ */
 :root {
+  /* الأسطح والنصوص والحدود */
+  --bg: #EDF2F7;
+  --surface: #FFFFFF;
+  --surface-2: #F4F8FC;
+  --surface-3: #E9F0F6;
+  --ink: #0B2C42;
+  --ink-2: #42607A;
+  --ink-3: #859AAC;
+  --line: #E2EAF1;
+  --line-2: #CFDBE6;
+
+  /* ألوان الهوية + نسخها النصّية (-ink) والخفيفة (-soft) */
   --navy: #094064;
-  --blue: #4c8bc9;
-  --green: #54bf99;
-  --err: #d26458;
+  --blue: #4C8BC9;
+  --blue-ink: #2E70AE;
+  --blue-soft: #E8F1FA;
+  --green: #54BF99;
+  --green-ink: #1F9D70;
+  --green-soft: #E4F6EF;
+  --err: #D26458;
+  --err-soft: #FBEAE7;
 
-  --bg: #edf2f7;
-  --surface: #ffffff;
-  --surface-2: #f4f8fc;
+  /* الأساسي (الأزرار) ونصّه */
+  --primary: #094064;
+  --primary-hover: #0B4E7C;
+  --on-primary: #FFFFFF;
 
-  --ink: #0b2c42;
-  --ink-2: #42607a;
-  --ink-3: #859aac;
+  /* الشريط الجانبي */
+  --side-bg: #094064;
+  --side-strong: #FFFFFF;
+  --side-ink: rgba(255, 255, 255, .74);
+  --side-active: rgba(255, 255, 255, .14);
+  --side-hover: rgba(255, 255, 255, .07);
+  --side-line: rgba(255, 255, 255, .12);
 
-  --line: #e2eaf1;
-  --line-2: #cfdbe6;
+  /* شريط/خلفية مميّزة (CTA · جانب اللوغو في الدخول) */
+  --band: #094064;
+  --band-ink: #FFFFFF;
+  --band-sub: #A9C5D8;
 
-  /* الاستدارة */
-  --r-card: 20px;
-  --r-control: 12px;
+  /* فلتر اللوغو (يقلبه أبيض في الليلي) */
+  --logo-filter: none;
+
+  /* التركيز (لون حلقة التركيز) */
+  --ring: rgba(76, 139, 201, .30);
+
+  /* الظل */
+  --shadow: 0 1px 2px rgba(11, 44, 66, .05), 0 10px 26px rgba(11, 44, 66, .06);
+  --shadow-lg: 0 18px 48px rgba(11, 44, 66, .13);
+
+  /* الاستدارة (صغير 9 · حقول/أزرار 13 · بطاقات 18 · دائري) */
+  --r-sm: 9px;
+  --r-control: 13px;
+  --r-card: 18px;
   --r-pill: 999px;
 
-  /* الظل والتركيز */
-  --shadow: 0 1px 2px rgb(9 64 100 / 0.06), 0 2px 8px rgb(9 64 100 / 0.06);
-  --shadow-lg: 0 8px 24px rgb(9 64 100 / 0.12);
-  --ring: 0 0 0 3px rgb(76 139 201 / 0.35);
+  /* شارات الحالة (خلفية/نص) */
+  --chip-active-bg: #E4F6EF;
+  --chip-active-ink: #1F9D70;
+  /* نشط/نجاح */
+  --chip-warn-bg: #FAEBCB;
+  --chip-warn-ink: #8A6A1A;
+  /* منقطع/تحذير */
+  --chip-info-bg: #E8F1FA;
+  --chip-info-ink: #2E70AE;
+  /* متخرّج/معلومة */
+  --chip-muted-bg: #E9F0F6;
+  --chip-muted-ink: #859AAC;
+  /* منتقل/محايد */
+  --chip-late-bg: #FBEAE7;
+  --chip-late-ink: #D26458;
+  /* متأخرة/خطأ */
 }
 
 .dark {
-  --navy: #2b7bbe;
-  --blue: #6ba6dd;
-  --green: #5fcba4;
-  --err: #e58579;
+  --bg: #06202F;
+  --surface: #0B3047;
+  --surface-2: #0E3852;
+  --surface-3: #0E3852;
+  --ink: #E9F1F7;
+  --ink-2: #A7C0D2;
+  --ink-3: #6B8699;
+  --line: #163E59;
+  --line-2: #214F70;
 
-  --bg: #06202f;
-  --surface: #0b3047;
-  --surface-2: #0e3852;
+  --navy: #0E4E78;
+  --blue: #6BA6DD;
+  --blue-ink: #86B7E6;
+  --blue-soft: rgba(76, 139, 201, .16);
+  --green: #5FCBA4;
+  --green-ink: #6FD3AF;
+  --green-soft: rgba(84, 191, 153, .14);
+  --err: #E58579;
+  --err-soft: rgba(210, 100, 88, .16);
 
-  --ink: #e9f1f7;
-  --ink-2: #a7c0d2;
-  --ink-3: #6b8699;
+  --primary: #2B7BBE;
+  --primary-hover: #3A89CC;
+  --on-primary: #FFFFFF;
 
-  --line: #163e59;
-  --line-2: #214f70;
+  --side-bg: #072B41;
+  --side-strong: #FFFFFF;
+  --side-ink: rgba(255, 255, 255, .66);
+  --side-active: rgba(255, 255, 255, .13);
+  --side-hover: rgba(255, 255, 255, .06);
+  --side-line: rgba(255, 255, 255, .09);
 
-  --shadow: 0 1px 2px rgb(0 0 0 / 0.30), 0 2px 8px rgb(0 0 0 / 0.30);
-  --shadow-lg: 0 8px 24px rgb(0 0 0 / 0.45);
-  --ring: 0 0 0 3px rgb(107 166 221 / 0.40);
+  --band: #062536;
+  --band-ink: #FFFFFF;
+  --band-sub: #7FA6BE;
+
+  --logo-filter: brightness(0) invert(1);
+
+  --ring: rgba(107, 166, 221, .38);
+
+  --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 12px 30px rgba(0, 0, 0, .35);
+  --shadow-lg: 0 20px 54px rgba(0, 0, 0, .5);
+
+  /* شارات الحالة (ليلي) */
+  --chip-active-bg: #123A2E;
+  --chip-active-ink: #5FCBA4;
+  --chip-warn-bg: #3A2F16;
+  --chip-warn-ink: #D9B566;
+  --chip-info-bg: #14324A;
+  --chip-info-ink: #6BA6DD;
+  --chip-muted-bg: #1B3340;
+  --chip-muted-ink: #8AA3B5;
+  --chip-late-bg: #3A201D;
+  --chip-late-ink: #E58579;
 }
 
 /* ============================================================
@@ -174,6 +279,9 @@
    ============================================================ */
 html {
   font-family: var(--font-sans);
+  scroll-behavior: smooth;
+  scroll-padding-top: 76px;
+  /* ارتفاع الشريط العلوي الثابت + هامش */
 }
 
 body {
