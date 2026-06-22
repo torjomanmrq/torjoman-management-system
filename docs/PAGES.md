@@ -11,7 +11,7 @@
 
 | الشاشة | المسار المتوقّع | الحالة | البريف |
 |---|---|---|---|
-| Landing | `pages/index.vue` | ⬜ | §4.0 |
+| Landing | `pages/index.vue` | ✅ | §4.0 |
 | تسجيل الدخول | `pages/login.vue` | ⬜ | §4.1 |
 | ضبط كلمة المرور (دعوة) | `pages/auth/confirm.vue` | ⬜ | §4.1 |
 | نسيت كلمة المرور | `pages/auth/reset.vue` | ⬜ | §4.1 |

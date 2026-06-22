@@ -17,7 +17,10 @@ export default defineNuxtConfig({
       htmlAttrs: {
         lang: 'ar',
         dir: 'rtl'
-      }
+      },
+      link: [
+        { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' }
+      ]
     }
   },
 
