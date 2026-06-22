@@ -5,107 +5,107 @@
  * التصميم، وبتخطيط مخصّص للأقسام البصرية الفريدة (Hero/البطاقات) بالتوكنز + RTL.
  * قسم الأخبار بيانات وهمية الآن، يُربط بوحدة الأخبار (§4.26) لاحقاً.
  */
-const colorMode = useColorMode();
-const isDark = computed(() => colorMode.value === "dark");
+const colorMode = useColorMode()
+const isDark = computed(() => colorMode.value === 'dark')
 function toggleTheme() {
-  colorMode.preference = isDark.value ? "light" : "dark";
+  colorMode.preference = isDark.value ? 'light' : 'dark'
 }
 
 useSeoMeta({
-  title: "ترجمان — حفظ وفهم وعمل",
+  title: 'ترجمان — حفظ وفهم وعمل',
   description:
-    "منظومة قرآنية تربوية متكاملة ترافق الطالب في رحلته: حفظ كتاب الله وفهمه وتدبّره والعمل به — إدارة الحلقات والطلاب والإشراف والتقارير في مكان واحد.",
-});
+    'منظومة قرآنية تربوية متكاملة ترافق الطالب في رحلته: حفظ كتاب الله وفهمه وتدبّره والعمل به — إدارة الحلقات والطلاب والإشراف والتقارير في مكان واحد.'
+})
 
 /** ركائز المشروع الثلاث. */
 const pillars = [
   {
-    icon: "i-lucide-book-open",
-    title: "حِفظ",
-    text: "حفظ متقن لكتاب الله بمتابعة يومية ومراجعة أسبوعية تُثبّت المحفوظ وتصونه.",
-    tone: "neutral",
+    icon: 'i-lucide-book-open',
+    title: 'حِفظ',
+    text: 'حفظ متقن لكتاب الله بمتابعة يومية ومراجعة أسبوعية تُثبّت المحفوظ وتصونه.',
+    tone: 'neutral'
   },
   {
-    icon: "i-lucide-lightbulb",
-    title: "فَهم",
-    text: "تدبّر المعاني وفهم المقاصد عبر اللقاءات التدبّرية والمقرر التربوي المصاحب.",
-    tone: "blue",
+    icon: 'i-lucide-lightbulb',
+    title: 'فَهم',
+    text: 'تدبّر المعاني وفهم المقاصد عبر اللقاءات التدبّرية والمقرر التربوي المصاحب.',
+    tone: 'blue'
   },
   {
-    icon: "i-lucide-sprout",
-    title: "عَمَل",
-    text: "ترجمة العلم إلى سلوك وقيم تربوية تُعاش في حياة الطالب اليومية.",
-    tone: "green",
-  },
-];
+    icon: 'i-lucide-sprout',
+    title: 'عَمَل',
+    text: 'ترجمة العلم إلى سلوك وقيم تربوية تُعاش في حياة الطالب اليومية.',
+    tone: 'green'
+  }
+]
 
 /** ما يقدّمه المشروع. */
 const features = [
   {
-    icon: "i-lucide-users",
-    title: "إدارة الحلقات",
-    text: "حلقة لكل معلم بوقت يومي ثابت، ومتابعة كاملة لطلابها وبرامجها.",
-    tone: "blue",
+    icon: 'i-lucide-users',
+    title: 'إدارة الحلقات',
+    text: 'حلقة لكل معلم بوقت يومي ثابت، ومتابعة كاملة لطلابها وبرامجها.',
+    tone: 'blue'
   },
   {
-    icon: "i-lucide-trending-up",
-    title: "متابعة الطلاب",
-    text: "تتبّع تقدّم كل طالب في الحفظ والمراجعة ونتائج الاختبارات عبر الزمن.",
-    tone: "green",
+    icon: 'i-lucide-trending-up',
+    title: 'متابعة الطلاب',
+    text: 'تتبّع تقدّم كل طالب في الحفظ والمراجعة ونتائج الاختبارات عبر الزمن.',
+    tone: 'green'
   },
   {
-    icon: "i-lucide-clipboard-check",
-    title: "الزيارات الإشرافية",
-    text: "جدولة شهرية للزيارات ورفع نتائجها ومتابعة الالتزام بمواعيدها.",
-    tone: "blue",
+    icon: 'i-lucide-clipboard-check',
+    title: 'الزيارات الإشرافية',
+    text: 'جدولة شهرية للزيارات ورفع نتائجها ومتابعة الالتزام بمواعيدها.',
+    tone: 'blue'
   },
   {
-    icon: "i-lucide-square-check-big",
-    title: "الاختبار حسب الخطة",
-    text: "يستحقّ الطالب الاختبار عند بلوغ محطته في الخطة، فيرشّحه المعلم، ويُقاس الحفظ والفهم والتدبّر من 100.",
-    tone: "green",
+    icon: 'i-lucide-square-check-big',
+    title: 'الاختبار حسب الخطة',
+    text: 'يستحقّ الطالب الاختبار عند بلوغ محطته في الخطة، فيرشّحه المعلم، ويُقاس الحفظ والفهم والتدبّر من 100.',
+    tone: 'green'
   },
   {
-    icon: "i-lucide-file-text",
-    title: "التقارير الشهرية",
-    text: "تقرير شامل لكل حلقة: حفظ ومراجعة وغياب وأنشطة مصاحبة.",
-    tone: "blue",
+    icon: 'i-lucide-file-text',
+    title: 'التقارير الشهرية',
+    text: 'تقرير شامل لكل حلقة: حفظ ومراجعة وغياب وأنشطة مصاحبة.',
+    tone: 'blue'
   },
   {
-    icon: "i-lucide-heart",
-    title: "البرامج المصاحبة",
-    text: "لقاءات تدبّرية ومراجعة ومقرر تربوي ومحاضرات تُثري رحلة الطالب.",
-    tone: "green",
-  },
-];
+    icon: 'i-lucide-heart',
+    title: 'البرامج المصاحبة',
+    text: 'لقاءات تدبّرية ومراجعة ومقرر تربوي ومحاضرات تُثري رحلة الطالب.',
+    tone: 'green'
+  }
+]
 
 /** أحدث الأخبار (بيانات وهمية — تُربط بوحدة الأخبار §4.26). */
 const news = [
   {
-    cat: "إنجاز",
-    date: "12 يونيو 2026",
-    title: "تخريج الدفعة الثانية من حفظة كتاب الله",
+    cat: 'إنجاز',
+    date: '12 يونيو 2026',
+    title: 'تخريج الدفعة الثانية من حفظة كتاب الله',
     excerpt:
-      "احتفلت أسرة ترجمان بتخريج 24 طالباً أتمّوا حفظ القرآن الكريم كاملاً.",
+      'احتفلت أسرة ترجمان بتخريج 24 طالباً أتمّوا حفظ القرآن الكريم كاملاً.'
   },
   {
-    cat: "فعالية",
-    date: "5 يونيو 2026",
-    title: "اللقاء التدبّري الشهري لطلاب الحلقات",
+    cat: 'فعالية',
+    date: '5 يونيو 2026',
+    title: 'اللقاء التدبّري الشهري لطلاب الحلقات',
     excerpt:
-      "لقاء جامع تناول تدبّر سورة الكهف ومقاصدها التربوية في حياة الطالب.",
+      'لقاء جامع تناول تدبّر سورة الكهف ومقاصدها التربوية في حياة الطالب.'
   },
   {
-    cat: "إعلان",
-    date: "28 مايو 2026",
-    title: "انطلاق التسجيل في برنامج المراجعة الصيفي",
+    cat: 'إعلان',
+    date: '28 مايو 2026',
+    title: 'انطلاق التسجيل في برنامج المراجعة الصيفي',
     excerpt:
-      "برنامج مكثّف لتثبيت المحفوظ خلال العطلة الصيفية بإشراف نخبة من المعلمين.",
-  },
-];
+      'برنامج مكثّف لتثبيت المحفوظ خلال العطلة الصيفية بإشراف نخبة من المعلمين.'
+  }
+]
 
 /** استدارة موحّدة لأزرار الصفحة (لتطابق نظام التصميم). */
-const btnUi = { base: "rounded-[14px] font-semibold" };
+const btnUi = { base: 'rounded-[14px] font-semibold' }
 </script>
 
 <template>
@@ -113,9 +113,13 @@ const btnUi = { base: "rounded-[14px] font-semibold" };
     <!-- NAV -->
     <header class="nav">
       <div class="nav-in">
-        <a href="#top" class="nav-logo"
-          ><img src="/brand/turjuman-full.svg" alt="ترجمان"
-        /></a>
+        <a
+          href="#top"
+          class="nav-logo"
+        ><img
+          src="/brand/turjuman-full.svg"
+          alt="ترجمان"
+        ></a>
         <nav class="nav-links">
           <a href="#about">عن المشروع</a>
           <a href="#pillars">حفظ وفهم وعمل</a>
@@ -146,15 +150,22 @@ const btnUi = { base: "rounded-[14px] font-semibold" };
     </header>
 
     <!-- HERO -->
-    <section id="top" class="hero">
+    <section
+      id="top"
+      class="hero"
+    >
       <div class="hero-in">
-        <div class="badge"><span class="dot" />مشروع ترجمان القرآني</div>
+        <div class="badge">
+          <span class="dot" />مشروع ترجمان القرآني
+        </div>
         <img
           src="/brand/turjuman-mark.png"
           alt="شعار ترجمان"
           class="hero-mark"
-        />
-        <h1 class="hero-title">ترجمان</h1>
+        >
+        <h1 class="hero-title">
+          ترجمان
+        </h1>
         <div class="hero-pillars">
           <span class="ink">حِفظ</span><span class="sep">·</span>
           <span class="blue">فَهم</span><span class="sep">·</span>
@@ -186,20 +197,37 @@ const btnUi = { base: "rounded-[14px] font-semibold" };
     </section>
 
     <!-- NEWS -->
-    <section id="news" class="band-sec">
+    <section
+      id="news"
+      class="band-sec"
+    >
       <div class="wrap">
         <div class="sec-head">
           <span class="eyebrow">آخر المستجدّات</span>
-          <h2 class="sec-title">أخبار ترجمان</h2>
+          <h2 class="sec-title">
+            أخبار ترجمان
+          </h2>
         </div>
         <div class="news-grid">
-          <article v-for="n in news" :key="n.title" class="news-card">
+          <article
+            v-for="n in news"
+            :key="n.title"
+            class="news-card"
+          >
             <div class="news-img">
-              <UIcon name="i-lucide-newspaper" class="size-10 opacity-40" />
+              <UIcon
+                name="i-lucide-newspaper"
+                class="size-10 opacity-40"
+              />
             </div>
             <div class="news-body">
               <div class="news-meta">
-                <UBadge :label="n.cat" color="info" variant="soft" size="sm" />
+                <UBadge
+                  :label="n.cat"
+                  color="info"
+                  variant="soft"
+                  size="sm"
+                />
                 <span class="news-date">{{ n.date }}</span>
               </div>
               <h3 class="news-title">
@@ -208,10 +236,9 @@ const btnUi = { base: "rounded-[14px] font-semibold" };
               <p class="news-excerpt">
                 {{ n.excerpt }}
               </p>
-              <span class="read-more"
-                >اقرأ المزيد<UIcon
-                  name="i-lucide-chevron-left"
-                  class="size-[15px]"
+              <span class="read-more">اقرأ المزيد<UIcon
+                name="i-lucide-chevron-left"
+                class="size-[15px]"
               /></span>
             </div>
           </article>
@@ -220,7 +247,10 @@ const btnUi = { base: "rounded-[14px] font-semibold" };
     </section>
 
     <!-- ABOUT -->
-    <section id="about" class="wrap about">
+    <section
+      id="about"
+      class="wrap about"
+    >
       <div>
         <span class="eyebrow">فكرة المشروع</span>
         <h2 class="sec-title big">
@@ -234,25 +264,38 @@ const btnUi = { base: "rounded-[14px] font-semibold" };
           الحفظ غايةً مجرّدة، بل طريقاً إلى الفهم والعمل.
         </p>
         <div class="tags">
-          <span class="tag">لقاءات تدبّرية</span
-          ><span class="tag">مراجعة أسبوعية</span>
-          <span class="tag">مقرر تربوي</span
-          ><span class="tag">متابعة القيم</span>
+          <span class="tag">لقاءات تدبّرية</span><span class="tag">مراجعة أسبوعية</span>
+          <span class="tag">مقرر تربوي</span><span class="tag">متابعة القيم</span>
         </div>
       </div>
     </section>
 
     <!-- PILLARS -->
-    <section id="pillars" class="band-sec">
+    <section
+      id="pillars"
+      class="band-sec"
+    >
       <div class="wrap">
         <div class="sec-head center">
           <span class="eyebrow">ركائز ترجمان الثلاث</span>
-          <h2 class="sec-title">حفظ وفهم وعمل</h2>
+          <h2 class="sec-title">
+            حفظ وفهم وعمل
+          </h2>
         </div>
         <div class="grid3">
-          <div v-for="p in pillars" :key="p.title" class="card pillar">
-            <div class="ico" :class="`ico-${p.tone}`">
-              <UIcon :name="p.icon" class="size-7" />
+          <div
+            v-for="p in pillars"
+            :key="p.title"
+            class="card pillar"
+          >
+            <div
+              class="ico"
+              :class="`ico-${p.tone}`"
+            >
+              <UIcon
+                :name="p.icon"
+                class="size-7"
+              />
             </div>
             <h3 class="card-title">
               {{ p.title }}
@@ -266,19 +309,34 @@ const btnUi = { base: "rounded-[14px] font-semibold" };
     </section>
 
     <!-- OFFER -->
-    <section id="offer" class="wrap offer">
+    <section
+      id="offer"
+      class="wrap offer"
+    >
       <div class="sec-head center">
         <span class="eyebrow">ماذا يقدّم ترجمان</span>
-        <h2 class="sec-title">منظومة واحدة تدير الرحلة كاملة</h2>
+        <h2 class="sec-title">
+          منظومة واحدة تدير الرحلة كاملة
+        </h2>
         <p class="sec-lede">
           من الحلقة اليومية إلى الإشراف الميداني والتقارير الشهرية — كل ذلك في
           مكان واحد.
         </p>
       </div>
       <div class="grid3 features">
-        <div v-for="f in features" :key="f.title" class="card feat">
-          <div class="ico" :class="`ico-${f.tone}`">
-            <UIcon :name="f.icon" class="size-[26px]" />
+        <div
+          v-for="f in features"
+          :key="f.title"
+          class="card feat"
+        >
+          <div
+            class="ico"
+            :class="`ico-${f.tone}`"
+          >
+            <UIcon
+              :name="f.icon"
+              class="size-[26px]"
+            />
           </div>
           <h3 class="card-title sm">
             {{ f.title }}
@@ -289,13 +347,12 @@ const btnUi = { base: "rounded-[14px] font-semibold" };
         </div>
       </div>
       <div class="roles">
-        <div class="roles-label">صُمّم ترجمان لكل دور في المنظومة</div>
+        <div class="roles-label">
+          صُمّم ترجمان لكل دور في المنظومة
+        </div>
         <div class="roles-chips">
-          <span class="role-chip">المدير</span
-          ><span class="role-chip">مشرف الجودة</span>
-          <span class="role-chip">المشرف</span
-          ><span class="role-chip">المعلم</span
-          ><span class="role-chip">الطالب</span>
+          <span class="role-chip">المدير</span><span class="role-chip">مشرف الجودة</span>
+          <span class="role-chip">المشرف</span><span class="role-chip">المعلم</span><span class="role-chip">الطالب</span>
         </div>
       </div>
     </section>
@@ -303,8 +360,14 @@ const btnUi = { base: "rounded-[14px] font-semibold" };
     <!-- CTA -->
     <section class="wrap cta-wrap">
       <div class="cta">
-        <img src="/brand/turjuman-mark.png" alt="" class="cta-mark" />
-        <h2 class="cta-title">ابدأ رحلتك مع ترجمان</h2>
+        <img
+          src="/brand/turjuman-mark.png"
+          alt=""
+          class="cta-mark"
+        >
+        <h2 class="cta-title">
+          ابدأ رحلتك مع ترجمان
+        </h2>
         <p class="cta-sub">
           سجّل دخولك للوصول إلى لوحتك. الحسابات تُنشأ من قِبل الإدارة — لا تسجيل
           ذاتي.
@@ -315,37 +378,43 @@ const btnUi = { base: "rounded-[14px] font-semibold" };
           size="xl"
           color="neutral"
           :ui="{
-            base: 'rounded-[14px] font-semibold bg-white text-[#094064] hover:bg-white/90',
+            base: 'rounded-[14px] font-semibold bg-white text-[#094064] hover:bg-white/90'
           }"
         />
       </div>
     </section>
 
     <!-- FOOTER -->
-    <footer id="contact" class="footer">
+    <footer
+      id="contact"
+      class="footer"
+    >
       <div class="wrap">
         <div class="footer-grid">
           <div>
             <div class="footer-brand">
-              <img src="/brand/turjuman-mark.png" alt="ترجمان" /><span
-                >ترجمان</span
-              >
+              <img
+                src="/brand/turjuman-mark.png"
+                alt="ترجمان"
+              ><span>ترجمان</span>
             </div>
             <p class="footer-about">
               منظومة قرآنية تربوية متكاملة — حفظ وفهم وعمل.
             </p>
           </div>
           <div>
-            <div class="footer-h">روابط</div>
+            <div class="footer-h">
+              روابط
+            </div>
             <div class="footer-links">
-              <a href="#about">عن المشروع</a
-              ><a href="#pillars">حفظ وفهم وعمل</a>
-              <a href="#offer">ماذا يقدّم</a
-              ><NuxtLink to="/login">تسجيل الدخول</NuxtLink>
+              <a href="#about">عن المشروع</a><a href="#pillars">حفظ وفهم وعمل</a>
+              <a href="#offer">ماذا يقدّم</a><NuxtLink to="/login">تسجيل الدخول</NuxtLink>
             </div>
           </div>
           <div>
-            <div class="footer-h">تواصل</div>
+            <div class="footer-h">
+              تواصل
+            </div>
             <div class="footer-links">
               <span>البريد: torjoman.official@gmail.com</span>
               <span>الجوال: 0594646042</span>
