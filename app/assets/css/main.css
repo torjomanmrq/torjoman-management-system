@@ -1,0 +1,182 @@
+@import "tailwindcss";
+@import "@nuxt/ui";
+
+/* ============================================================
+   الخط المعتمد — Lama Sans (مع ربط 400→Medium و 700→SemiBold)
+   ============================================================ */
+@font-face {
+  font-family: 'Lama Sans';
+  src: url('../fonts/LamaSans-Light.ttf') format('truetype');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Lama Sans';
+  src: url('../fonts/LamaSans-Medium.ttf') format('truetype');
+  font-weight: 400; /* 400 يُربط بـ Medium (البريف §5) */
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Lama Sans';
+  src: url('../fonts/LamaSans-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Lama Sans';
+  src: url('../fonts/LamaSans-SemiBold.ttf') format('truetype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Lama Sans';
+  src: url('../fonts/LamaSans-SemiBold.ttf') format('truetype');
+  font-weight: 700; /* 700 يُربط بـ SemiBold (البريف §5) */
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ============================================================
+   تدرّجات الألوان (Tailwind/Nuxt UI) — مرتبطة بالهوية
+   navy=أساسي · blue=ثانوي · green=نجاح · err=خطأ · neutral=محايد
+   الدرجتان 400/500 مضبوطتان على قيم البريف (ليلي/فاتح):
+   Nuxt UI يستخدم 500 في الفاتح و400 في الليلي تلقائياً.
+   ============================================================ */
+@theme static {
+  --font-sans: 'Lama Sans', 'IBM Plex Sans Arabic', ui-sans-serif, system-ui, sans-serif;
+
+  /* أساسي — Navy */
+  --color-navy-50: #edf5fb;
+  --color-navy-100: #d3e5f2;
+  --color-navy-200: #a7cbe6;
+  --color-navy-300: #6fa9d2;
+  --color-navy-400: #2b7bbe; /* ليلي (البريف) */
+  --color-navy-500: #094064; /* فاتح (البريف) */
+  --color-navy-600: #083a5b;
+  --color-navy-700: #07304a;
+  --color-navy-800: #06283c;
+  --color-navy-900: #051f30;
+  --color-navy-950: #03131e;
+
+  /* ثانوي — Blue */
+  --color-blue-50: #eef5fb;
+  --color-blue-100: #d9e8f4;
+  --color-blue-200: #b7d3e9;
+  --color-blue-300: #8db8da;
+  --color-blue-400: #6ba6dd; /* ليلي */
+  --color-blue-500: #4c8bc9; /* فاتح */
+  --color-blue-600: #3e72a8;
+  --color-blue-700: #335c88;
+  --color-blue-800: #2a4a6e;
+  --color-blue-900: #243e5b;
+  --color-blue-950: #16273a;
+
+  /* نجاح — Green */
+  --color-green-50: #ecfaf4;
+  --color-green-100: #d2f4e6;
+  --color-green-200: #a8e9cd;
+  --color-green-300: #79dbb1;
+  --color-green-400: #5fcba4; /* ليلي */
+  --color-green-500: #54bf99; /* فاتح */
+  --color-green-600: #3fa17e;
+  --color-green-700: #338065;
+  --color-green-800: #2b6651;
+  --color-green-900: #245343;
+  --color-green-950: #123026;
+
+  /* خطأ — Terra (دافئ متناسق) */
+  --color-err-50: #fbeeec;
+  --color-err-100: #f6dad6;
+  --color-err-200: #edb8b1;
+  --color-err-300: #e2938a;
+  --color-err-400: #e58579; /* ليلي */
+  --color-err-500: #d26458; /* فاتح */
+  --color-err-600: #b84b40;
+  --color-err-700: #973c33;
+  --color-err-800: #7b322b;
+  --color-err-900: #662b26;
+  --color-err-950: #371513;
+
+  /* محايد — مشتقّ من ink/surface/line في البريف */
+  --color-neutral-50: #f4f8fc;  /* surface-2 */
+  --color-neutral-100: #edf2f7; /* bg (فاتح) */
+  --color-neutral-200: #e2eaf1; /* line */
+  --color-neutral-300: #cfdbe6; /* line-2 */
+  --color-neutral-400: #859aac; /* ink-3 */
+  --color-neutral-500: #5e788c;
+  --color-neutral-600: #42607a; /* ink-2 */
+  --color-neutral-700: #2e4a60;
+  --color-neutral-800: #0e3852; /* surface-2 ليلي */
+  --color-neutral-900: #0b2c42; /* ink (فاتح) */
+  --color-neutral-950: #06202f; /* bg (ليلي) */
+}
+
+/* ============================================================
+   توكنز البريف §5 الحرفية — مصدر واحد لمكوّناتنا الخاصة
+   (Nuxt UI يدير مكوّناته عبر التدرّجات أعلاه؛ هذه لعناصرنا)
+   ============================================================ */
+:root {
+  --navy: #094064;
+  --blue: #4c8bc9;
+  --green: #54bf99;
+  --err: #d26458;
+
+  --bg: #edf2f7;
+  --surface: #ffffff;
+  --surface-2: #f4f8fc;
+
+  --ink: #0b2c42;
+  --ink-2: #42607a;
+  --ink-3: #859aac;
+
+  --line: #e2eaf1;
+  --line-2: #cfdbe6;
+
+  /* الاستدارة */
+  --r-card: 20px;
+  --r-control: 12px;
+  --r-pill: 999px;
+
+  /* الظل والتركيز */
+  --shadow: 0 1px 2px rgb(9 64 100 / 0.06), 0 2px 8px rgb(9 64 100 / 0.06);
+  --shadow-lg: 0 8px 24px rgb(9 64 100 / 0.12);
+  --ring: 0 0 0 3px rgb(76 139 201 / 0.35);
+}
+
+.dark {
+  --navy: #2b7bbe;
+  --blue: #6ba6dd;
+  --green: #5fcba4;
+  --err: #e58579;
+
+  --bg: #06202f;
+  --surface: #0b3047;
+  --surface-2: #0e3852;
+
+  --ink: #e9f1f7;
+  --ink-2: #a7c0d2;
+  --ink-3: #6b8699;
+
+  --line: #163e59;
+  --line-2: #214f70;
+
+  --shadow: 0 1px 2px rgb(0 0 0 / 0.30), 0 2px 8px rgb(0 0 0 / 0.30);
+  --shadow-lg: 0 8px 24px rgb(0 0 0 / 0.45);
+  --ring: 0 0 0 3px rgb(107 166 221 / 0.40);
+}
+
+/* ============================================================
+   أساسيات الصفحة — RTL + خلفية/نص الهوية
+   ============================================================ */
+html {
+  font-family: var(--font-sans);
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--ink);
+}
