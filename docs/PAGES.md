@@ -71,7 +71,7 @@
 |---|---|---|---|
 | رفع أسماء الاختبار (المعلم) | `pages/exams/nominate.vue` | ⬜ | §4.6 |
 | اختبار الطالب (المشرف) | `pages/exams/grade.vue` | ⬜ | §4.10 |
-| خطة الاختبارات (يعدّلها المدير) | `pages/exams/plan.vue` | ⬜ | §4.11 |
+| خطة الاختبارات | `pages/exam-plan/index.vue` | ✅ | §4.11 |
 | كشف حوافز الحلقة الشهري (المعلم) | `pages/incentives/statement.vue` | ⬜ | §4.25 |
 
 ---
