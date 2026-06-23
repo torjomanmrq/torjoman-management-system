@@ -15,8 +15,8 @@ type VisitRow = Database['public']['Tables']['supervision_visits']['Row'] & {
   halaqa: { name: string, teacher: { full_name: string } | null } | null
   supervisor: { full_name: string, role: string } | null
 }
-type NameRow = { id: string, name?: string, full_name?: string }
 type VisitorRow = { id: string, full_name: string, role: string }
+type HalqaOption = { id: string, name: string, daily_time: string | null, teacher: { full_name: string } | null }
 
 const supabase = useSupabaseClient<Database>()
 const { role: myRole, profile } = useProfile()
@@ -42,8 +42,12 @@ const { data: visits, refresh, pending } = await useAsyncData<VisitRow[]>(
   { server: false, default: () => [] }
 )
 
-const { data: halqat } = await useAsyncData<NameRow[]>('visits-halqat', async () => {
-  const { data } = await supabase.from('halaqat').select('id, name').order('name')
+const { data: halqat } = await useAsyncData<HalqaOption[]>('visits-halqat', async () => {
+  const { data } = await supabase
+    .from('halaqat')
+    .select('id, name, daily_time, teacher:teacher_id(full_name)')
+    .order('name')
+    .returns<HalqaOption[]>()
   return data ?? []
 }, { server: false, default: () => [] })
 // الزائر: مدير أو مشرف ميداني (المدير يزور بصفته مديراً أيضاً)
@@ -51,7 +55,12 @@ const { data: visitors } = await useAsyncData<VisitorRow[]>('visits-visitors', a
   const { data } = await supabase.from('profiles').select('id, full_name, role').in('role', ['manager', 'supervisor']).eq('status', 'active').order('full_name')
   return (data ?? []) as VisitorRow[]
 }, { server: false, default: () => [] })
-const halqaItems = computed(() => (halqat.value ?? []).map(h => ({ label: h.name ?? '', value: h.id })))
+const halqaItems = computed(() => (halqat.value ?? []).map((h) => {
+  const parts = [h.name]
+  if (h.teacher?.full_name) parts.push(h.teacher.full_name)
+  if (h.daily_time) parts.push(h.daily_time.slice(0, 5))
+  return { label: parts.join(' — '), value: h.id }
+}))
 const visitorItems = computed(() => (visitors.value ?? []).map(v => ({
   label: v.role === 'manager' ? `${v.full_name} (المدير)` : v.full_name,
   value: v.id
