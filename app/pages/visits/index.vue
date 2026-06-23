@@ -13,7 +13,7 @@ useSeoMeta({ title: 'الزيارات الإشرافية — ترجمان' })
 type VisitStatus = Database['public']['Enums']['visit_status']
 type VisitRow = Database['public']['Tables']['supervision_visits']['Row'] & {
   halaqa: { name: string, teacher: { full_name: string } | null } | null
-  supervisor: { full_name: string } | null
+  supervisor: { full_name: string, role: string } | null
 }
 type NameRow = { id: string, name?: string, full_name?: string }
 type VisitorRow = { id: string, full_name: string, role: string }
@@ -30,7 +30,7 @@ const { data: visits, refresh, pending } = await useAsyncData<VisitRow[]>(
   async () => {
     const { data, error } = await supabase
       .from('supervision_visits')
-      .select('*, halaqa:halaqa_id(name, teacher:teacher_id(full_name)), supervisor:supervisor_id(full_name)')
+      .select('*, halaqa:halaqa_id(name, teacher:teacher_id(full_name)), supervisor:supervisor_id(full_name, role)')
       .order('scheduled_at', { ascending: false })
       .returns<VisitRow[]>()
     if (error) {
@@ -64,6 +64,7 @@ const STATUS_META: Record<VisitStatus, { label: string, color: 'info' | 'success
   late: { label: 'متأخّرة', color: 'warning' },
   missed: { label: 'فائتة', color: 'error' }
 }
+const VISITOR_ROLE: Record<string, string> = { manager: 'مدير', supervisor: 'مشرف', quality: 'مشرف جودة' }
 const chipOptions = [
   { value: 'all' as const, label: 'الكل' },
   { value: 'scheduled' as const, label: 'مجدولة' },
@@ -274,7 +275,16 @@ async function confirmDelete() {
           <span class="muted">{{ row.halaqa?.teacher?.full_name || '—' }}</span>
         </template>
         <template #supervisor="{ row }">
-          <span class="muted">{{ row.supervisor?.full_name || '—' }}</span>
+          <div class="visitor-cell">
+            <span class="strong">{{ row.supervisor?.full_name || '—' }}</span>
+            <UBadge
+              v-if="row.supervisor"
+              :label="VISITOR_ROLE[row.supervisor.role] || row.supervisor.role"
+              :color="row.supervisor.role === 'manager' ? 'primary' : 'info'"
+              variant="soft"
+              size="sm"
+            />
+          </div>
         </template>
         <template #date="{ row }">
           <span class="muted">{{ fmtDate(row.scheduled_at) }}</span>
@@ -492,6 +502,7 @@ async function confirmDelete() {
 .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-bottom: 22px; }
 .mb-4 { margin-bottom: 18px; }
 .strong { font-weight: 600; color: var(--ink); white-space: nowrap; }
+.visitor-cell { display: flex; align-items: center; gap: 8px; white-space: nowrap; }
 .muted { color: var(--ink-2); white-space: nowrap; }
 .actions { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
 .form { display: flex; flex-direction: column; gap: 14px; }

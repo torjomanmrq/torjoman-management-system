@@ -49,8 +49,12 @@ defineProps<{
 
 <style scoped>
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: 20px; box-shadow: var(--shadow); }
-.table-wrap { overflow: hidden; }
+.table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 .table-wrap table { width: 100%; border-collapse: collapse; font-size: 15px; }
+/* على الجوال: لا تضغط الأعمدة، اسمح بالتمرير الأفقي */
+@media (max-width: 640px) {
+  .table-wrap table { min-width: 640px; }
+}
 .table-wrap thead tr { background: var(--surface-2); }
 .table-wrap th { padding: 14px 18px; font-weight: 600; color: var(--ink-3); font-size: 13px; white-space: nowrap; }
 .ta-start { text-align: start; }
