@@ -61,7 +61,8 @@ const { data: supervisors } = await useAsyncData<NameRow[]>(
 )
 
 const teacherItems = computed(() => (teachers.value ?? []).map(t => ({ label: t.full_name, value: t.id })))
-const supervisorItems = computed(() => [{ label: 'بلا مشرف', value: '' }, ...(supervisors.value ?? []).map(s => ({ label: s.full_name, value: s.id }))])
+const NO_SUP = 'none'
+const supervisorItems = computed(() => [{ label: 'بلا مشرف', value: NO_SUP }, ...(supervisors.value ?? []).map(s => ({ label: s.full_name, value: s.id }))])
 
 // ── التصفية ──
 const genderF = ref<Gender | 'all'>('all')
@@ -88,7 +89,7 @@ const modalOpen = ref(false)
 const saving = ref(false)
 const editingId = ref<string | null>(null)
 const form = reactive({
-  name: '', teacher_id: '', supervisor_id: '', daily_time: '',
+  name: '', teacher_id: '', supervisor_id: NO_SUP, daily_time: '',
   gender: 'male' as Gender, classification: 'a' as Classification, status: 'active' as Status
 })
 const genderItems = [{ label: 'بنين', value: 'male' }, { label: 'بنات', value: 'female' }]
@@ -97,7 +98,7 @@ const statusItems = [{ label: 'نشطة', value: 'active' }, { label: 'متوق�
 
 function openCreate() {
   editingId.value = null
-  Object.assign(form, { name: '', teacher_id: '', supervisor_id: '', daily_time: '', gender: 'male', classification: 'a', status: 'active' })
+  Object.assign(form, { name: '', teacher_id: '', supervisor_id: NO_SUP, daily_time: '', gender: 'male', classification: 'a', status: 'active' })
   modalOpen.value = true
 }
 function openEdit(h: HalaqaRow) {
@@ -105,7 +106,7 @@ function openEdit(h: HalaqaRow) {
   Object.assign(form, {
     name: h.name,
     teacher_id: h.teacher_id,
-    supervisor_id: h.supervisor_id ?? '',
+    supervisor_id: h.supervisor_id ?? NO_SUP,
     daily_time: h.daily_time ? h.daily_time.slice(0, 5) : '',
     gender: h.gender ?? 'male',
     classification: h.classification ?? 'a',
@@ -127,7 +128,7 @@ async function save() {
     const payload = {
       name: form.name.trim(),
       teacher_id: form.teacher_id,
-      supervisor_id: form.supervisor_id || null,
+      supervisor_id: form.supervisor_id === NO_SUP ? null : form.supervisor_id,
       daily_time: form.daily_time || null,
       gender: form.gender,
       classification: form.classification,
