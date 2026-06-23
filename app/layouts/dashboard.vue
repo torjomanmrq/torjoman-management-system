@@ -25,7 +25,7 @@ type Item = { key: string, label: string, icon: string, to?: string, roles: stri
 
 const mainNav: Item[] = [
   { key: 'dashboard', label: 'لوحة التحكم', icon: 'i-lucide-layout-dashboard', to: '/dashboard', roles: ['manager', 'quality', 'supervisor', 'teacher'] },
-  { key: 'users', label: 'إدارة المستخدمين', icon: 'i-lucide-users', roles: ['manager'] },
+  { key: 'users', label: 'إدارة المستخدمين', icon: 'i-lucide-users', to: '/users', roles: ['manager'] },
   { key: 'supervisors', label: 'المشرفون', icon: 'i-lucide-users-round', roles: ['manager', 'quality'] },
   { key: 'halqat', label: 'الحلقات', icon: 'i-lucide-book-open', roles: ['manager', 'quality', 'supervisor'] },
   { key: 'myhalqa', label: 'حلقتي', icon: 'i-lucide-book-open', roles: ['teacher'] },
