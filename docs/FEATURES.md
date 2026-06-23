@@ -54,6 +54,10 @@ _(لا شيء بعد — التالي: المكوّنات الأساسية §5،
 -->
 
 ### 2026-06-23
+- **feat(shell):** الهيكل العام `layouts/dashboard.vue` (§4.2) — Sidebar حسب الدور + Topbar + Drawer للجوال + تبديل الوضع + خروج
+- **feat(auth):** middleware عامّ `auth.global.ts` (§4.3) لحماية المسارات (تحويل غير المسجّل للدخول، والمسجّل بعيداً عن /login)
+- **feat(dashboard):** لوحة المدير (§4.3) — بطاقات إحصائية بأعداد حقيقية + بطاقات إعدادات مربوطة بجدول `app_settings` (قراءة/اعتماد)
+- **feat(types):** توليد أنواع TypeScript من قاعدة Supabase إلى `app/types/database.types.ts` (typed client) + `useProfile` (دور المستخدم)
 - **feat(auth):** شاشة تسجيل الدخول (§4.1) بمكوّنات Nuxt UI — بريد فقط (الطالب لا يدخل)، تحقّق، إظهار/إخفاء كلمة المرور، نافذة استعادة (إرسال رابط)، تبديل الوضع
 - **feat(auth):** composable `useAuth` (دخول/خروج/استعادة عبر Supabase) + `useErrorHandler` (رسائل عربية موحّدة)
 - **chore:** لوحة مؤقّتة `pages/dashboard.vue` (تُستبدل بالـ Shell ولوحات الأدوار)

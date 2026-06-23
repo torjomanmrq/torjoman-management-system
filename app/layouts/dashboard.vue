@@ -1,0 +1,309 @@
+<script setup lang="ts">
+/**
+ * الهيكل العام للوحة (§4.2) — Sidebar (يمين) حسب الدور + Topbar + Drawer للجوال.
+ * مشترك بين كل الأدوار العاملة. القوائم تظهر حسب دور المستخدم.
+ * المسارات غير المبنيّة بعد تُظهر تنبيه «قيد الإنشاء» (تُربط عند بناء كل شاشة).
+ */
+const { role, fullName, initial, fetchProfile } = useProfile()
+const { signOut } = useAuth()
+const toast = useToast()
+const route = useRoute()
+
+await fetchProfile()
+
+const colorMode = useColorMode()
+const isDark = computed(() => colorMode.value === 'dark')
+function toggleTheme() {
+  colorMode.preference = isDark.value ? 'light' : 'dark'
+}
+
+const drawerOpen = ref(false)
+function comingSoon() {
+  drawerOpen.value = false
+  toast.add({ title: 'هذه الشاشة قيد الإنشاء — قريباً.', icon: 'i-lucide-hammer', color: 'info' })
+}
+
+type Item = { key: string, label: string, icon: string, to?: string, roles: string[] }
+
+const mainNav: Item[] = [
+  { key: 'dashboard', label: 'لوحة التحكم', icon: 'i-lucide-layout-dashboard', to: '/dashboard', roles: ['manager', 'quality', 'supervisor', 'teacher'] },
+  { key: 'users', label: 'إدارة المستخدمين', icon: 'i-lucide-users', roles: ['manager'] },
+  { key: 'supervisors', label: 'المشرفون', icon: 'i-lucide-users-round', roles: ['manager', 'quality'] },
+  { key: 'halqat', label: 'الحلقات', icon: 'i-lucide-book-open', roles: ['manager', 'quality', 'supervisor'] },
+  { key: 'myhalqa', label: 'حلقتي', icon: 'i-lucide-book-open', roles: ['teacher'] },
+  { key: 'students', label: 'الطلاب', icon: 'i-lucide-graduation-cap', roles: ['manager', 'quality', 'supervisor'] },
+  { key: 'visits', label: 'الزيارات الإشرافية', icon: 'i-lucide-clipboard-check', roles: ['manager', 'quality', 'supervisor'] },
+  { key: 'exams', label: 'الاختبارات', icon: 'i-lucide-square-check-big', roles: ['supervisor', 'teacher'] },
+  { key: 'examplan', label: 'خطة الاختبارات', icon: 'i-lucide-list-ordered', roles: ['manager', 'quality', 'supervisor', 'teacher'] },
+  { key: 'reports', label: 'التقارير الشهرية', icon: 'i-lucide-file-text', roles: ['manager', 'quality', 'supervisor', 'teacher'] },
+  { key: 'incentives', label: 'كشف الحوافز', icon: 'i-lucide-gift', roles: ['teacher'] },
+  { key: 'alerts', label: 'التنبيهات الإدارية', icon: 'i-lucide-bell', roles: ['manager', 'quality', 'supervisor', 'teacher'] }
+]
+
+const managerNav: Item[] = [
+  { key: 'minutes', label: 'محاضر الاجتماعات', icon: 'i-lucide-notebook-pen', roles: ['manager'] },
+  { key: 'finance', label: 'الملف المالي', icon: 'i-lucide-wallet', roles: ['manager'] },
+  { key: 'news', label: 'الأخبار', icon: 'i-lucide-newspaper', roles: ['manager'] }
+]
+
+const metricsItem: Item = { key: 'metrics', label: 'دليل المؤشرات', icon: 'i-lucide-gauge', roles: ['manager', 'quality'] }
+const profileItem: Item = { key: 'profile', label: 'الملف الشخصي', icon: 'i-lucide-user', roles: ['manager', 'quality', 'supervisor', 'teacher'] }
+
+const visible = (items: Item[]) => computed(() => items.filter(i => role.value && i.roles.includes(role.value)))
+const mainItems = visible(mainNav)
+const managerItems = visible(managerNav)
+const showMetrics = computed(() => role.value && metricsItem.roles.includes(role.value))
+
+const navTitle = computed(() => {
+  const all = [...mainNav, ...managerNav, metricsItem, profileItem]
+  return all.find(i => i.to && i.to === route.path)?.label ?? 'لوحة التحكم'
+})
+
+const roleLabel = computed(() => ({
+  manager: 'المدير', quality: 'مشرف الجودة', supervisor: 'المشرف', teacher: 'المعلم'
+}[role.value ?? 'manager'] ?? ''))
+
+function go(item: Item) {
+  drawerOpen.value = false
+  if (item.to) navigateTo(item.to)
+  else comingSoon()
+}
+const isActive = (item: Item) => item.to === route.path
+</script>
+
+<template>
+  <div class="shell">
+    <!-- Overlay للجوال -->
+    <div
+      v-if="drawerOpen"
+      class="overlay"
+      @click="drawerOpen = false"
+    />
+
+    <!-- SIDEBAR -->
+    <aside
+      class="side"
+      :class="{ 'side-open': drawerOpen }"
+    >
+      <div class="side-head">
+        <img
+          src="/brand/turjuman-mark.png"
+          alt=""
+          class="side-mark"
+        >
+        <div>
+          <div class="side-name">
+            ترجمان
+          </div>
+          <div class="side-tag">
+            حفظ وفهم وعمل
+          </div>
+        </div>
+      </div>
+
+      <nav class="side-nav">
+        <div class="nav-group">
+          القائمة الرئيسية
+        </div>
+        <button
+          v-for="item in mainItems"
+          :key="item.key"
+          class="nav-item"
+          :class="{ active: isActive(item) }"
+          @click="go(item)"
+        >
+          <UIcon
+            :name="item.icon"
+            class="size-5"
+          />
+          <span>{{ item.label }}</span>
+        </button>
+
+        <template v-if="managerItems.length">
+          <div class="nav-group">
+            إدارة المشروع
+          </div>
+          <button
+            v-for="item in managerItems"
+            :key="item.key"
+            class="nav-item"
+            @click="go(item)"
+          >
+            <UIcon
+              :name="item.icon"
+              class="size-5"
+            />
+            <span>{{ item.label }}</span>
+          </button>
+        </template>
+
+        <template v-if="showMetrics">
+          <button
+            class="nav-item"
+            @click="go(metricsItem)"
+          >
+            <UIcon
+              :name="metricsItem.icon"
+              class="size-5"
+            />
+            <span>{{ metricsItem.label }}</span>
+          </button>
+        </template>
+
+        <div class="nav-group">
+          الحساب
+        </div>
+        <button
+          class="nav-item"
+          @click="go(profileItem)"
+        >
+          <UIcon
+            :name="profileItem.icon"
+            class="size-5"
+          />
+          <span>{{ profileItem.label }}</span>
+        </button>
+      </nav>
+
+      <div class="side-foot">
+        <button
+          class="nav-item theme"
+          @click="toggleTheme"
+        >
+          <UIcon
+            :name="isDark ? 'i-lucide-sun' : 'i-lucide-moon'"
+            class="size-5"
+          />
+          <span>{{ isDark ? 'الوضع الفاتح' : 'الوضع الليلي' }}</span>
+        </button>
+        <div class="user-card">
+          <div class="user-av">
+            {{ initial }}
+          </div>
+          <div class="user-meta">
+            <div class="user-name">
+              {{ fullName }}
+            </div>
+            <div class="user-role">
+              {{ roleLabel }}
+            </div>
+          </div>
+          <button
+            class="logout"
+            aria-label="تسجيل الخروج"
+            @click="signOut"
+          >
+            <UIcon
+              name="i-lucide-log-out"
+              class="size-[18px]"
+            />
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <div class="main">
+      <header class="topbar">
+        <div class="top-start">
+          <button
+            class="hamburger"
+            aria-label="القائمة"
+            @click="drawerOpen = true"
+          >
+            <UIcon
+              name="i-lucide-menu"
+              class="size-6"
+            />
+          </button>
+          <h1 class="top-title">
+            {{ navTitle }}
+          </h1>
+        </div>
+        <div class="top-end">
+          <button
+            class="top-icon"
+            aria-label="التنبيهات"
+            @click="comingSoon"
+          >
+            <UIcon
+              name="i-lucide-bell"
+              class="size-5"
+            />
+          </button>
+          <div class="top-user">
+            <div class="top-usertext">
+              <div class="tu-name">
+                {{ fullName }}
+              </div>
+              <div class="tu-role">
+                {{ roleLabel }}
+              </div>
+            </div>
+            <div class="top-av">
+              {{ initial }}
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main class="content">
+        <slot />
+      </main>
+    </div>
+  </div>
+</template>
+
+<style scoped>
+.shell { display: flex; min-height: 100vh; background: var(--bg); color: var(--ink); }
+
+/* SIDEBAR */
+.side { width: 274px; flex-shrink: 0; background: var(--side-bg); display: flex; flex-direction: column; height: 100vh; position: sticky; top: 0; }
+.side-head { padding: 24px 22px 20px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--side-line); }
+.side-mark { height: 40px; width: auto; filter: brightness(0) invert(1); }
+.side-name { font-size: 21px; font-weight: 700; color: #fff; line-height: 1; }
+.side-tag { font-size: 11px; color: var(--side-ink); margin-top: 5px; letter-spacing: .5px; }
+.side-nav { flex: 1; overflow-y: auto; padding: 16px 14px; display: flex; flex-direction: column; gap: 3px; }
+.nav-group { font-size: 11.5px; font-weight: 600; color: var(--side-ink); padding: 14px 12px 8px; opacity: .75; }
+.nav-item { display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 14px; border-radius: 11px; background: transparent; border: none; color: var(--side-ink); font-size: 15px; font-weight: 500; font-family: inherit; cursor: pointer; width: 100%; text-align: start; transition: background .15s, color .15s; }
+.nav-item:hover { background: var(--side-hover); color: var(--side-strong); }
+.nav-item.active { background: var(--side-active); color: var(--side-strong); }
+.side-foot { padding: 14px; border-top: 1px solid var(--side-line); display: flex; flex-direction: column; gap: 8px; }
+.user-card { display: flex; align-items: center; gap: 11px; padding: 8px 10px; border-radius: 12px; background: rgba(255, 255, 255, .06); }
+.user-av { width: 38px; height: 38px; border-radius: 11px; background: #fff; color: var(--navy); display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 700; flex-shrink: 0; }
+.user-meta { min-width: 0; flex: 1; }
+.user-name { font-size: 14.5px; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.user-role { font-size: 12px; color: var(--side-ink); }
+.logout { width: 32px; height: 32px; border-radius: 9px; border: none; background: transparent; color: var(--side-ink); cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all .15s; }
+.logout:hover { color: #fff; background: rgba(255, 255, 255, .1); }
+
+/* MAIN */
+.main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.topbar { height: 76px; flex-shrink: 0; background: var(--surface); border-bottom: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; padding: 0 32px; position: sticky; top: 0; z-index: 20; }
+.top-start { display: flex; align-items: center; gap: 13px; min-width: 0; }
+.hamburger { display: none; width: 44px; height: 44px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface-2); color: var(--ink-2); align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; }
+.top-title { font-size: 22px; font-weight: 700; margin: 0; color: var(--ink); white-space: nowrap; }
+.top-end { display: flex; align-items: center; gap: 16px; }
+.top-icon { width: 44px; height: 44px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface-2); color: var(--ink-2); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all .2s; }
+.top-icon:hover { color: var(--ink); border-color: var(--blue); }
+.top-user { display: flex; align-items: center; gap: 11px; }
+.top-usertext { text-align: start; }
+.tu-name { font-size: 14.5px; font-weight: 600; color: var(--ink); line-height: 1.2; }
+.tu-role { font-size: 12.5px; color: var(--ink-3); }
+.top-av { width: 42px; height: 42px; border-radius: 12px; background: var(--navy); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 17px; font-weight: 700; }
+.content { flex: 1; overflow-y: auto; padding: 32px; background: var(--bg); }
+
+/* RESPONSIVE */
+.overlay { display: none; }
+@media (max-width: 1024px) {
+  .side { position: fixed; top: 0; right: 0; height: 100vh; transform: translateX(106%); box-shadow: -18px 0 50px rgba(0, 0, 0, .28); z-index: 60; transition: transform .28s ease; }
+  .side.side-open { transform: translateX(0); }
+  .hamburger { display: flex; }
+  .overlay { display: block; position: fixed; inset: 0; background: rgba(2, 15, 25, .5); z-index: 55; }
+}
+@media (max-width: 620px) {
+  .topbar { padding: 0 16px; }
+  .content { padding: 18px; }
+  .top-usertext { display: none; }
+}
+</style>

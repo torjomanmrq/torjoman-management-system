@@ -1,0 +1,1470 @@
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[]
+
+export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "14.5"
+  }
+  public: {
+    Tables: {
+      admin_alerts: {
+        Row: {
+          acknowledged_at: string | null
+          alert_date: string
+          created_at: string
+          description: string | null
+          id: string
+          issuer_id: string
+          severity: Database["public"]["Enums"]["alert_severity"]
+          status: Database["public"]["Enums"]["alert_status"]
+          teacher_id: string
+          updated_at: string
+          violation_type: string
+        }
+        Insert: {
+          acknowledged_at?: string | null
+          alert_date?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          issuer_id: string
+          severity?: Database["public"]["Enums"]["alert_severity"]
+          status?: Database["public"]["Enums"]["alert_status"]
+          teacher_id: string
+          updated_at?: string
+          violation_type: string
+        }
+        Update: {
+          acknowledged_at?: string | null
+          alert_date?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          issuer_id?: string
+          severity?: Database["public"]["Enums"]["alert_severity"]
+          status?: Database["public"]["Enums"]["alert_status"]
+          teacher_id?: string
+          updated_at?: string
+          violation_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_alerts_issuer_id_fkey"
+            columns: ["issuer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "admin_alerts_teacher_id_fkey"
+            columns: ["teacher_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      app_settings: {
+        Row: {
+          created_at: string
+          default_attendance_days: number | null
+          default_points: number
+          id: number
+          pass_mark: number
+          target_memorization_pages: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          default_attendance_days?: number | null
+          default_points?: number
+          id?: number
+          pass_mark?: number
+          target_memorization_pages?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          default_attendance_days?: number | null
+          default_points?: number
+          id?: number
+          pass_mark?: number
+          target_memorization_pages?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      exam_list_items: {
+        Row: {
+          created_at: string
+          exam_list_id: string
+          exam_plan_id: number | null
+          id: string
+          student_id: string
+          teacher_note: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          exam_list_id: string
+          exam_plan_id?: number | null
+          id?: string
+          student_id: string
+          teacher_note?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          exam_list_id?: string
+          exam_plan_id?: number | null
+          id?: string
+          student_id?: string
+          teacher_note?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exam_list_items_exam_list_id_fkey"
+            columns: ["exam_list_id"]
+            isOneToOne: false
+            referencedRelation: "exam_lists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exam_list_items_exam_plan_id_fkey"
+            columns: ["exam_plan_id"]
+            isOneToOne: false
+            referencedRelation: "exam_plan"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exam_list_items_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      exam_lists: {
+        Row: {
+          created_at: string
+          halaqa_id: string
+          id: string
+          status: Database["public"]["Enums"]["exam_list_status"]
+          teacher_id: string
+          updated_at: string
+          week_date: string
+        }
+        Insert: {
+          created_at?: string
+          halaqa_id: string
+          id?: string
+          status?: Database["public"]["Enums"]["exam_list_status"]
+          teacher_id: string
+          updated_at?: string
+          week_date: string
+        }
+        Update: {
+          created_at?: string
+          halaqa_id?: string
+          id?: string
+          status?: Database["public"]["Enums"]["exam_list_status"]
+          teacher_id?: string
+          updated_at?: string
+          week_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exam_lists_halaqa_id_fkey"
+            columns: ["halaqa_id"]
+            isOneToOne: false
+            referencedRelation: "halaqat"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exam_lists_teacher_id_fkey"
+            columns: ["teacher_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      exam_plan: {
+        Row: {
+          created_at: string
+          group_number: number
+          id: number
+          parts_from: number
+          parts_to: number
+          stage_type: Database["public"]["Enums"]["exam_stage_type"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          group_number: number
+          id?: never
+          parts_from: number
+          parts_to: number
+          stage_type: Database["public"]["Enums"]["exam_stage_type"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          group_number?: number
+          id?: never
+          parts_from?: number
+          parts_to?: number
+          stage_type?: Database["public"]["Enums"]["exam_stage_type"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      exam_results: {
+        Row: {
+          created_at: string
+          exam_date: string
+          exam_list_item_id: string | null
+          examiner_id: string | null
+          id: string
+          notes: string | null
+          pass_mark_snapshot: number
+          passed: boolean | null
+          q1_memorization: number
+          q1_reflection: number
+          q1_understanding: number
+          q2_memorization: number
+          q2_reflection: number
+          q2_understanding: number
+          q3_memorization: number
+          q3_reflection: number
+          q3_understanding: number
+          student_id: string
+          tajweed_score: number
+          total_score: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          exam_date?: string
+          exam_list_item_id?: string | null
+          examiner_id?: string | null
+          id?: string
+          notes?: string | null
+          pass_mark_snapshot: number
+          passed?: boolean | null
+          q1_memorization?: number
+          q1_reflection?: number
+          q1_understanding?: number
+          q2_memorization?: number
+          q2_reflection?: number
+          q2_understanding?: number
+          q3_memorization?: number
+          q3_reflection?: number
+          q3_understanding?: number
+          student_id: string
+          tajweed_score?: number
+          total_score?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          exam_date?: string
+          exam_list_item_id?: string | null
+          examiner_id?: string | null
+          id?: string
+          notes?: string | null
+          pass_mark_snapshot?: number
+          passed?: boolean | null
+          q1_memorization?: number
+          q1_reflection?: number
+          q1_understanding?: number
+          q2_memorization?: number
+          q2_reflection?: number
+          q2_understanding?: number
+          q3_memorization?: number
+          q3_reflection?: number
+          q3_understanding?: number
+          student_id?: string
+          tajweed_score?: number
+          total_score?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exam_results_exam_list_item_id_fkey"
+            columns: ["exam_list_item_id"]
+            isOneToOne: false
+            referencedRelation: "exam_list_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exam_results_examiner_id_fkey"
+            columns: ["examiner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exam_results_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      financial_transactions: {
+        Row: {
+          amount: number
+          category: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          transaction_date: string
+          type: Database["public"]["Enums"]["transaction_type"]
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          transaction_date?: string
+          type: Database["public"]["Enums"]["transaction_type"]
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          transaction_date?: string
+          type?: Database["public"]["Enums"]["transaction_type"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "financial_transactions_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      halaqa_incentives: {
+        Row: {
+          allocated_amount: number
+          approved: boolean
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          halaqa_id: string
+          id: string
+          incentive_month: number
+          incentive_year: number
+          updated_at: string
+        }
+        Insert: {
+          allocated_amount?: number
+          approved?: boolean
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          halaqa_id: string
+          id?: string
+          incentive_month: number
+          incentive_year: number
+          updated_at?: string
+        }
+        Update: {
+          allocated_amount?: number
+          approved?: boolean
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          halaqa_id?: string
+          id?: string
+          incentive_month?: number
+          incentive_year?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "halaqa_incentives_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "halaqa_incentives_halaqa_id_fkey"
+            columns: ["halaqa_id"]
+            isOneToOne: false
+            referencedRelation: "halaqat"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      halaqat: {
+        Row: {
+          assigned_by: string | null
+          classification:
+            | Database["public"]["Enums"]["halaqa_classification"]
+            | null
+          created_at: string
+          daily_time: string | null
+          gender: Database["public"]["Enums"]["gender_type"] | null
+          id: string
+          name: string
+          status: Database["public"]["Enums"]["halaqa_status"]
+          supervisor_id: string | null
+          teacher_id: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_by?: string | null
+          classification?:
+            | Database["public"]["Enums"]["halaqa_classification"]
+            | null
+          created_at?: string
+          daily_time?: string | null
+          gender?: Database["public"]["Enums"]["gender_type"] | null
+          id?: string
+          name: string
+          status?: Database["public"]["Enums"]["halaqa_status"]
+          supervisor_id?: string | null
+          teacher_id: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_by?: string | null
+          classification?:
+            | Database["public"]["Enums"]["halaqa_classification"]
+            | null
+          created_at?: string
+          daily_time?: string | null
+          gender?: Database["public"]["Enums"]["gender_type"] | null
+          id?: string
+          name?: string
+          status?: Database["public"]["Enums"]["halaqa_status"]
+          supervisor_id?: string | null
+          teacher_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "halaqat_assigned_by_fkey"
+            columns: ["assigned_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "halaqat_supervisor_id_fkey"
+            columns: ["supervisor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "halaqat_teacher_id_fkey"
+            columns: ["teacher_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      incentive_statement_items: {
+        Row: {
+          amount: number
+          category: string | null
+          created_at: string
+          description: string | null
+          id: string
+          item_date: string | null
+          statement_id: string
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          item_date?: string | null
+          statement_id: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          item_date?: string | null
+          statement_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "incentive_statement_items_statement_id_fkey"
+            columns: ["statement_id"]
+            isOneToOne: false
+            referencedRelation: "incentive_statements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      incentive_statements: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          halaqa_id: string
+          id: string
+          received_amount: number
+          reviewed_at: string | null
+          reviewed_by: string | null
+          statement_month: number
+          statement_year: number
+          status: Database["public"]["Enums"]["statement_status"]
+          submitted_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          halaqa_id: string
+          id?: string
+          received_amount?: number
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          statement_month: number
+          statement_year: number
+          status?: Database["public"]["Enums"]["statement_status"]
+          submitted_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          halaqa_id?: string
+          id?: string
+          received_amount?: number
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          statement_month?: number
+          statement_year?: number
+          status?: Database["public"]["Enums"]["statement_status"]
+          submitted_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "incentive_statements_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "incentive_statements_halaqa_id_fkey"
+            columns: ["halaqa_id"]
+            isOneToOne: false
+            referencedRelation: "halaqat"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "incentive_statements_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      meeting_minutes: {
+        Row: {
+          agenda: string | null
+          attachments: Json | null
+          attendee_ids: string[]
+          created_at: string
+          created_by: string | null
+          decisions: string | null
+          id: string
+          meeting_date: string
+          status: Database["public"]["Enums"]["minutes_status"]
+          tasks: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          agenda?: string | null
+          attachments?: Json | null
+          attendee_ids?: string[]
+          created_at?: string
+          created_by?: string | null
+          decisions?: string | null
+          id?: string
+          meeting_date: string
+          status?: Database["public"]["Enums"]["minutes_status"]
+          tasks?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          agenda?: string | null
+          attachments?: Json | null
+          attendee_ids?: string[]
+          created_at?: string
+          created_by?: string | null
+          decisions?: string | null
+          id?: string
+          meeting_date?: string
+          status?: Database["public"]["Enums"]["minutes_status"]
+          tasks?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meeting_minutes_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      monthly_report_activities: {
+        Row: {
+          activity_key: Database["public"]["Enums"]["activity_key"]
+          created_at: string
+          done: boolean
+          id: string
+          note: string | null
+          report_id: string
+          updated_at: string
+        }
+        Insert: {
+          activity_key: Database["public"]["Enums"]["activity_key"]
+          created_at?: string
+          done?: boolean
+          id?: string
+          note?: string | null
+          report_id: string
+          updated_at?: string
+        }
+        Update: {
+          activity_key?: Database["public"]["Enums"]["activity_key"]
+          created_at?: string
+          done?: boolean
+          id?: string
+          note?: string | null
+          report_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "monthly_report_activities_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "monthly_reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      monthly_report_students: {
+        Row: {
+          absence_excused: number
+          absence_unexcused: number
+          created_at: string
+          id: string
+          memorization_from: number | null
+          memorization_pages: number | null
+          memorization_to: number | null
+          monthly_points: number | null
+          notes: string | null
+          report_id: string
+          review_pages: number | null
+          review_to: number | null
+          student_grade: number | null
+          student_id: string
+          updated_at: string
+        }
+        Insert: {
+          absence_excused?: number
+          absence_unexcused?: number
+          created_at?: string
+          id?: string
+          memorization_from?: number | null
+          memorization_pages?: number | null
+          memorization_to?: number | null
+          monthly_points?: number | null
+          notes?: string | null
+          report_id: string
+          review_pages?: number | null
+          review_to?: number | null
+          student_grade?: number | null
+          student_id: string
+          updated_at?: string
+        }
+        Update: {
+          absence_excused?: number
+          absence_unexcused?: number
+          created_at?: string
+          id?: string
+          memorization_from?: number | null
+          memorization_pages?: number | null
+          memorization_to?: number | null
+          monthly_points?: number | null
+          notes?: string | null
+          report_id?: string
+          review_pages?: number | null
+          review_to?: number | null
+          student_grade?: number | null
+          student_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "monthly_report_students_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "monthly_reports"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "monthly_report_students_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      monthly_reports: {
+        Row: {
+          activities_done: number
+          activities_notes: string | null
+          activities_total: number
+          actual_days: number | null
+          approved_at: string | null
+          approved_by: string | null
+          attendance_rate: number | null
+          created_at: string
+          default_days_snapshot: number | null
+          default_points_snapshot: number | null
+          general_notes: string | null
+          halaqa_id: string
+          id: string
+          report_month: number
+          report_year: number
+          status: Database["public"]["Enums"]["report_status"]
+          submitted_at: string | null
+          target_pages_snapshot: number | null
+          updated_at: string
+        }
+        Insert: {
+          activities_done?: number
+          activities_notes?: string | null
+          activities_total?: number
+          actual_days?: number | null
+          approved_at?: string | null
+          approved_by?: string | null
+          attendance_rate?: number | null
+          created_at?: string
+          default_days_snapshot?: number | null
+          default_points_snapshot?: number | null
+          general_notes?: string | null
+          halaqa_id: string
+          id?: string
+          report_month: number
+          report_year: number
+          status?: Database["public"]["Enums"]["report_status"]
+          submitted_at?: string | null
+          target_pages_snapshot?: number | null
+          updated_at?: string
+        }
+        Update: {
+          activities_done?: number
+          activities_notes?: string | null
+          activities_total?: number
+          actual_days?: number | null
+          approved_at?: string | null
+          approved_by?: string | null
+          attendance_rate?: number | null
+          created_at?: string
+          default_days_snapshot?: number | null
+          default_points_snapshot?: number | null
+          general_notes?: string | null
+          halaqa_id?: string
+          id?: string
+          report_month?: number
+          report_year?: number
+          status?: Database["public"]["Enums"]["report_status"]
+          submitted_at?: string | null
+          target_pages_snapshot?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "monthly_reports_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "monthly_reports_halaqa_id_fkey"
+            columns: ["halaqa_id"]
+            isOneToOne: false
+            referencedRelation: "halaqat"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      monthly_salaries: {
+        Row: {
+          amount: number
+          approved: boolean
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          id: string
+          profile_id: string
+          salary_month: number
+          salary_year: number
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          approved?: boolean
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          id?: string
+          profile_id: string
+          salary_month: number
+          salary_year: number
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          approved?: boolean
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          id?: string
+          profile_id?: string
+          salary_month?: number
+          salary_year?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "monthly_salaries_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "monthly_salaries_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      news: {
+        Row: {
+          body: string | null
+          category: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          image_url: string | null
+          news_date: string
+          published: boolean
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          body?: string | null
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          image_url?: string | null
+          news_date?: string
+          published?: boolean
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          body?: string | null
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          image_url?: string | null
+          news_date?: string
+          published?: boolean
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "news_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profile_financials: {
+        Row: {
+          account_holder: string | null
+          account_number: string | null
+          account_type: Database["public"]["Enums"]["account_type"] | null
+          created_at: string
+          profile_id: string
+          updated_at: string
+        }
+        Insert: {
+          account_holder?: string | null
+          account_number?: string | null
+          account_type?: Database["public"]["Enums"]["account_type"] | null
+          created_at?: string
+          profile_id: string
+          updated_at?: string
+        }
+        Update: {
+          account_holder?: string | null
+          account_number?: string | null
+          account_type?: Database["public"]["Enums"]["account_type"] | null
+          created_at?: string
+          profile_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profile_financials_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          academic_major: string | null
+          address_detail: string | null
+          assigned_by: string | null
+          avatar_url: string | null
+          birth_date: string | null
+          created_at: string
+          education_level: string | null
+          email: string | null
+          family_count: number | null
+          full_name: string
+          gender: Database["public"]["Enums"]["gender_type"] | null
+          hire_date: string | null
+          id: string
+          job_title: string | null
+          marital_status: string | null
+          national_id: string | null
+          nearest_mosque: string | null
+          phone: string | null
+          quality_supervisor_id: string | null
+          quran_parts: number | null
+          residence_area: string | null
+          role: Database["public"]["Enums"]["user_role"]
+          status: Database["public"]["Enums"]["profile_status"]
+          tajweed_level: string | null
+          updated_at: string
+          years_experience: number | null
+        }
+        Insert: {
+          academic_major?: string | null
+          address_detail?: string | null
+          assigned_by?: string | null
+          avatar_url?: string | null
+          birth_date?: string | null
+          created_at?: string
+          education_level?: string | null
+          email?: string | null
+          family_count?: number | null
+          full_name: string
+          gender?: Database["public"]["Enums"]["gender_type"] | null
+          hire_date?: string | null
+          id: string
+          job_title?: string | null
+          marital_status?: string | null
+          national_id?: string | null
+          nearest_mosque?: string | null
+          phone?: string | null
+          quality_supervisor_id?: string | null
+          quran_parts?: number | null
+          residence_area?: string | null
+          role: Database["public"]["Enums"]["user_role"]
+          status?: Database["public"]["Enums"]["profile_status"]
+          tajweed_level?: string | null
+          updated_at?: string
+          years_experience?: number | null
+        }
+        Update: {
+          academic_major?: string | null
+          address_detail?: string | null
+          assigned_by?: string | null
+          avatar_url?: string | null
+          birth_date?: string | null
+          created_at?: string
+          education_level?: string | null
+          email?: string | null
+          family_count?: number | null
+          full_name?: string
+          gender?: Database["public"]["Enums"]["gender_type"] | null
+          hire_date?: string | null
+          id?: string
+          job_title?: string | null
+          marital_status?: string | null
+          national_id?: string | null
+          nearest_mosque?: string | null
+          phone?: string | null
+          quality_supervisor_id?: string | null
+          quran_parts?: number | null
+          residence_area?: string | null
+          role?: Database["public"]["Enums"]["user_role"]
+          status?: Database["public"]["Enums"]["profile_status"]
+          tajweed_level?: string | null
+          updated_at?: string
+          years_experience?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_assigned_by_fkey"
+            columns: ["assigned_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_quality_supervisor_id_fkey"
+            columns: ["quality_supervisor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      students: {
+        Row: {
+          avatar_url: string | null
+          birth_date: string | null
+          created_at: string
+          created_by: string | null
+          enrollment_date: string | null
+          family_count: number | null
+          full_name: string
+          gender: Database["public"]["Enums"]["gender_type"] | null
+          guardian_email: string | null
+          guardian_name: string | null
+          guardian_phone: string | null
+          halaqa_id: string | null
+          id: string
+          national_id: string | null
+          nearest_mosque: string | null
+          phone: string | null
+          quran_parts: number | null
+          residence: string | null
+          status: Database["public"]["Enums"]["student_status"]
+          tajweed_level: string | null
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          birth_date?: string | null
+          created_at?: string
+          created_by?: string | null
+          enrollment_date?: string | null
+          family_count?: number | null
+          full_name: string
+          gender?: Database["public"]["Enums"]["gender_type"] | null
+          guardian_email?: string | null
+          guardian_name?: string | null
+          guardian_phone?: string | null
+          halaqa_id?: string | null
+          id?: string
+          national_id?: string | null
+          nearest_mosque?: string | null
+          phone?: string | null
+          quran_parts?: number | null
+          residence?: string | null
+          status?: Database["public"]["Enums"]["student_status"]
+          tajweed_level?: string | null
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          birth_date?: string | null
+          created_at?: string
+          created_by?: string | null
+          enrollment_date?: string | null
+          family_count?: number | null
+          full_name?: string
+          gender?: Database["public"]["Enums"]["gender_type"] | null
+          guardian_email?: string | null
+          guardian_name?: string | null
+          guardian_phone?: string | null
+          halaqa_id?: string | null
+          id?: string
+          national_id?: string | null
+          nearest_mosque?: string | null
+          phone?: string | null
+          quran_parts?: number | null
+          residence?: string | null
+          status?: Database["public"]["Enums"]["student_status"]
+          tajweed_level?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "students_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "students_halaqa_id_fkey"
+            columns: ["halaqa_id"]
+            isOneToOne: false
+            referencedRelation: "halaqat"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      supervision_visits: {
+        Row: {
+          created_at: string
+          executed_at: string | null
+          flow_rating: string | null
+          halaqa_id: string
+          id: string
+          improvements: string | null
+          notes: string | null
+          recommendations: string | null
+          scheduled_at: string
+          status: Database["public"]["Enums"]["visit_status"]
+          strengths: string | null
+          supervisor_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          executed_at?: string | null
+          flow_rating?: string | null
+          halaqa_id: string
+          id?: string
+          improvements?: string | null
+          notes?: string | null
+          recommendations?: string | null
+          scheduled_at: string
+          status?: Database["public"]["Enums"]["visit_status"]
+          strengths?: string | null
+          supervisor_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          executed_at?: string | null
+          flow_rating?: string | null
+          halaqa_id?: string
+          id?: string
+          improvements?: string | null
+          notes?: string | null
+          recommendations?: string | null
+          scheduled_at?: string
+          status?: Database["public"]["Enums"]["visit_status"]
+          strengths?: string | null
+          supervisor_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supervision_visits_halaqa_id_fkey"
+            columns: ["halaqa_id"]
+            isOneToOne: false
+            referencedRelation: "halaqat"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supervision_visits_supervisor_id_fkey"
+            columns: ["supervisor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      visit_reschedule_log: {
+        Row: {
+          changed_at: string
+          id: string
+          new_time: string | null
+          old_time: string | null
+          reason: string
+          visit_id: string
+        }
+        Insert: {
+          changed_at?: string
+          id?: string
+          new_time?: string | null
+          old_time?: string | null
+          reason: string
+          visit_id: string
+        }
+        Update: {
+          changed_at?: string
+          id?: string
+          new_time?: string | null
+          old_time?: string | null
+          reason?: string
+          visit_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "visit_reschedule_log_visit_id_fkey"
+            columns: ["visit_id"]
+            isOneToOne: false
+            referencedRelation: "supervision_visits"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      can_access_halaqa: { Args: { hid: string }, Returns: boolean }
+      current_user_role: {
+        Args: never
+        Returns: Database["public"]["Enums"]["user_role"]
+      }
+      is_manager: { Args: never, Returns: boolean }
+    }
+    Enums: {
+      account_type: "jawwalpay" | "palpay" | "bank_palestine"
+      activity_key:
+        | "reflection_1"
+        | "reflection_2"
+        | "reflection_3"
+        | "reflection_4"
+        | "weekly_review_1"
+        | "weekly_review_2"
+        | "weekly_review_3"
+        | "weekly_review_4"
+        | "edu_curriculum_1"
+        | "edu_curriculum_2"
+        | "edu_curriculum_3"
+        | "edu_curriculum_4"
+        | "video_lecture"
+        | "values_followup"
+      alert_severity: "note" | "first_warning" | "final_warning"
+      alert_status: "new" | "acknowledged"
+      exam_list_status: "sent" | "in_progress" | "completed"
+      exam_stage_type: "partial" | "cumulative"
+      gender_type: "male" | "female"
+      halaqa_classification: "a" | "b"
+      halaqa_status: "active" | "stopped"
+      minutes_status: "draft" | "final"
+      profile_status: "pending" | "active" | "disabled"
+      report_status: "draft" | "submitted" | "approved"
+      statement_status: "draft" | "submitted" | "reviewed"
+      student_status: "active" | "withdrawn" | "graduated" | "transferred"
+      transaction_type: "income" | "expense"
+      user_role: "manager" | "quality" | "supervisor" | "teacher"
+      visit_status: "scheduled" | "done" | "late" | "missed"
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
+}
+
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
+
+export type Tables<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      Row: infer R
+    }
+    ? R
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R
+      }
+      ? R
+      : never
+    : never
+
+export type TablesInsert<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Insert: infer I
+    }
+    ? I
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I
+      }
+      ? I
+      : never
+    : never
+
+export type TablesUpdate<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Update: infer U
+    }
+    ? U
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U
+      }
+      ? U
+      : never
+    : never
+
+export type Enums<
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never = never,
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
+
+export const Constants = {
+  public: {
+    Enums: {
+      account_type: ["jawwalpay", "palpay", "bank_palestine"],
+      activity_key: [
+        "reflection_1",
+        "reflection_2",
+        "reflection_3",
+        "reflection_4",
+        "weekly_review_1",
+        "weekly_review_2",
+        "weekly_review_3",
+        "weekly_review_4",
+        "edu_curriculum_1",
+        "edu_curriculum_2",
+        "edu_curriculum_3",
+        "edu_curriculum_4",
+        "video_lecture",
+        "values_followup",
+      ],
+      alert_severity: ["note", "first_warning", "final_warning"],
+      alert_status: ["new", "acknowledged"],
+      exam_list_status: ["sent", "in_progress", "completed"],
+      exam_stage_type: ["partial", "cumulative"],
+      gender_type: ["male", "female"],
+      halaqa_classification: ["a", "b"],
+      halaqa_status: ["active", "stopped"],
+      minutes_status: ["draft", "final"],
+      profile_status: ["pending", "active", "disabled"],
+      report_status: ["draft", "submitted", "approved"],
+      statement_status: ["draft", "submitted", "reviewed"],
+      student_status: ["active", "withdrawn", "graduated", "transferred"],
+      transaction_type: ["income", "expense"],
+      user_role: ["manager", "quality", "supervisor", "teacher"],
+      visit_status: ["scheduled", "done", "late", "missed"],
+    },
+  },
+} as const
