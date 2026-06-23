@@ -31,9 +31,10 @@ export function useProfile() {
   )
 
   const role = computed<Role | null>(() => profile.value?.role ?? null)
+  const status = computed(() => profile.value?.status ?? null)
   const fullName = computed(() => profile.value?.full_name ?? '')
   /** أول حرف من الاسم — بديل الصورة الرمزية. */
   const initial = computed(() => fullName.value.trim().charAt(0) || '؟')
 
-  return { profile, role, fullName, initial, pending, fetchProfile: refresh }
+  return { profile, role, status, fullName, initial, pending, fetchProfile: refresh }
 }
