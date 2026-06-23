@@ -2,6 +2,7 @@
 /**
  * الزيارات الإشرافية (§4.15).
  * المدير/المشرف يجدول زيارة لحلقة ثم يرفع نتائجها (نقاط قوة/تحسين/توصيات/تقييم).
+ * الزائر قد يكون مشرفاً أو المدير نفسه (يزور بصفته مديراً).
  * RLS: المدير يدير الكل، المشرف زياراته. الحذف للمدير.
  */
 import type { Database } from '~/types/database.types'
@@ -15,6 +16,7 @@ type VisitRow = Database['public']['Tables']['supervision_visits']['Row'] & {
   supervisor: { full_name: string } | null
 }
 type NameRow = { id: string, name?: string, full_name?: string }
+type VisitorRow = { id: string, full_name: string, role: string }
 
 const supabase = useSupabaseClient<Database>()
 const { role: myRole, profile } = useProfile()
@@ -44,12 +46,16 @@ const { data: halqat } = await useAsyncData<NameRow[]>('visits-halqat', async ()
   const { data } = await supabase.from('halaqat').select('id, name').order('name')
   return data ?? []
 }, { server: false, default: () => [] })
-const { data: supervisors } = await useAsyncData<NameRow[]>('visits-supervisors', async () => {
-  const { data } = await supabase.from('profiles').select('id, full_name').eq('role', 'supervisor').eq('status', 'active').order('full_name')
-  return data ?? []
+// الزائر: مدير أو مشرف ميداني (المدير يزور بصفته مديراً أيضاً)
+const { data: visitors } = await useAsyncData<VisitorRow[]>('visits-visitors', async () => {
+  const { data } = await supabase.from('profiles').select('id, full_name, role').in('role', ['manager', 'supervisor']).eq('status', 'active').order('full_name')
+  return (data ?? []) as VisitorRow[]
 }, { server: false, default: () => [] })
 const halqaItems = computed(() => (halqat.value ?? []).map(h => ({ label: h.name ?? '', value: h.id })))
-const supervisorItems = computed(() => (supervisors.value ?? []).map(s => ({ label: s.full_name ?? '', value: s.id })))
+const visitorItems = computed(() => (visitors.value ?? []).map(v => ({
+  label: v.role === 'manager' ? `${v.full_name} (المدير)` : v.full_name,
+  value: v.id
+})))
 
 const statusF = ref<VisitStatus | 'all'>('all')
 const STATUS_META: Record<VisitStatus, { label: string, color: 'info' | 'success' | 'warning' | 'error' }> = {
@@ -77,7 +83,7 @@ const stats = computed(() => {
 const columns = [
   { key: 'halqa', label: 'الحلقة' },
   { key: 'teacher', label: 'المعلّم' },
-  { key: 'supervisor', label: 'المشرف' },
+  { key: 'supervisor', label: 'الزائر' },
   { key: 'date', label: 'الموعد' },
   { key: 'rating', label: 'التقييم' },
   { key: 'status', label: 'الحالة' },
@@ -96,7 +102,8 @@ const sched = reactive({ halaqa_id: '', supervisor_id: '', scheduled_at: '' })
 function openSchedule() {
   editingId.value = null
   sched.halaqa_id = ''
-  sched.supervisor_id = myRole.value === 'supervisor' ? (profile.value?.id ?? '') : ''
+  // المدير والمشرف يُعيَّنان زائرَين افتراضيّاً (أنفسهما)
+  sched.supervisor_id = (myRole.value === 'supervisor' || myRole.value === 'manager') ? (profile.value?.id ?? '') : ''
   sched.scheduled_at = ''
   schedOpen.value = true
 }
@@ -110,7 +117,7 @@ function openEditSchedule(v: VisitRow) {
 function validateSched(s: typeof sched) {
   const e: { name: string, message: string }[] = []
   if (!s.halaqa_id) e.push({ name: 'halaqa_id', message: 'اختر الحلقة.' })
-  if (!s.supervisor_id) e.push({ name: 'supervisor_id', message: 'اختر المشرف.' })
+  if (!s.supervisor_id) e.push({ name: 'supervisor_id', message: 'اختر الزائر.' })
   if (!s.scheduled_at) e.push({ name: 'scheduled_at', message: 'حدّد موعد الزيارة.' })
   return e
 }
@@ -344,14 +351,14 @@ async function confirmDelete() {
             />
           </UFormField>
           <UFormField
-            label="المشرف"
+            label="الزائر"
             name="supervisor_id"
-            :hint="supervisorItems.length ? '' : 'لا مشرفون بعد — أنشئ مشرفاً من إدارة المستخدمين'"
+            :hint="visitorItems.length ? 'المدير أو أحد المشرفين' : 'لا زائرون متاحون بعد'"
           >
             <USelect
               v-model="sched.supervisor_id"
-              :items="supervisorItems"
-              placeholder="اختر المشرف"
+              :items="visitorItems"
+              placeholder="اختر الزائر"
               size="lg"
               class="w-full"
               :ui="{ base: 'rounded-[13px]' }"
