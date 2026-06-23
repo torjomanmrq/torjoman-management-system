@@ -10,12 +10,9 @@ definePageMeta({ layout: 'dashboard' })
 useSeoMeta({ title: 'لوحة التحكم — ترجمان' })
 
 const supabase = useSupabaseClient<Database>()
-const { role, fullName, fetchProfile } = useProfile()
+const { role, fullName } = useProfile()
 const { handle } = useErrorHandler()
 const toast = useToast()
-
-// نضمن تحميل الملف هنا أيضاً (لا نعتمد على ترتيب تحميل الـ layout)
-await fetchProfile()
 
 const isManager = computed(() => role.value === 'manager')
 
@@ -72,7 +69,7 @@ async function saveSetting(key: SettingKey, unit: string) {
   }
 }
 
-if (isManager.value) {
+async function loadManagerData() {
   const [st, te, su, qu, ha] = await Promise.all([
     countOf('students'), countRole('teacher'), countRole('supervisor'), countRole('quality'), countOf('halaqat')
   ])
@@ -83,6 +80,11 @@ if (isManager.value) {
   counts.halqat = ha
   await loadSettings()
 }
+
+// يُحمَّل عند معرفة الدور (الملف قد يصل بعد أول تصيير على العميل)
+watch(isManager, (v) => {
+  if (v) loadManagerData()
+}, { immediate: true })
 
 const statCards = computed(() => [
   { icon: 'i-lucide-graduation-cap', tone: 'blue', value: counts.students, label: 'إجمالي الطلاب' },

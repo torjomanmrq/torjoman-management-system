@@ -4,12 +4,10 @@
  * مشترك بين كل الأدوار العاملة. القوائم تظهر حسب دور المستخدم.
  * المسارات غير المبنيّة بعد تُظهر تنبيه «قيد الإنشاء» (تُربط عند بناء كل شاشة).
  */
-const { role, fullName, initial, fetchProfile } = useProfile()
+const { role, fullName, initial } = useProfile()
 const { signOut } = useAuth()
 const toast = useToast()
 const route = useRoute()
-
-await fetchProfile()
 
 const colorMode = useColorMode()
 const isDark = computed(() => colorMode.value === 'dark')
