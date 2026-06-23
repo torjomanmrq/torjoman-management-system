@@ -27,7 +27,7 @@ const mainNav: Item[] = [
   { key: 'dashboard', label: 'لوحة التحكم', icon: 'i-lucide-layout-dashboard', to: '/dashboard', roles: ['manager', 'quality', 'supervisor', 'teacher'] },
   { key: 'users', label: 'إدارة المستخدمين', icon: 'i-lucide-users', to: '/users', roles: ['manager'] },
   { key: 'supervisors', label: 'المشرفون', icon: 'i-lucide-users-round', roles: ['manager', 'quality'] },
-  { key: 'halqat', label: 'الحلقات', icon: 'i-lucide-book-open', roles: ['manager', 'quality', 'supervisor'] },
+  { key: 'halqat', label: 'الحلقات', icon: 'i-lucide-book-open', to: '/halqat', roles: ['manager', 'quality', 'supervisor'] },
   { key: 'myhalqa', label: 'حلقتي', icon: 'i-lucide-book-open', roles: ['teacher'] },
   { key: 'students', label: 'الطلاب', icon: 'i-lucide-graduation-cap', roles: ['manager', 'quality', 'supervisor'] },
   { key: 'visits', label: 'الزيارات الإشرافية', icon: 'i-lucide-clipboard-check', roles: ['manager', 'quality', 'supervisor'] },
