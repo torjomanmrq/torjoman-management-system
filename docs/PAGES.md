@@ -15,7 +15,8 @@
 | تسجيل الدخول | `pages/login.vue` | ✅ | §4.1 |
 | ضبط كلمة المرور (دعوة) | `pages/auth/confirm.vue` | ⬜ | §4.1 |
 | نسيت كلمة المرور | `pages/auth/reset.vue` | ⬜ | §4.1 |
-| الهيكل العام Shell | `layouts/dashboard.vue` | ⬜ | §4.2 |
+| الهيكل العام Shell | `layouts/dashboard.vue` | ✅ | §4.2 |
+| حماية المسارات | `middleware/auth.global.ts` | ✅ | §4.3 |
 | الملف الشخصي | `pages/profile/[id].vue` | ⬜ | §4.4, §4.5 |
 | الحالات الفارغة (مكوّن) | `components/ui/EmptyState.vue` | ⬜ | §4.15 |
 | مربّع التأكيد (مكوّن) | `components/ui/ConfirmModal.vue` | ⬜ | §4.15 |
@@ -26,10 +27,13 @@
 
 | الشاشة | المسار المتوقّع | الحالة | البريف |
 |---|---|---|---|
-| لوحة المدير | `pages/dashboard/manager.vue` | ⬜ | §4.3 |
-| لوحة مشرف الجودة | `pages/dashboard/quality.vue` | ⬜ | §4.3 |
-| لوحة المشرف | `pages/dashboard/supervisor.vue` | ⬜ | §4.3 |
-| لوحة المعلم (حلقتي) | `pages/dashboard/teacher.vue` | ⬜ | §4.3 |
+| لوحة التحكم (موجّهة بالدور) | `pages/dashboard.vue` | 🟡 | §4.3 |
+| └ لوحة المدير | `pages/dashboard.vue` (فرع manager) | ✅ | §4.3 |
+| └ لوحة مشرف الجودة | `pages/dashboard.vue` (فرع quality) | ⬜ | §4.3 |
+| └ لوحة المشرف | `pages/dashboard.vue` (فرع supervisor) | ⬜ | §4.3 |
+| └ لوحة المعلم (حلقتي) | `pages/dashboard.vue` (فرع teacher) | ⬜ | §4.3 |
+
+> **لوحة موحّدة موجّهة بالدور:** صفحة `pages/dashboard.vue` واحدة تعرض محتوى كل دور حسب `useProfile().role`. لوحة المدير منفّذة (إحصائيات + إعدادات `app_settings`)؛ بقية الأدوار محتواها يُضاف في شرائحها.
 
 > **لا توجد لوحة طالب:** الطالب سجلّ بيانات بلا حساب ولا دخول (§4.3) — كل ما يخصّه يُعرض داخل ملف الطالب للعاملين.
 
@@ -39,7 +43,7 @@
 
 | الشاشة | المسار المتوقّع | الحالة | البريف |
 |---|---|---|---|
-| إدارة المستخدمين | `pages/users/index.vue` | ⬜ | §4.12 |
+| إدارة المستخدمين | `pages/users/index.vue` | 🟡 | §4.12 |
 | إنشاء/تعديل الحلقة | `pages/halaqat/edit.vue` | ⬜ | §4.13 |
 | تفاصيل الحلقة | `pages/halaqat/[id].vue` | ⬜ | §4.14 |
 | دليل المشرفين | `pages/supervisors/index.vue` | ⬜ | §4.14أ |
