@@ -1,5 +1,5 @@
 import type { H3Event } from 'h3'
-import { serverSupabaseUser, serverSupabaseServiceRole } from '#supabase/server'
+import { serverSupabaseClient, serverSupabaseServiceRole } from '#supabase/server'
 import type { Database } from '~/types/database.types'
 
 /**
@@ -8,8 +8,9 @@ import type { Database } from '~/types/database.types'
  * عميل الخدمة خادمي فقط ولا يُستورَد في كود العميل أبداً.
  */
 export async function requireManager(event: H3Event) {
-  const user = await serverSupabaseUser(event)
-  if (!user) {
+  const client = await serverSupabaseClient<Database>(event)
+  const { data: { user } } = await client.auth.getUser()
+  if (!user?.id) {
     throw createError({ statusCode: 401, statusMessage: 'يلزم تسجيل الدخول.' })
   }
   const admin = serverSupabaseServiceRole<Database>(event)
