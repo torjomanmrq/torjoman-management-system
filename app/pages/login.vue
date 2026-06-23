@@ -4,6 +4,8 @@
  * مبنيّة بمكوّنات Nuxt UI (UForm/UInput/UButton/UModal) + تخطيط مخصّص للوحَين.
  * التسجيل مغلق — الحسابات تُنشأ من الإدارة. استعادة كلمة المرور ذاتية عبر البريد.
  */
+definePageMeta({ layout: false })
+
 const { user, signIn, sendPasswordReset } = useAuth()
 const { handle } = useErrorHandler()
 const toast = useToast()

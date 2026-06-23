@@ -2,5 +2,6 @@
 import withNuxt from './.nuxt/eslint.config.mjs'
 
 export default withNuxt(
-  // Your custom configs here
+  // أنواع قاعدة البيانات تُولَّد آليّاً (supabase gen types) — لا تُفحَص ولا تُحرَّر يدويّاً.
+  { ignores: ['app/types/database.types.ts'] }
 )
