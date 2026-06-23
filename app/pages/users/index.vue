@@ -1,8 +1,7 @@
 <script setup lang="ts">
 /**
  * إدارة المستخدمين (§4.12) — للمدير فقط.
- * قائمة العاملين + تصفية بالدور + إنشاء حساب (عبر مسار خادمي بصلاحية الخدمة)
- * + تفعيل/تعطيل الحساب. الطالب ليس مستخدماً فلا يظهر هنا.
+ * قائمة العاملين + تصفية بالدور + إنشاء حساب (عبر مسار خادمي) + تفعيل/تعطيل.
  */
 import type { Database } from '~/types/database.types'
 
@@ -17,7 +16,6 @@ const supabase = useSupabaseClient<Database>()
 const { role: myRole } = useProfile()
 const { handle } = useErrorHandler()
 const toast = useToast()
-
 const isManager = computed(() => myRole.value === 'manager')
 
 const ROLE_LABEL: Record<Role, string> = {
@@ -26,8 +24,12 @@ const ROLE_LABEL: Record<Role, string> = {
 const ROLE_COLOR: Record<Role, 'primary' | 'secondary' | 'info' | 'success'> = {
   manager: 'primary', quality: 'secondary', supervisor: 'info', teacher: 'success'
 }
+const STATUS_META: Record<string, { label: string, color: 'success' | 'warning' | 'neutral' }> = {
+  active: { label: 'نشط', color: 'success' },
+  pending: { label: 'بانتظار التفعيل', color: 'warning' },
+  disabled: { label: 'معطّل', color: 'neutral' }
+}
 
-// ── جلب القائمة (عميل — RLS يسمح بقراءة الملفات) ──
 const { data: users, refresh, pending } = await useAsyncData<UserRow[]>(
   'users-list',
   async () => {
@@ -45,24 +47,29 @@ const { data: users, refresh, pending } = await useAsyncData<UserRow[]>(
   { server: false, default: () => [] }
 )
 
-// ── التصفية بالدور ──
 const filter = ref<Role | 'all'>('all')
-const chips: { key: Role | 'all', label: string }[] = [
-  { key: 'all', label: 'الكل' },
-  { key: 'manager', label: 'المديرون' },
-  { key: 'quality', label: 'الجودة' },
-  { key: 'supervisor', label: 'المشرفون' },
-  { key: 'teacher', label: 'المعلمون' }
-]
-const filteredUsers = computed(() => {
-  const list = users.value ?? []
-  return filter.value === 'all' ? list : list.filter(u => u.role === filter.value)
-})
 function countFor(key: Role | 'all') {
   const list = users.value ?? []
   return key === 'all' ? list.length : list.filter(u => u.role === key).length
 }
-
+const chipOptions = computed(() => ([
+  { value: 'all' as const, label: 'الكل' },
+  { value: 'manager' as const, label: 'المديرون' },
+  { value: 'quality' as const, label: 'الجودة' },
+  { value: 'supervisor' as const, label: 'المشرفون' },
+  { value: 'teacher' as const, label: 'المعلمون' }
+]).map(c => ({ ...c, count: countFor(c.value) })))
+const filteredUsers = computed(() => {
+  const list = users.value ?? []
+  return filter.value === 'all' ? list : list.filter(u => u.role === filter.value)
+})
+const columns = [
+  { key: 'user', label: 'المستخدم' },
+  { key: 'role', label: 'الدور' },
+  { key: 'assigner', label: 'عيّنه' },
+  { key: 'status', label: 'الحالة' },
+  { key: 'actions', label: 'إجراءات', align: 'end' as const }
+]
 function initialOf(name: string) {
   return name.trim().charAt(0) || '؟'
 }
@@ -77,16 +84,10 @@ const roleItems = [
   { label: 'مشرف جودة', value: 'quality' },
   { label: 'مدير', value: 'manager' }
 ]
-
 function openCreate() {
-  form.full_name = ''
-  form.email = ''
-  form.password = ''
-  form.role = 'teacher'
-  form.phone = ''
+  Object.assign(form, { full_name: '', email: '', password: '', role: 'teacher', phone: '' })
   modalOpen.value = true
 }
-
 function validate(s: typeof form) {
   const errors: { name: string, message: string }[] = []
   if (!s.full_name.trim()) errors.push({ name: 'full_name', message: 'الاسم الكامل مطلوب.' })
@@ -94,7 +95,6 @@ function validate(s: typeof form) {
   if (s.password.length < 8) errors.push({ name: 'password', message: 'كلمة المرور 8 أحرف على الأقل.' })
   return errors
 }
-
 async function submitCreate() {
   creating.value = true
   try {
@@ -103,7 +103,7 @@ async function submitCreate() {
     modalOpen.value = false
     await refresh()
   } catch (err) {
-    const msg = (err as { statusMessage?: string, data?: { statusMessage?: string } })?.data?.statusMessage
+    const msg = (err as { data?: { statusMessage?: string }, statusMessage?: string })?.data?.statusMessage
       || (err as { statusMessage?: string })?.statusMessage
     toast.add({ title: msg || 'تعذّر إنشاء الحساب.', color: 'error', icon: 'i-lucide-circle-alert' })
   } finally {
@@ -127,159 +127,107 @@ async function toggleStatus(u: UserRow) {
     togglingId.value = null
   }
 }
-
-const STATUS_META: Record<string, { label: string, color: 'success' | 'warning' | 'neutral' }> = {
-  active: { label: 'نشط', color: 'success' },
-  pending: { label: 'بانتظار التفعيل', color: 'warning' },
-  disabled: { label: 'معطّل', color: 'neutral' }
-}
 </script>
 
 <template>
   <div class="users">
-    <div
+    <UiEmptyState
       v-if="!isManager"
-      class="card forbidden"
-    >
-      <UIcon
-        name="i-lucide-lock"
-        class="size-8"
-      />
-      <p>هذه الصفحة للمدير فقط.</p>
-    </div>
+      icon="i-lucide-lock"
+      title="هذه الصفحة للمدير فقط."
+    />
 
     <template v-else>
-      <!-- رأس -->
-      <div class="head">
-        <div>
-          <h2>إدارة المستخدمين</h2>
-          <p>{{ (users || []).length }} مستخدم في المنظومة — الحسابات تُنشأ من قِبل الإدارة فقط.</p>
-        </div>
-        <UButton
-          label="إنشاء مستخدم"
-          color="primary"
-          size="lg"
-          icon="i-lucide-plus"
-          :ui="{ base: 'rounded-[13px] font-semibold' }"
-          @click="openCreate"
-        />
-      </div>
+      <UiPageHeader
+        title="إدارة المستخدمين"
+        :subtitle="`${(users || []).length} مستخدم في المنظومة — الحسابات تُنشأ من قِبل الإدارة فقط.`"
+      >
+        <template #actions>
+          <UButton
+            label="إنشاء مستخدم"
+            color="primary"
+            size="lg"
+            icon="i-lucide-plus"
+            :ui="{ base: 'rounded-[13px] font-semibold' }"
+            @click="openCreate"
+          />
+        </template>
+      </UiPageHeader>
 
-      <!-- شرائح التصفية -->
-      <div class="chips">
-        <button
-          v-for="c in chips"
-          :key="c.key"
-          class="chip"
-          :class="{ on: filter === c.key }"
-          @click="filter = c.key"
+      <UiFilterChips
+        v-model="filter"
+        :options="chipOptions"
+        class="mb-4"
+      />
+
+      <ClientOnly>
+        <UiEmptyState
+          v-if="pending"
+          title="جارٍ التحميل…"
+        />
+        <UiEmptyState
+          v-else-if="filteredUsers.length === 0"
+          icon="i-lucide-users"
+          title="لا مستخدمون في هذا التصنيف"
+          description="جرّب تصنيفاً آخر، أو أنشئ مستخدماً جديداً."
+        />
+        <UiDataTable
+          v-else
+          :columns="columns"
+          :rows="filteredUsers"
+          row-key="id"
         >
-          {{ c.label }}
-          <span class="chip-n">{{ countFor(c.key) }}</span>
-        </button>
-      </div>
-
-      <!-- القائمة -->
-      <div
-        v-if="pending"
-        class="card empty"
-      >
-        جارٍ التحميل…
-      </div>
-      <div
-        v-else-if="filteredUsers.length === 0"
-        class="card empty"
-      >
-        <UIcon
-          name="i-lucide-users"
-          class="size-8"
-        />
-        <h3>لا مستخدمون في هذا التصنيف</h3>
-        <p>جرّب تصنيفاً آخر، أو أنشئ مستخدماً جديداً.</p>
-      </div>
-      <div
-        v-else
-        class="card table-wrap"
-      >
-        <table>
-          <thead>
-            <tr>
-              <th class="ta-start">
-                المستخدم
-              </th>
-              <th class="ta-start">
-                الدور
-              </th>
-              <th class="ta-start">
-                عيّنه
-              </th>
-              <th class="ta-start">
-                الحالة
-              </th>
-              <th class="ta-end">
-                إجراءات
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr
-              v-for="u in filteredUsers"
-              :key="u.id"
-            >
-              <td>
-                <div class="user-cell">
-                  <div class="av">
-                    {{ initialOf(u.full_name) }}
-                  </div>
-                  <div class="user-info">
-                    <div class="u-name">
-                      {{ u.full_name }}
-                    </div>
-                    <div
-                      class="u-email"
-                      dir="ltr"
-                    >
-                      {{ u.email }}
-                    </div>
-                  </div>
+          <template #user="{ row }">
+            <div class="user-cell">
+              <div class="av">
+                {{ initialOf(row.full_name) }}
+              </div>
+              <div>
+                <div class="u-name">
+                  {{ row.full_name }}
                 </div>
-              </td>
-              <td>
-                <UBadge
-                  :label="ROLE_LABEL[u.role]"
-                  :color="ROLE_COLOR[u.role]"
-                  variant="soft"
-                />
-              </td>
-              <td class="muted">
-                {{ u.assigner?.full_name || '—' }}
-              </td>
-              <td>
-                <UBadge
-                  :label="STATUS_META[u.status]?.label"
-                  :color="STATUS_META[u.status]?.color"
-                  variant="soft"
-                />
-              </td>
-              <td>
-                <div class="actions">
-                  <UButton
-                    :label="u.status === 'disabled' ? 'تفعيل' : 'تعطيل'"
-                    :color="u.status === 'disabled' ? 'success' : 'neutral'"
-                    variant="outline"
-                    size="sm"
-                    :icon="u.status === 'disabled' ? 'i-lucide-power' : 'i-lucide-ban'"
-                    :loading="togglingId === u.id"
-                    :disabled="u.id === undefined"
-                    :ui="{ base: 'rounded-[10px]' }"
-                    @click="toggleStatus(u)"
-                  />
+                <div
+                  class="u-email"
+                  dir="ltr"
+                >
+                  {{ row.email }}
                 </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+              </div>
+            </div>
+          </template>
+          <template #role="{ row }">
+            <UBadge
+              :label="ROLE_LABEL[row.role]"
+              :color="ROLE_COLOR[row.role]"
+              variant="soft"
+            />
+          </template>
+          <template #assigner="{ row }">
+            <span class="muted">{{ row.assigner?.full_name || '—' }}</span>
+          </template>
+          <template #status="{ row }">
+            <UBadge
+              :label="STATUS_META[row.status]?.label"
+              :color="STATUS_META[row.status]?.color"
+              variant="soft"
+            />
+          </template>
+          <template #actions="{ row }">
+            <div class="actions">
+              <UButton
+                :label="row.status === 'disabled' ? 'تفعيل' : 'تعطيل'"
+                :color="row.status === 'disabled' ? 'success' : 'neutral'"
+                variant="outline"
+                size="sm"
+                :icon="row.status === 'disabled' ? 'i-lucide-power' : 'i-lucide-ban'"
+                :loading="togglingId === row.id"
+                :ui="{ base: 'rounded-[10px]' }"
+                @click="toggleStatus(row)"
+              />
+            </div>
+          </template>
+        </UiDataTable>
+      </ClientOnly>
     </template>
 
     <!-- نافذة الإنشاء -->
@@ -388,31 +336,7 @@ const STATUS_META: Record<string, { label: string, color: 'success' | 'warning' 
 
 <style scoped>
 .users { max-width: 1280px; margin: 0 auto; }
-.card { background: var(--surface); border: 1px solid var(--line); border-radius: 20px; box-shadow: var(--shadow); }
-
-.head { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; flex-wrap: wrap; margin-bottom: 24px; }
-.head h2 { margin: 0; font-size: 26px; font-weight: 700; color: var(--ink); }
-.head p { margin: 8px 0 0; font-size: 16px; color: var(--ink-2); font-weight: 300; }
-
-.chips { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; }
-.chip { display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 0 16px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line-2); color: var(--ink-2); font-size: 14px; font-weight: 600; font-family: inherit; cursor: pointer; transition: all .15s; }
-.chip:hover { background: var(--surface-2); }
-.chip.on { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
-.chip-n { font-size: 12px; opacity: .8; background: rgba(0, 0, 0, .08); border-radius: 999px; padding: 1px 7px; }
-.chip.on .chip-n { background: rgba(255, 255, 255, .22); }
-
-.empty { padding: 56px 24px; text-align: center; color: var(--ink-2); display: flex; flex-direction: column; align-items: center; gap: 10px; }
-.empty h3 { margin: 6px 0 0; font-size: 19px; font-weight: 700; color: var(--ink); }
-.empty p { margin: 0; font-size: 15px; font-weight: 300; }
-
-.table-wrap { overflow: hidden; }
-.table-wrap table { width: 100%; border-collapse: collapse; font-size: 15px; }
-.table-wrap thead tr { background: var(--surface-2); }
-.table-wrap th { padding: 14px 20px; font-weight: 600; color: var(--ink-3); font-size: 13px; white-space: nowrap; }
-.ta-start { text-align: start; }
-.ta-end { text-align: end; }
-.table-wrap tbody tr { border-top: 1px solid var(--line); }
-.table-wrap td { padding: 14px 20px; vertical-align: middle; }
+.mb-4 { margin-bottom: 16px; }
 .muted { color: var(--ink-2); white-space: nowrap; }
 .user-cell { display: flex; align-items: center; gap: 11px; }
 .av { width: 40px; height: 40px; border-radius: 11px; background: var(--navy); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 700; flex: none; }

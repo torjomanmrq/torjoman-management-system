@@ -2,8 +2,7 @@
 /**
  * خطة الاختبارات (§4.11).
  * كل مجموعة محطّتان: مرحلي (3 أجزاء) وتجميعي (5)، مخزّنتان كصفّين في exam_plan.
- * تُعرض كصفّ واحد لكل مجموعة. التعديل/الإضافة/الحذف للمدير (RLS: plan_write=is_manager)،
- * والبقية للاطّلاع فقط. المعلّم يحدّد نطاق اختبار الطالب من الخطة لاحقاً (§4.16).
+ * تُعرض كصفّ واحد لكل مجموعة. التعديل/الإضافة/الحذف للمدير، والبقية للاطّلاع.
  */
 import type { Database } from '~/types/database.types'
 
@@ -43,6 +42,15 @@ const groups = computed<Group[]>(() => {
   return [...map.values()].sort((a, b) => a.group_number - b.group_number)
 })
 const range = (r: PlanRow | null) => r ? `${r.parts_from} – ${r.parts_to}` : '—'
+
+const columns = computed(() => {
+  const base = [
+    { key: 'group_number', label: 'المجموعة' },
+    { key: 'partial', label: 'مرحلي (3 أجزاء)' },
+    { key: 'cumulative', label: 'تجميعي (5 أجزاء)' }
+  ]
+  return isManager.value ? [...base, { key: 'actions', label: 'إجراءات', align: 'end' as const }] : base
+})
 
 // ── إضافة/تعديل ──
 const modalOpen = ref(false)
@@ -131,99 +139,73 @@ async function confirmDelete() {
 
 <template>
   <div class="plan">
-    <div class="head">
-      <div>
-        <h2>خطة الاختبارات</h2>
-        <p>يستحقّ الطالب الاختبار عند بلوغ محطته — مرحلي (3 أجزاء) ثم تجميعي (5 أجزاء).</p>
-      </div>
-      <UButton
-        v-if="isManager"
-        label="إضافة مجموعة"
-        color="primary"
-        size="lg"
-        icon="i-lucide-plus"
-        :ui="{ base: 'rounded-[13px] font-semibold' }"
-        @click="openCreate"
-      />
-    </div>
+    <UiPageHeader
+      title="خطة الاختبارات"
+      subtitle="يستحقّ الطالب الاختبار عند بلوغ محطته — مرحلي (3 أجزاء) ثم تجميعي (5 أجزاء)."
+    >
+      <template #actions>
+        <UButton
+          v-if="isManager"
+          label="إضافة مجموعة"
+          color="primary"
+          size="lg"
+          icon="i-lucide-plus"
+          :ui="{ base: 'rounded-[13px] font-semibold' }"
+          @click="openCreate"
+        />
+      </template>
+    </UiPageHeader>
 
-    <div
-      v-if="pending"
-      class="card empty"
-    >
-      جارٍ التحميل…
-    </div>
-    <div
-      v-else-if="groups.length === 0"
-      class="card empty"
-    >
-      <UIcon
-        name="i-lucide-list-ordered"
-        class="size-8"
+    <ClientOnly>
+      <UiEmptyState
+        v-if="pending"
+        title="جارٍ التحميل…"
       />
-      <h3>لا مجموعات بعد</h3>
-      <p>أضِف أول مجموعة لتبدأ خطة الاختبارات.</p>
-    </div>
-    <div
-      v-else
-      class="card table-wrap"
-    >
-      <table>
-        <thead>
-          <tr>
-            <th class="ta-start">
-              المجموعة
-            </th>
-            <th class="ta-start">
-              مرحلي (3 أجزاء)
-            </th>
-            <th class="ta-start">
-              تجميعي (5 أجزاء)
-            </th>
-            <th
-              v-if="isManager"
-              class="ta-end"
-            >
-              إجراءات
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr
-            v-for="g in groups"
-            :key="g.group_number"
-          >
-            <td class="g-num">
-              المجموعة {{ g.group_number }}
-            </td>
-            <td><span class="pill pill-blue">{{ range(g.partial) }}</span></td>
-            <td><span class="pill pill-green">{{ range(g.cumulative) }}</span></td>
-            <td v-if="isManager">
-              <div class="actions">
-                <UButton
-                  color="neutral"
-                  variant="outline"
-                  size="sm"
-                  icon="i-lucide-pencil"
-                  :ui="{ base: 'rounded-[10px]' }"
-                  aria-label="تعديل"
-                  @click="openEdit(g)"
-                />
-                <UButton
-                  color="neutral"
-                  variant="outline"
-                  size="sm"
-                  icon="i-lucide-trash-2"
-                  :ui="{ base: 'rounded-[10px]' }"
-                  aria-label="حذف"
-                  @click="deleteTarget = g"
-                />
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+      <UiEmptyState
+        v-else-if="groups.length === 0"
+        icon="i-lucide-list-ordered"
+        title="لا مجموعات بعد"
+        description="أضِف أول مجموعة لتبدأ خطة الاختبارات."
+      />
+      <UiDataTable
+        v-else
+        :columns="columns"
+        :rows="groups"
+        row-key="group_number"
+      >
+        <template #group_number="{ row }">
+          <span class="g-num">المجموعة {{ row.group_number }}</span>
+        </template>
+        <template #partial="{ row }">
+          <span class="pill pill-blue">{{ range(row.partial) }}</span>
+        </template>
+        <template #cumulative="{ row }">
+          <span class="pill pill-green">{{ range(row.cumulative) }}</span>
+        </template>
+        <template #actions="{ row }">
+          <div class="actions">
+            <UButton
+              color="neutral"
+              variant="outline"
+              size="sm"
+              icon="i-lucide-pencil"
+              :ui="{ base: 'rounded-[10px]' }"
+              aria-label="تعديل"
+              @click="openEdit(row)"
+            />
+            <UButton
+              color="neutral"
+              variant="outline"
+              size="sm"
+              icon="i-lucide-trash-2"
+              :ui="{ base: 'rounded-[10px]' }"
+              aria-label="حذف"
+              @click="deleteTarget = row"
+            />
+          </div>
+        </template>
+      </UiDataTable>
+    </ClientOnly>
 
     <div class="note">
       <UIcon
@@ -361,59 +343,20 @@ async function confirmDelete() {
     </UModal>
 
     <!-- تأكيد الحذف -->
-    <UModal
+    <UiConfirmModal
       :open="!!deleteTarget"
       title="حذف المجموعة"
+      :loading="deleting"
       @update:open="v => { if (!v) deleteTarget = null }"
+      @confirm="confirmDelete"
     >
-      <template #body>
-        <p class="confirm-text">
-          هل أنت متأكّد من حذف «<strong>المجموعة {{ deleteTarget?.group_number }}</strong>» بمحطّتيها؟ لا يمكن التراجع.
-        </p>
-        <div class="form-actions">
-          <UButton
-            label="إلغاء"
-            color="neutral"
-            variant="ghost"
-            size="lg"
-            :ui="{ base: 'rounded-[13px]' }"
-            @click="deleteTarget = null"
-          />
-          <UButton
-            label="حذف"
-            color="error"
-            size="lg"
-            icon="i-lucide-trash-2"
-            :loading="deleting"
-            :ui="{ base: 'rounded-[13px] font-semibold' }"
-            @click="confirmDelete"
-          />
-        </div>
-      </template>
-    </UModal>
+      هل أنت متأكّد من حذف «<strong>المجموعة {{ deleteTarget?.group_number }}</strong>» بمحطّتيها؟ لا يمكن التراجع.
+    </UiConfirmModal>
   </div>
 </template>
 
 <style scoped>
 .plan { max-width: 1000px; margin: 0 auto; }
-.card { background: var(--surface); border: 1px solid var(--line); border-radius: 20px; box-shadow: var(--shadow); }
-
-.head { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; flex-wrap: wrap; margin-bottom: 24px; }
-.head h2 { margin: 0; font-size: 26px; font-weight: 700; color: var(--ink); }
-.head p { margin: 8px 0 0; font-size: 16px; color: var(--ink-2); font-weight: 300; }
-
-.empty { padding: 56px 24px; text-align: center; color: var(--ink-2); display: flex; flex-direction: column; align-items: center; gap: 10px; }
-.empty h3 { margin: 6px 0 0; font-size: 19px; font-weight: 700; color: var(--ink); }
-.empty p { margin: 0; font-size: 15px; font-weight: 300; }
-
-.table-wrap { overflow: hidden; }
-.table-wrap table { width: 100%; border-collapse: collapse; font-size: 15px; }
-.table-wrap thead tr { background: var(--surface-2); }
-.table-wrap th { padding: 15px 24px; font-weight: 600; color: var(--ink-3); font-size: 13px; white-space: nowrap; }
-.ta-start { text-align: start; }
-.ta-end { text-align: end; }
-.table-wrap tbody tr { border-top: 1px solid var(--line); }
-.table-wrap td { padding: 16px 24px; vertical-align: middle; }
 .g-num { font-weight: 600; color: var(--ink); white-space: nowrap; }
 .pill { display: inline-flex; align-items: center; height: 30px; padding: 0 14px; border-radius: 999px; font-size: 14.5px; font-weight: 700; }
 .pill-blue { background: var(--blue-soft); color: var(--blue-ink); }
@@ -429,5 +372,4 @@ async function confirmDelete() {
 .row { display: flex; gap: 14px; flex-wrap: wrap; }
 .row .f { flex: 1; min-width: 120px; }
 .form-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 6px; }
-.confirm-text { font-size: 15.5px; color: var(--ink-2); line-height: 1.8; margin: 0 0 18px; }
 </style>
