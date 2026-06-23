@@ -14,7 +14,7 @@ type StudentStatus = Database['public']['Enums']['student_status']
 type StudentRow = Database['public']['Tables']['students']['Row'] & {
   halaqa: { name: string, teacher: { full_name: string } | null } | null
 }
-type HalqaOpt = { id: string, name: string }
+type HalqaOpt = { id: string, name: string, daily_time: string | null, teacher: { full_name: string } | null }
 
 const supabase = useSupabaseClient<Database>()
 const { role: myRole, profile } = useProfile()
@@ -43,10 +43,21 @@ const { data: students, refresh, pending } = await useAsyncData<StudentRow[]>(
 )
 
 const { data: halqat } = await useAsyncData<HalqaOpt[]>('students-halqat', async () => {
-  const { data } = await supabase.from('halaqat').select('id, name').order('name')
+  const { data } = await supabase
+    .from('halaqat')
+    .select('id, name, daily_time, teacher:teacher_id(full_name)')
+    .order('name')
+    .returns<HalqaOpt[]>()
   return data ?? []
 }, { server: false, default: () => [] })
-const halqaItems = computed(() => [{ label: 'بلا حلقة', value: HALQA_NONE }, ...(halqat.value ?? []).map(h => ({ label: h.name, value: h.id }))])
+function halqaLabel(h: HalqaOpt) {
+  const parts = [h.name]
+  if (h.teacher?.full_name) parts.push(h.teacher.full_name)
+  if (h.daily_time) parts.push(h.daily_time.slice(0, 5))
+  return parts.join(' — ')
+}
+// قائمة الإسناد: تفاصيل كاملة لتمييز الحلقة. قائمة التصفية: الاسم فقط (أوجز).
+const halqaItems = computed(() => [{ label: 'بلا حلقة', value: HALQA_NONE }, ...(halqat.value ?? []).map(h => ({ label: halqaLabel(h), value: h.id }))])
 const halqaFilterItems = computed(() => [{ label: 'كل الحلقات', value: 'all' }, ...(halqat.value ?? []).map(h => ({ label: h.name, value: h.id }))])
 
 const statusF = ref<StudentStatus | 'all'>('all')
