@@ -4,10 +4,18 @@
  * مشترك بين كل الأدوار العاملة. القوائم تظهر حسب دور المستخدم.
  * المسارات غير المبنيّة بعد تُظهر تنبيه «قيد الإنشاء» (تُربط عند بناء كل شاشة).
  */
-const { role, fullName, initial } = useProfile()
+const { role, status, fullName, initial } = useProfile()
 const { signOut } = useAuth()
 const toast = useToast()
 const route = useRoute()
+
+// طرد فوري لأي حساب يُعطَّل أثناء الجلسة (الخيار 1 لإنفاذ التعطيل)
+watch(status, (s) => {
+  if (s === 'disabled') {
+    toast.add({ title: 'تم تعطيل حسابك. تواصل مع الإدارة.', color: 'error', icon: 'i-lucide-ban' })
+    signOut()
+  }
+}, { immediate: true })
 
 const colorMode = useColorMode()
 const isDark = computed(() => colorMode.value === 'dark')
@@ -27,7 +35,7 @@ const mainNav: Item[] = [
   { key: 'dashboard', label: 'لوحة التحكم', icon: 'i-lucide-layout-dashboard', to: '/dashboard', roles: ['manager', 'quality', 'supervisor', 'teacher'] },
   { key: 'users', label: 'إدارة المستخدمين', icon: 'i-lucide-users', to: '/users', roles: ['manager'] },
   { key: 'supervisors', label: 'المشرفون', icon: 'i-lucide-users-round', roles: ['manager', 'quality'] },
-  { key: 'halqat', label: 'الحلقات', icon: 'i-lucide-book-open', roles: ['manager', 'quality', 'supervisor'] },
+  { key: 'halqat', label: 'الحلقات', icon: 'i-lucide-book-open', to: '/halqat', roles: ['manager', 'quality', 'supervisor'] },
   { key: 'myhalqa', label: 'حلقتي', icon: 'i-lucide-book-open', roles: ['teacher'] },
   { key: 'students', label: 'الطلاب', icon: 'i-lucide-graduation-cap', roles: ['manager', 'quality', 'supervisor'] },
   { key: 'visits', label: 'الزيارات الإشرافية', icon: 'i-lucide-clipboard-check', roles: ['manager', 'quality', 'supervisor'] },

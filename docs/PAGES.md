@@ -44,8 +44,8 @@
 | الشاشة | المسار المتوقّع | الحالة | البريف |
 |---|---|---|---|
 | إدارة المستخدمين | `pages/users/index.vue` | 🟡 | §4.12 |
-| إنشاء/تعديل الحلقة | `pages/halaqat/edit.vue` | ⬜ | §4.13 |
-| تفاصيل الحلقة | `pages/halaqat/[id].vue` | ⬜ | §4.14 |
+| الحلقات (قائمة + إنشاء/تعديل/حذف) | `pages/halqat/index.vue` | 🟡 | §4.13 |
+| تفاصيل الحلقة | `pages/halqat/[id].vue` | ⬜ | §4.14 |
 | دليل المشرفين | `pages/supervisors/index.vue` | ⬜ | §4.14أ |
 | تفاصيل المشرف | `pages/supervisors/[id].vue` | ⬜ | §4.14ب |
 | دليل الطلاب | `pages/students/index.vue` | ⬜ | §4.23 |

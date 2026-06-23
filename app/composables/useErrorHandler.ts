@@ -7,6 +7,7 @@
 function translateError(message?: string): string | null {
   if (!message) return null
   const m = message.toLowerCase()
+  if (m.includes('account_disabled')) return 'حسابك معطّل. تواصل مع الإدارة لإعادة تفعيله.'
   if (m.includes('invalid login credentials')) return 'البريد الإلكتروني أو كلمة المرور غير صحيحة.'
   if (m.includes('email not confirmed')) return 'الحساب بانتظار التفعيل — افتح رابط الدعوة في بريدك أولاً.'
   if (m.includes('rate limit') || m.includes('too many')) return 'محاولات كثيرة. انتظر قليلاً ثم حاول مجدداً.'
