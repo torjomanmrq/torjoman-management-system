@@ -5,6 +5,8 @@
  * التصميم، وبتخطيط مخصّص للأقسام البصرية الفريدة (Hero/البطاقات) بالتوكنز + RTL.
  * قسم الأخبار بيانات وهمية الآن، يُربط بوحدة الأخبار (§4.26) لاحقاً.
  */
+definePageMeta({ layout: false })
+
 const colorMode = useColorMode()
 const isDark = computed(() => colorMode.value === 'dark')
 function toggleTheme() {

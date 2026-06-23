@@ -10,9 +10,12 @@ definePageMeta({ layout: 'dashboard' })
 useSeoMeta({ title: 'لوحة التحكم — ترجمان' })
 
 const supabase = useSupabaseClient<Database>()
-const { role, fullName } = useProfile()
+const { role, fullName, fetchProfile } = useProfile()
 const { handle } = useErrorHandler()
 const toast = useToast()
+
+// نضمن تحميل الملف هنا أيضاً (لا نعتمد على ترتيب تحميل الـ layout)
+await fetchProfile()
 
 const isManager = computed(() => role.value === 'manager')
 
