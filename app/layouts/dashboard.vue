@@ -38,7 +38,7 @@ const mainNav: Item[] = [
   { key: 'halqat', label: 'الحلقات', icon: 'i-lucide-book-open', to: '/halqat', roles: ['manager', 'quality', 'supervisor'] },
   { key: 'myhalqa', label: 'حلقتي', icon: 'i-lucide-book-open', roles: ['teacher'] },
   { key: 'students', label: 'الطلاب', icon: 'i-lucide-graduation-cap', to: '/students', roles: ['manager', 'quality', 'supervisor', 'teacher'] },
-  { key: 'visits', label: 'الزيارات الإشرافية', icon: 'i-lucide-clipboard-check', roles: ['manager', 'quality', 'supervisor'] },
+  { key: 'visits', label: 'الزيارات الإشرافية', icon: 'i-lucide-clipboard-check', to: '/visits', roles: ['manager', 'quality', 'supervisor'] },
   { key: 'exams', label: 'الاختبارات', icon: 'i-lucide-square-check-big', roles: ['supervisor', 'teacher'] },
   { key: 'examplan', label: 'خطة الاختبارات', icon: 'i-lucide-list-ordered', to: '/exam-plan', roles: ['manager', 'quality', 'supervisor', 'teacher'] },
   { key: 'reports', label: 'التقارير الشهرية', icon: 'i-lucide-file-text', roles: ['manager', 'quality', 'supervisor', 'teacher'] },
