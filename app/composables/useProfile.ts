@@ -5,8 +5,9 @@ type Role = Database['public']['Enums']['user_role']
 
 /**
  * ملف المستخدم الحالي ودوره.
- * يُجلب عبر useAsyncData مع watch على user — فيُعاد الجلب تلقائيّاً عند جهوزية
- * الجلسة على العميل (يتفادى بقاء البيانات فارغة بعد ترطيب SSR).
+ * يُجلب على العميل (server:false) حيث الجلسة مضمونة. نقرأ المستخدم من
+ * supabase.auth.getUser() داخل الجلب لتفادي سباق توقيت الـ ref التفاعلي.
+ * watch على user يعيد الجلب عند تغيّر حالة المصادقة.
  * مصدر الدور لإظهار قوائم التنقّل وصلاحيات الواجهة (RLS يفرضها الخادم).
  */
 export function useProfile() {
@@ -16,15 +17,17 @@ export function useProfile() {
   const { data: profile, refresh, pending } = useAsyncData<Profile | null>(
     'current-profile',
     async () => {
-      if (!user.value) return null
-      const { data } = await supabase
+      const { data: auth } = await supabase.auth.getUser()
+      if (!auth.user) return null
+      const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .eq('id', user.value.id)
+        .eq('id', auth.user.id)
         .single()
+      if (error) console.error('[useProfile] فشل جلب الملف:', error.message)
       return data
     },
-    { watch: [user], default: () => null }
+    { server: false, watch: [user], default: () => null }
   )
 
   const role = computed<Role | null>(() => profile.value?.role ?? null)
