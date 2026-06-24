@@ -53,6 +53,17 @@ const { data: examResults } = await useAsyncData(() => `journey-results-${id.val
   return (data ?? []).map(r => ({ exam_plan_id: r.exam_list_item?.exam_plan_id ?? null, passed: r.passed, total_score: r.total_score }))
 }, { server: false, default: () => [] })
 
+// إجمالي صفحات الحفظ من التقارير الشهرية المعتمدة
+type PagesRow = { memorization_pages: number | null, report: { status: string } | null }
+const { data: memorizationPages } = await useAsyncData(() => `journey-pages-${id.value}`, async () => {
+  const { data } = await supabase
+    .from('monthly_report_students')
+    .select('memorization_pages, report:report_id(status)')
+    .eq('student_id', id.value)
+    .returns<PagesRow[]>()
+  return (data ?? []).filter(r => r.report?.status === 'approved').reduce((sum, r) => sum + (r.memorization_pages ?? 0), 0)
+}, { server: false, default: () => 0 })
+
 useSeoMeta({ title: () => student.value ? `${student.value.full_name} — ترجمان` : 'ملف الطالب — ترجمان' })
 
 const GENDER: Record<string, string> = { male: 'ذكر', female: 'أنثى' }
@@ -272,6 +283,7 @@ const sections = computed<{ title: string, icon: string, tone: string, fields: F
             :quran-parts="student.quran_parts"
             :plan="plan"
             :results="examResults"
+            :memorization-pages="memorizationPages"
             :enrollment-date="student.enrollment_date"
           />
         </section>
