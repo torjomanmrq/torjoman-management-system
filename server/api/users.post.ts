@@ -45,6 +45,7 @@ export default defineEventHandler(async (event) => {
     role,
     phone,
     status: 'active',
+    must_change_password: true,
     assigned_by: user.id
   }, { onConflict: 'id' })
 

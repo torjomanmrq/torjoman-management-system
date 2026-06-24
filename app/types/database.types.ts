@@ -992,6 +992,7 @@ export type Database = {
           id: string
           job_title: string | null
           marital_status: string | null
+          must_change_password: boolean
           national_id: string | null
           nearest_mosque: string | null
           phone: string | null
@@ -1020,6 +1021,7 @@ export type Database = {
           id: string
           job_title?: string | null
           marital_status?: string | null
+          must_change_password?: boolean
           national_id?: string | null
           nearest_mosque?: string | null
           phone?: string | null
@@ -1048,6 +1050,7 @@ export type Database = {
           id?: string
           job_title?: string | null
           marital_status?: string | null
+          must_change_password?: boolean
           national_id?: string | null
           nearest_mosque?: string | null
           phone?: string | null
