@@ -14,9 +14,13 @@ type StudentRow = Database['public']['Tables']['students']['Row'] & {
 
 const route = useRoute()
 const supabase = useSupabaseClient<Database>()
+const { role } = useProfile()
+const { handle } = useErrorHandler()
+const toast = useToast()
 const id = computed(() => String(route.params.id))
+const canManage = computed(() => role.value === 'manager' || role.value === 'teacher')
 
-const { data: student, pending } = await useAsyncData<StudentRow | null>(
+const { data: student, pending, refresh } = await useAsyncData<StudentRow | null>(
   () => `student-${id.value}`,
   async () => {
     const { data, error } = await supabase
@@ -50,6 +54,28 @@ function ageFrom(d: string | null) {
 const dash = (v: string | number | null | undefined) => (v === null || v === undefined || v === '') ? '—' : String(v)
 
 const initial = computed(() => student.value?.full_name?.trim().charAt(0) || '؟')
+
+// رابط الاطّلاع العام (للقراءة فقط)
+function copyLink() {
+  if (!student.value) return
+  navigator.clipboard.writeText(`${window.location.origin}/s/${student.value.view_token}`)
+  toast.add({ title: 'تم نسخ رابط الاطّلاع.', color: 'success', icon: 'i-lucide-copy-check' })
+}
+const regenerating = ref(false)
+async function regenerateLink() {
+  if (!student.value) return
+  regenerating.value = true
+  try {
+    const { error } = await supabase.from('students').update({ view_token: crypto.randomUUID() }).eq('id', student.value.id)
+    if (error) throw error
+    await refresh()
+    toast.add({ title: 'أُعيد توليد الرابط — القديم لم يعد صالحاً.', color: 'success', icon: 'i-lucide-refresh-cw' })
+  } catch (err) {
+    handle(err)
+  } finally {
+    regenerating.value = false
+  }
+}
 
 type Field = { label: string, value: string, ltr?: boolean }
 const sections = computed<{ title: string, icon: string, tone: string, fields: Field[] }[]>(() => {
@@ -153,6 +179,31 @@ const sections = computed<{ title: string, icon: string, tone: string, fields: F
               </template>
             </div>
           </div>
+          <div
+            v-if="canManage"
+            class="band-actions"
+          >
+            <UButton
+              label="نسخ رابط الاطّلاع"
+              icon="i-lucide-link"
+              color="neutral"
+              variant="ghost"
+              size="md"
+              :ui="{ base: 'rounded-xl bg-white/15 text-white ring-1 ring-white/25 hover:bg-white/25' }"
+              @click="copyLink"
+            />
+            <UButton
+              icon="i-lucide-refresh-cw"
+              color="neutral"
+              variant="ghost"
+              size="md"
+              :loading="regenerating"
+              :ui="{ base: 'rounded-xl bg-white/15 text-white ring-1 ring-white/25 hover:bg-white/25' }"
+              aria-label="إعادة توليد الرابط"
+              title="إعادة توليد الرابط (يُبطل القديم)"
+              @click="regenerateLink"
+            />
+          </div>
         </div>
 
         <!-- بطاقات البيانات -->
@@ -221,6 +272,7 @@ const sections = computed<{ title: string, icon: string, tone: string, fields: F
 .band-top { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .band-top h2 { margin: 0; font-size: 25px; font-weight: 700; color: #fff; }
 .band-sub { font-size: 15px; color: var(--band-sub); margin-top: 6px; }
+.band-actions { display: flex; align-items: center; gap: 8px; flex: none; }
 
 .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 22px; align-items: start; }
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 24px; box-shadow: var(--shadow); }
