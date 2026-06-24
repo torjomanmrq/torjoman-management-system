@@ -4,6 +4,7 @@
  * قائمة العاملين + تصفية بالدور + إنشاء حساب (عبر مسار خادمي) + تفعيل/تعطيل.
  */
 import type { Database } from '~/types/database.types'
+import { DEFAULT_PASSWORD } from '~/constants/auth'
 
 definePageMeta({ layout: 'dashboard' })
 useSeoMeta({ title: 'إدارة المستخدمين — ترجمان' })
@@ -77,7 +78,7 @@ function initialOf(name: string) {
 // ── إنشاء مستخدم ──
 const modalOpen = ref(false)
 const creating = ref(false)
-const form = reactive({ full_name: '', email: '', password: '', role: 'teacher' as Role, phone: '' })
+const form = reactive({ full_name: '', email: '', password: DEFAULT_PASSWORD, role: 'teacher' as Role, phone: '' })
 const roleItems = [
   { label: 'معلم', value: 'teacher' },
   { label: 'مشرف ميداني', value: 'supervisor' },
@@ -85,7 +86,7 @@ const roleItems = [
   { label: 'مدير', value: 'manager' }
 ]
 function openCreate() {
-  Object.assign(form, { full_name: '', email: '', password: '', role: 'teacher', phone: '' })
+  Object.assign(form, { full_name: '', email: '', password: DEFAULT_PASSWORD, role: 'teacher', phone: '' })
   modalOpen.value = true
 }
 function validate(s: typeof form) {
@@ -279,7 +280,7 @@ async function toggleStatus(u: UserRow) {
           <UFormField
             label="كلمة المرور المبدئية"
             name="password"
-            hint="8 أحرف على الأقل"
+            hint="افتراضية موحّدة — أبلغها للعامل ليغيّرها لاحقاً"
           >
             <UInput
               v-model="form.password"
