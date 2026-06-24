@@ -49,7 +49,7 @@
 | دليل المشرفين | `pages/supervisors/index.vue` | ⬜ | §4.14أ |
 | تفاصيل المشرف | `pages/supervisors/[id].vue` | ⬜ | §4.14ب |
 | دليل الطلاب | `pages/students/index.vue` | 🟡 | §4.23 |
-| ملف الطالب | `pages/students/[id].vue` | ⬜ | §4.23 |
+| ملف الطالب | `pages/students/[id].vue` | 🟡 | §4.23 |
 
 > **عرض بيانات مستخدم (§4.12):** الضغط على «عرض البيانات» لعامل يفتح بياناته الشخصية عبر `pages/profile/[id].vue` نفسها (id = العامل) — لا صفحة منفصلة. هذا يختلف عن صفحة المشرف التشغيلية `supervisors/[id].vue` (§4.14ب).
 
