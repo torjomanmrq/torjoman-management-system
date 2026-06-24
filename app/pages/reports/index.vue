@@ -42,11 +42,16 @@ const month = ref(now.getMonth() + 1)
 const year = ref(now.getFullYear())
 
 type NameRow = { id: string, name: string }
-const { data: halqat } = await useAsyncData<NameRow[]>('reports-halqat', async () => {
-  const { data } = await supabase.from('halaqat').select('id, name').order('name')
-  return data ?? []
-}, { server: false, default: () => [] })
-const halqaItems = computed(() => (halqat.value ?? []).map(h => ({ label: h.name, value: h.id })))
+
+// حلقة المعلّم تلقائيّاً (لا يختارها)
+const { data: myHalqa } = await useAsyncData<NameRow | null>('reports-my-halqa', async () => {
+  if (role.value !== 'teacher') return null
+  const { data } = await supabase.from('halaqat').select('id, name').eq('teacher_id', profile.value?.id ?? '').limit(1).maybeSingle()
+  return data
+}, { server: false, default: () => null, watch: [role] })
+watchEffect(() => {
+  if (isTeacher.value && myHalqa.value && !halqaId.value) halqaId.value = myHalqa.value.id
+})
 const monthItems = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'].map((m, i) => ({ label: m, value: i + 1 }))
 const yearItems = [now.getFullYear() - 1, now.getFullYear()].map(y => ({ label: String(y), value: y }))
 
@@ -70,7 +75,8 @@ const rows = ref<Row[]>([])
 const acts = reactive<Record<string, boolean>>({})
 const meta = reactive({ general_notes: '', activities_notes: '' })
 
-const canEdit = computed(() => (isManager.value || isTeacher.value) && report.value?.status !== 'approved')
+// المعلّم وحده يحرّر التقرير (المدير يستقبل ويعتمد فقط)
+const canEdit = computed(() => isTeacher.value && report.value?.status !== 'approved')
 const num = (v: number | string) => (v === '' || v === null || v === undefined) ? null : Number(v)
 const pagesOf = (r: Row) => (num(r.memorization_to) ?? 0) - (num(r.memorization_from) ?? 0)
 const reviewOf = (r: Row) => (num(r.review_to) ?? 0) - (num(r.memorization_from) ?? 0)
@@ -343,17 +349,21 @@ async function setStatus(status: ReportStatus) {
       </div>
     </ClientOnly>
 
-    <!-- إنشاء/اختيار يدوي -->
-    <div class="card pick">
+    <!-- المعلّم: تقرير حلقته (تُختار تلقائيّاً) -->
+    <div
+      v-if="isTeacher"
+      class="card pick"
+    >
       <div class="pick-fields">
         <div class="pf">
           <label>الحلقة</label>
-          <UiSelect
-            v-model="halqaId"
-            :items="halqaItems"
-            placeholder="اختر الحلقة"
-            size="lg"
-          />
+          <div class="halqa-auto">
+            <UIcon
+              name="i-lucide-book-open"
+              class="size-5"
+            />
+            {{ myHalqa?.name || 'لا حلقة معيّنة لك' }}
+          </div>
         </div>
         <div class="pf sm">
           <label>الشهر</label>
@@ -372,7 +382,7 @@ async function setStatus(status: ReportStatus) {
           />
         </div>
         <UButton
-          label="تحميل"
+          label="تحميل / إنشاء"
           color="primary"
           size="lg"
           icon="i-lucide-folder-open"
@@ -384,12 +394,24 @@ async function setStatus(status: ReportStatus) {
       </div>
     </div>
 
+    <!-- المدير/غيره: استقبال واعتماد من القائمة أعلاه -->
+    <div
+      v-else
+      class="card hint-card"
+    >
+      <UIcon
+        name="i-lucide-inbox"
+        class="size-5"
+      />
+      اختر تقريراً من القائمة أعلاه لمراجعته واعتماده. التقارير يرفعها المعلّمون.
+    </div>
+
     <ClientOnly>
       <UiEmptyState
         v-if="!loaded"
         icon="i-lucide-calendar-range"
-        title="اختر الحلقة والشهر ثم اضغط «تحميل»"
-        description="يظهر التقرير للتعبئة، ويُنشأ تلقائيّاً عند أول حفظ."
+        :title="isTeacher ? 'اختر الشهر ثم اضغط «تحميل / إنشاء»' : 'افتح تقريراً من القائمة أعلاه'"
+        :description="isTeacher ? 'يظهر تقرير حلقتك للتعبئة، ويُنشأ تلقائيّاً عند أول حفظ.' : 'بعد فتح التقرير تستطيع مراجعته واعتماده.'"
       />
 
       <template v-else>
@@ -624,6 +646,8 @@ async function setStatus(status: ReportStatus) {
 .list-head { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; padding: 18px 20px; border-bottom: 1px solid var(--line); }
 .list-head h3 { margin: 0; font-size: 17px; font-weight: 700; color: var(--ink); display: flex; align-items: center; gap: 10px; }
 
+.halqa-auto { display: flex; align-items: center; gap: 9px; height: 48px; padding: 0 16px; border-radius: 13px; background: var(--surface-2); border: 1px solid var(--line); font-size: 15.5px; font-weight: 600; color: var(--ink); }
+.hint-card { display: flex; align-items: center; gap: 10px; color: var(--ink-2); font-size: 15px; }
 .pick-fields { display: flex; align-items: flex-end; gap: 14px; flex-wrap: wrap; }
 .pf { flex: 1; min-width: 200px; display: flex; flex-direction: column; gap: 8px; }
 .pf.sm { flex: 0 0 140px; min-width: 120px; }
