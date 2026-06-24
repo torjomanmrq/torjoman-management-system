@@ -54,7 +54,7 @@ const managerNav: Item[] = [
   { key: 'news', label: 'الأخبار', icon: 'i-lucide-newspaper', roles: ['manager'] }
 ]
 
-const metricsItem: Item = { key: 'metrics', label: 'دليل المؤشرات', icon: 'i-lucide-gauge', roles: ['manager', 'quality'] }
+const metricsItem: Item = { key: 'metrics', label: 'دليل المؤشرات', icon: 'i-lucide-gauge', to: '/metrics', roles: ['manager', 'quality'] }
 const profileItem: Item = { key: 'profile', label: 'الملف الشخصي', icon: 'i-lucide-user', roles: ['manager', 'quality', 'supervisor', 'teacher'] }
 
 const visible = (items: Item[]) => computed(() => items.filter(i => role.value && i.roles.includes(role.value)))
