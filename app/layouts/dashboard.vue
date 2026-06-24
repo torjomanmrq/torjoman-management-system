@@ -44,7 +44,7 @@ const mainNav: Item[] = [
   { key: 'exams', label: 'الاختبارات', icon: 'i-lucide-square-check-big', to: '/exams', roles: ['manager', 'supervisor', 'teacher'] },
   { key: 'examplan', label: 'خطة الاختبارات', icon: 'i-lucide-list-ordered', to: '/exam-plan', roles: ['manager', 'quality', 'supervisor', 'teacher'] },
   { key: 'reports', label: 'التقارير الشهرية', icon: 'i-lucide-file-text', to: '/reports', roles: ['manager', 'quality', 'supervisor', 'teacher'] },
-  { key: 'incentives', label: 'كشف الحوافز', icon: 'i-lucide-gift', roles: ['teacher'] },
+  { key: 'incentives', label: 'كشف الحوافز', icon: 'i-lucide-gift', to: '/incentives', roles: ['teacher'] },
   { key: 'alerts', label: 'التنبيهات الإدارية', icon: 'i-lucide-bell', to: '/alerts', roles: ['manager', 'quality', 'supervisor', 'teacher'] }
 ]
 
@@ -55,7 +55,7 @@ const managerNav: Item[] = [
 ]
 
 const metricsItem: Item = { key: 'metrics', label: 'دليل المؤشرات', icon: 'i-lucide-gauge', to: '/metrics', roles: ['manager', 'quality'] }
-const profileItem: Item = { key: 'profile', label: 'الملف الشخصي', icon: 'i-lucide-user', roles: ['manager', 'quality', 'supervisor', 'teacher'] }
+const profileItem: Item = { key: 'profile', label: 'الملف الشخصي', icon: 'i-lucide-user', to: '/profile/me', roles: ['manager', 'quality', 'supervisor', 'teacher'] }
 
 const visible = (items: Item[]) => computed(() => items.filter(i => role.value && i.roles.includes(role.value)))
 const mainItems = visible(mainNav)

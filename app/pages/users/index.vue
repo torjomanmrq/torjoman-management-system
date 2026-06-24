@@ -215,6 +215,15 @@ async function toggleStatus(u: UserRow) {
           <template #actions="{ row }">
             <div class="actions">
               <UButton
+                :to="`/profile/${row.id}`"
+                label="عرض البيانات"
+                color="neutral"
+                variant="outline"
+                size="sm"
+                icon="i-lucide-id-card"
+                :ui="{ base: 'rounded-[10px]' }"
+              />
+              <UButton
                 :label="row.status === 'disabled' ? 'تفعيل' : 'تعطيل'"
                 :color="row.status === 'disabled' ? 'success' : 'neutral'"
                 variant="outline"

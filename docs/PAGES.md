@@ -17,7 +17,7 @@
 | نسيت كلمة المرور | `pages/auth/reset.vue` | ⬜ | §4.1 |
 | الهيكل العام Shell | `layouts/dashboard.vue` | ✅ | §4.2 |
 | حماية المسارات | `middleware/auth.global.ts` | ✅ | §4.3 |
-| الملف الشخصي | `pages/profile/[id].vue` | ⬜ | §4.4, §4.5 |
+| الملف الشخصي | `pages/profile/[id].vue` | 🟡 | §4.4, §4.5 |
 | الحالات الفارغة (مكوّن) | `components/ui/EmptyState.vue` | ⬜ | §4.15 |
 | مربّع التأكيد (مكوّن) | `components/ui/ConfirmModal.vue` | ⬜ | §4.15 |
 
@@ -69,7 +69,7 @@
 |---|---|---|---|
 | الاختبارات (ترشيح المعلّم + رصد المشرف + النتائج) | `pages/exams/index.vue` | 🟡 | §4.16 |
 | خطة الاختبارات | `pages/exam-plan/index.vue` | ✅ | §4.11 |
-| كشف حوافز الحلقة الشهري (المعلم) | `pages/incentives/statement.vue` | ⬜ | §4.25 |
+| كشف حوافز الحلقة الشهري (المعلم) | `pages/incentives/index.vue` | 🟡 | §4.25 |
 
 ---
 
