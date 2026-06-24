@@ -39,6 +39,15 @@ export default defineEventHandler(async (event) => {
     total_score: r.total_score
   }))
 
+  // إجمالي صفحات الحفظ من التقارير المعتمدة
+  const { data: pagesRows } = await admin
+    .from('monthly_report_students')
+    .select('memorization_pages, report:report_id(status)')
+    .eq('student_id', data.id)
+  const memorization_pages = (pagesRows ?? [])
+    .filter((r: { report: { status: string } | null }) => r.report?.status === 'approved')
+    .reduce((sum: number, r: { memorization_pages: number | null }) => sum + (r.memorization_pages ?? 0), 0)
+
   const { id: _id, ...safe } = data
-  return { ...safe, exam_plan: plan ?? [], results }
+  return { ...safe, exam_plan: plan ?? [], results, memorization_pages }
 })
