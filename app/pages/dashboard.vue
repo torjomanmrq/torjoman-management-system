@@ -18,6 +18,7 @@ const toast = useToast()
 const isManager = computed(() => role.value === 'manager')
 const isTeacher = computed(() => role.value === 'teacher')
 const isSupervisor = computed(() => role.value === 'supervisor')
+const isQuality = computed(() => role.value === 'quality')
 
 // ── أعداد البطاقات (للمدير) ──
 const counts = reactive({ students: 0, teachers: 0, supervisors: 0, quality: 0, halqat: 0 })
@@ -182,6 +183,50 @@ const fmtDateTime = (iso: string) => {
   const d = new Date(iso)
   return `${d.toLocaleDateString('ar', { weekday: 'short', day: 'numeric', month: 'short' })} · ${d.toTimeString().slice(0, 5)}`
 }
+
+// ── لوحة الجودة ──
+const MONTHS = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر']
+type QSup = { id: string, name: string, halqat: number }
+type QReport = { id: string, halqa: string, label: string }
+const qSupervisors = ref<QSup[]>([])
+const qHalqatCount = ref(0)
+const qVisitsCount = ref(0)
+const qReports = ref<QReport[]>([])
+
+async function loadQualityData() {
+  try {
+    const me = profile.value?.id ?? ''
+    const { data: sups } = await supabase
+      .from('profiles').select('id, full_name')
+      .eq('role', 'supervisor').eq('quality_supervisor_id', me).eq('status', 'active').order('full_name')
+
+    const { data: halqat } = await supabase.from('halaqat').select('id, supervisor_id')
+    const halqaCount: Record<string, number> = {}
+    for (const h of halqat ?? []) {
+      if (h.supervisor_id) halqaCount[h.supervisor_id] = (halqaCount[h.supervisor_id] ?? 0) + 1
+    }
+    qSupervisors.value = (sups ?? []).map(s => ({ id: s.id, name: s.full_name, halqat: halqaCount[s.id] ?? 0 }))
+    qHalqatCount.value = (halqat ?? []).length
+
+    const today = new Date().toISOString().slice(0, 10)
+    const { data: visits } = await supabase.from('supervision_visits').select('id').eq('status', 'scheduled').gte('scheduled_at', today)
+    qVisitsCount.value = (visits ?? []).length
+
+    const { data: reps } = await supabase
+      .from('monthly_reports')
+      .select('id, report_month, report_year, halaqa:halaqa_id(name)')
+      .eq('status', 'submitted')
+      .order('report_year', { ascending: false }).order('report_month', { ascending: false }).limit(8)
+      .returns<{ id: string, report_month: number, report_year: number, halaqa: { name: string } | null }[]>()
+    qReports.value = (reps ?? []).map(r => ({ id: r.id, halqa: r.halaqa?.name ?? '—', label: `${MONTHS[r.report_month - 1]} ${r.report_year}` }))
+  } catch (err) {
+    handle(err)
+  }
+}
+
+watch(isQuality, (v) => {
+  if (v) loadQualityData()
+}, { immediate: true })
 
 type Tone = 'blue' | 'green' | 'neutral' | 'err'
 const statCards = computed(() => [
@@ -502,6 +547,120 @@ const settingCards = [
       </ClientOnly>
     </template>
 
+    <template v-else-if="isQuality">
+      <ClientOnly>
+        <div class="stats stats-4">
+          <UiStatCard
+            icon="i-lucide-shield-check"
+            tone="blue"
+            :value="qSupervisors.length"
+            label="مشرفوني"
+            stacked
+          />
+          <UiStatCard
+            icon="i-lucide-book-open"
+            tone="green"
+            :value="qHalqatCount"
+            label="الحلقات في نطاقي"
+            stacked
+          />
+          <UiStatCard
+            icon="i-lucide-calendar-clock"
+            tone="neutral"
+            :value="qVisitsCount"
+            label="زيارات قادمة"
+            stacked
+          />
+          <UiStatCard
+            icon="i-lucide-file-text"
+            tone="blue"
+            :value="qReports.length"
+            label="تقارير بانتظار الاعتماد"
+            stacked
+          />
+        </div>
+
+        <div class="sup-grid">
+          <!-- مشرفوني -->
+          <div class="card sec">
+            <div class="sec-head">
+              <h3>مشرفوني</h3>
+              <UButton
+                to="/supervisors"
+                label="المشرفون"
+                color="neutral"
+                variant="ghost"
+                size="sm"
+                trailing-icon="i-lucide-arrow-left"
+              />
+            </div>
+            <UiEmptyState
+              v-if="!qSupervisors.length"
+              icon="i-lucide-shield"
+              title="لا مشرفين في نطاقك"
+            />
+            <ul
+              v-else
+              class="rows"
+            >
+              <li
+                v-for="s in qSupervisors"
+                :key="s.id"
+                class="row"
+              >
+                <span class="row-title">{{ s.name }}</span>
+                <UBadge
+                  :label="`${s.halqat} حلقة`"
+                  color="neutral"
+                  variant="soft"
+                />
+              </li>
+            </ul>
+          </div>
+
+          <!-- تقارير بانتظار الاعتماد -->
+          <div class="card sec">
+            <div class="sec-head">
+              <h3>تقارير بانتظار الاعتماد</h3>
+              <UButton
+                to="/reports"
+                label="التقارير"
+                color="neutral"
+                variant="ghost"
+                size="sm"
+                trailing-icon="i-lucide-arrow-left"
+              />
+            </div>
+            <UiEmptyState
+              v-if="!qReports.length"
+              icon="i-lucide-file-check"
+              title="لا تقارير مُرسلة"
+            />
+            <ul
+              v-else
+              class="rows"
+            >
+              <li
+                v-for="r in qReports"
+                :key="r.id"
+                class="row"
+              >
+                <div class="row-main">
+                  <span class="row-title">{{ r.halqa }}</span>
+                  <span class="row-sub">{{ r.label }}</span>
+                </div>
+                <UBadge
+                  label="مُرسل"
+                  color="warning"
+                  variant="soft"
+                />
+              </li>
+            </ul>
+          </div>
+        </div>
+      </ClientOnly>
+    </template>
+
     <template v-else>
       <div class="card placeholder">
         <p>لوحة دورك ({{ role }}) قيد البناء — تُضاف في الخطوات التالية.</p>
@@ -557,6 +716,7 @@ const settingCards = [
 
 /* لوحة المشرف */
 .stats-3 { grid-template-columns: repeat(3, 1fr); }
+.stats-4 { grid-template-columns: repeat(4, 1fr); }
 .sup-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 18px; }
 .sec { padding: 20px 22px; }
 .sec-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
@@ -571,6 +731,6 @@ const settingCards = [
 .cta-text { display: flex; align-items: center; gap: 9px; font-size: 15px; color: var(--ink-2); }
 .cta-text strong { color: var(--ink); }
 
-@media (max-width: 1024px) { .stats { grid-template-columns: repeat(2, 1fr); } .settings { grid-template-columns: 1fr; } .sup-grid { grid-template-columns: 1fr; } .stats-3 { grid-template-columns: 1fr; } }
+@media (max-width: 1024px) { .stats { grid-template-columns: repeat(2, 1fr); } .settings { grid-template-columns: 1fr; } .sup-grid { grid-template-columns: 1fr; } .stats-3 { grid-template-columns: 1fr; } .stats-4 { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 620px) { .stats { grid-template-columns: 1fr; } }
 </style>
