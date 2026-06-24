@@ -267,21 +267,29 @@ async function confirmDelete() {
             />
           </div>
 
-          <div
-            v-if="isManager"
-            class="hcard-actions"
-          >
+          <div class="hcard-actions">
             <UButton
-              label="تعديل"
+              :to="`/halqat/${h.id}`"
+              label="تفاصيل"
+              color="neutral"
+              variant="outline"
+              size="sm"
+              icon="i-lucide-eye"
+              block
+              :ui="{ base: 'rounded-[11px]' }"
+            />
+            <UButton
+              v-if="isManager"
               color="neutral"
               variant="outline"
               size="sm"
               icon="i-lucide-pencil"
-              block
               :ui="{ base: 'rounded-[11px]' }"
+              aria-label="تعديل"
               @click="openEdit(h)"
             />
             <UButton
+              v-if="isManager"
               color="neutral"
               variant="outline"
               size="sm"

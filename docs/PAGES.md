@@ -45,7 +45,7 @@
 |---|---|---|---|
 | إدارة المستخدمين | `pages/users/index.vue` | 🟡 | §4.12 |
 | الحلقات (قائمة + إنشاء/تعديل/حذف) | `pages/halqat/index.vue` | 🟡 | §4.13 |
-| تفاصيل الحلقة | `pages/halqat/[id].vue` | ⬜ | §4.14 |
+| تفاصيل الحلقة | `pages/halqat/[id].vue` | 🟡 | §4.14 |
 | دليل المشرفين | `pages/supervisors/index.vue` | ⬜ | §4.14أ |
 | تفاصيل المشرف | `pages/supervisors/[id].vue` | ⬜ | §4.14ب |
 | دليل الطلاب | `pages/students/index.vue` | 🟡 | §4.23 |
@@ -92,7 +92,7 @@
 |---|---|---|---|
 | محاضر الاجتماعات | `pages/minutes/index.vue` | ⬜ | §4.19 |
 | الملف المالي (نظرة عامة/الحركات/الرواتب والحوافز) | `pages/finance/index.vue` | ⬜ | §4.20 |
-| التنبيهات الإدارية | `pages/alerts/index.vue` | ⬜ | §4.21 |
+| التنبيهات الإدارية | `pages/alerts/index.vue` | 🟡 | §4.21 |
 | الأخبار (إدارة + عرض على Landing) | `pages/news/index.vue` | ⬜ | §4.26 |
 
 ---
