@@ -55,12 +55,10 @@ const { data: visitors } = await useAsyncData<VisitorRow[]>('visits-visitors', a
   const { data } = await supabase.from('profiles').select('id, full_name, role').in('role', ['manager', 'supervisor']).eq('status', 'active').order('full_name')
   return (data ?? []) as VisitorRow[]
 }, { server: false, default: () => [] })
-const halqaItems = computed(() => (halqat.value ?? []).map((h) => {
-  const parts = [h.name]
-  if (h.teacher?.full_name) parts.push(h.teacher.full_name)
-  if (h.daily_time) parts.push(h.daily_time.slice(0, 5))
-  return { label: parts.join(' — '), value: h.id }
-}))
+const halqaItems = computed(() => (halqat.value ?? []).map(h => ({
+  label: h.teacher?.full_name ? `${h.name} — ${h.teacher.full_name}` : h.name,
+  value: h.id
+})))
 const visitorItems = computed(() => (visitors.value ?? []).map(v => ({
   label: v.role === 'manager' ? `${v.full_name} (المدير)` : v.full_name,
   value: v.id
@@ -366,7 +364,7 @@ async function confirmDelete() {
               placeholder="اختر الحلقة"
               size="lg"
               class="w-full"
-              :ui="{ base: 'rounded-[13px]' }"
+              :ui="{ base: 'rounded-[13px]', content: 'w-fit min-w-(--reka-select-trigger-width) max-w-[min(92vw,32rem)]' }"
             />
           </UFormField>
           <UFormField
