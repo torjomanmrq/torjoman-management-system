@@ -17,6 +17,7 @@ const toast = useToast()
 
 const isManager = computed(() => role.value === 'manager')
 const isTeacher = computed(() => role.value === 'teacher')
+const isSupervisor = computed(() => role.value === 'supervisor')
 
 // ── أعداد البطاقات (للمدير) ──
 const counts = reactive({ students: 0, teachers: 0, supervisors: 0, quality: 0, halqat: 0 })
@@ -129,6 +130,58 @@ watch(isTeacher, (v) => {
 }, { immediate: true })
 
 const fmtTime = (t: string | null) => t ? t.slice(0, 5) : '—'
+
+// ── لوحة المشرف ──
+type SHalqa = { id: string, name: string, teacher: string, students: number }
+type SVisit = { id: string, halqa: string, scheduled_at: string }
+const supHalqat = ref<SHalqa[]>([])
+const supVisits = ref<SVisit[]>([])
+const supPendingExams = ref(0)
+
+async function loadSupervisorData() {
+  try {
+    const me = profile.value?.id ?? ''
+    const { data: halqat } = await supabase
+      .from('halaqat')
+      .select('id, name, teacher:teacher_id(full_name)')
+      .eq('supervisor_id', me)
+      .order('name')
+      .returns<{ id: string, name: string, teacher: { full_name: string } | null }[]>()
+    const ids = (halqat ?? []).map(h => h.id)
+
+    const countMap: Record<string, number> = {}
+    if (ids.length) {
+      const { data: studs } = await supabase.from('students').select('halaqa_id').in('halaqa_id', ids).eq('status', 'active')
+      for (const s of studs ?? []) {
+        if (s.halaqa_id) countMap[s.halaqa_id] = (countMap[s.halaqa_id] ?? 0) + 1
+      }
+    }
+    supHalqat.value = (halqat ?? []).map(h => ({ id: h.id, name: h.name, teacher: h.teacher?.full_name ?? '—', students: countMap[h.id] ?? 0 }))
+
+    const today = new Date().toISOString().slice(0, 10)
+    const { data: visits } = await supabase
+      .from('supervision_visits')
+      .select('id, scheduled_at, halaqa:halaqa_id(name)')
+      .eq('supervisor_id', me).eq('status', 'scheduled').gte('scheduled_at', today)
+      .order('scheduled_at', { ascending: true }).limit(8)
+      .returns<{ id: string, scheduled_at: string, halaqa: { name: string } | null }[]>()
+    supVisits.value = (visits ?? []).map(v => ({ id: v.id, halqa: v.halaqa?.name ?? '—', scheduled_at: v.scheduled_at }))
+
+    const { data: items } = await supabase.from('exam_list_items').select('id, exam_results(id)').returns<{ id: string, exam_results: { id: string }[] }[]>()
+    supPendingExams.value = (items ?? []).filter(i => !i.exam_results?.length).length
+  } catch (err) {
+    handle(err)
+  }
+}
+
+watch(isSupervisor, (v) => {
+  if (v) loadSupervisorData()
+}, { immediate: true })
+
+const fmtDateTime = (iso: string) => {
+  const d = new Date(iso)
+  return `${d.toLocaleDateString('ar', { weekday: 'short', day: 'numeric', month: 'short' })} · ${d.toTimeString().slice(0, 5)}`
+}
 
 type Tone = 'blue' | 'green' | 'neutral' | 'err'
 const statCards = computed(() => [
@@ -316,6 +369,139 @@ const settingCards = [
       </ClientOnly>
     </template>
 
+    <template v-else-if="isSupervisor">
+      <ClientOnly>
+        <!-- بطاقات إحصائية -->
+        <div class="stats stats-3">
+          <UiStatCard
+            icon="i-lucide-book-open"
+            tone="blue"
+            :value="supHalqat.length"
+            label="حلقاتي"
+            stacked
+          />
+          <UiStatCard
+            icon="i-lucide-calendar-clock"
+            tone="green"
+            :value="supVisits.length"
+            label="زيارات قادمة"
+            stacked
+          />
+          <UiStatCard
+            icon="i-lucide-clipboard-check"
+            tone="neutral"
+            :value="supPendingExams"
+            label="اختبارات تنتظر الرصد"
+            stacked
+          />
+        </div>
+
+        <div class="sup-grid">
+          <!-- حلقاتي -->
+          <div class="card sec">
+            <div class="sec-head">
+              <h3>حلقاتي</h3>
+              <UButton
+                to="/visits"
+                label="الزيارات"
+                color="neutral"
+                variant="ghost"
+                size="sm"
+                trailing-icon="i-lucide-arrow-left"
+              />
+            </div>
+            <UiEmptyState
+              v-if="!supHalqat.length"
+              icon="i-lucide-book-open"
+              title="لا حلقات مُسندة إليك"
+            />
+            <ul
+              v-else
+              class="rows"
+            >
+              <li
+                v-for="h in supHalqat"
+                :key="h.id"
+                class="row"
+              >
+                <div class="row-main">
+                  <span class="row-title">{{ h.name }}</span>
+                  <span class="row-sub">المعلّم: {{ h.teacher }}</span>
+                </div>
+                <UBadge
+                  :label="`${h.students} طالب`"
+                  color="neutral"
+                  variant="soft"
+                />
+              </li>
+            </ul>
+          </div>
+
+          <!-- زياراتي القادمة -->
+          <div class="card sec">
+            <div class="sec-head">
+              <h3>زياراتي القادمة</h3>
+              <UButton
+                to="/visits"
+                label="الكل"
+                color="neutral"
+                variant="ghost"
+                size="sm"
+                trailing-icon="i-lucide-arrow-left"
+              />
+            </div>
+            <UiEmptyState
+              v-if="!supVisits.length"
+              icon="i-lucide-calendar-check"
+              title="لا زيارات مجدولة قادمة"
+            />
+            <ul
+              v-else
+              class="rows"
+            >
+              <li
+                v-for="v in supVisits"
+                :key="v.id"
+                class="row"
+              >
+                <div class="row-main">
+                  <span class="row-title">{{ v.halqa }}</span>
+                  <span class="row-sub">{{ fmtDateTime(v.scheduled_at) }}</span>
+                </div>
+                <UBadge
+                  label="مجدولة"
+                  color="warning"
+                  variant="soft"
+                />
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- تنبيه الرصد -->
+        <div
+          v-if="supPendingExams"
+          class="card cta"
+        >
+          <div class="cta-text">
+            <UIcon
+              name="i-lucide-clipboard-check"
+              class="size-5"
+            />
+            لديك <strong>{{ supPendingExams }}</strong> بند اختبار بانتظار الرصد.
+          </div>
+          <UButton
+            to="/exams"
+            label="رصد الاختبارات"
+            color="primary"
+            size="lg"
+            icon="i-lucide-pencil"
+            :ui="{ base: 'rounded-[13px] font-semibold' }"
+          />
+        </div>
+      </ClientOnly>
+    </template>
+
     <template v-else>
       <div class="card placeholder">
         <p>لوحة دورك ({{ role }}) قيد البناء — تُضاف في الخطوات التالية.</p>
@@ -369,6 +555,22 @@ const settingCards = [
 .strong { font-weight: 600; color: var(--ink); }
 .done { color: var(--green-ink); font-weight: 600; }
 
-@media (max-width: 1024px) { .stats { grid-template-columns: repeat(2, 1fr); } .settings { grid-template-columns: 1fr; } }
+/* لوحة المشرف */
+.stats-3 { grid-template-columns: repeat(3, 1fr); }
+.sup-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 18px; }
+.sec { padding: 20px 22px; }
+.sec-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.sec-head h3 { margin: 0; font-size: 17px; font-weight: 700; color: var(--ink); }
+.rows { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0; border-top: 1px solid var(--line); }
+.row:first-child { border-top: none; }
+.row-main { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.row-title { font-weight: 600; color: var(--ink); }
+.row-sub { font-size: 13px; color: var(--ink-3); }
+.cta { padding: 18px 22px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.cta-text { display: flex; align-items: center; gap: 9px; font-size: 15px; color: var(--ink-2); }
+.cta-text strong { color: var(--ink); }
+
+@media (max-width: 1024px) { .stats { grid-template-columns: repeat(2, 1fr); } .settings { grid-template-columns: 1fr; } .sup-grid { grid-template-columns: 1fr; } .stats-3 { grid-template-columns: 1fr; } }
 @media (max-width: 620px) { .stats { grid-template-columns: 1fr; } }
 </style>
