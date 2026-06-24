@@ -124,6 +124,45 @@ async function load() {
   }
 }
 
+// ── قائمة التقارير (استعراض سريع) ──
+type ListRow = {
+  id: string
+  halaqa_id: string
+  report_month: number
+  report_year: number
+  status: ReportStatus
+  halaqa: { name: string, teacher: { full_name: string } | null } | null
+}
+const { data: reportsList, refresh: refreshList } = await useAsyncData<ListRow[]>('reports-list', async () => {
+  const { data } = await supabase
+    .from('monthly_reports')
+    .select('id, halaqa_id, report_month, report_year, status, halaqa:halaqa_id(name, teacher:teacher_id(full_name))')
+    .order('report_year', { ascending: false })
+    .order('report_month', { ascending: false })
+    .returns<ListRow[]>()
+  return data ?? []
+}, { server: false, default: () => [] })
+
+const listFilter = ref<ReportStatus | 'all'>('all')
+const countByStatus = (st: ReportStatus) => (reportsList.value ?? []).filter(r => r.status === st).length
+const submittedCount = computed(() => countByStatus('submitted'))
+const listChips = computed(() => [
+  { value: 'all' as const, label: 'الكل', count: (reportsList.value ?? []).length },
+  { value: 'submitted' as const, label: 'بانتظار الاعتماد', count: countByStatus('submitted') },
+  { value: 'approved' as const, label: 'معتمد', count: countByStatus('approved') },
+  { value: 'draft' as const, label: 'مسودّة', count: countByStatus('draft') }
+])
+const listFiltered = computed(() => (reportsList.value ?? []).filter(r => listFilter.value === 'all' || r.status === listFilter.value))
+
+async function openReport(r: ListRow) {
+  halqaId.value = r.halaqa_id
+  month.value = r.report_month
+  year.value = r.report_year
+  await load()
+  await nextTick()
+  document.querySelector('.statusbar')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+}
+
 const saving = ref(false)
 async function save() {
   if (!halqaId.value) return
@@ -172,6 +211,7 @@ async function save() {
     }
 
     toast.add({ title: 'تم حفظ التقرير.', color: 'success', icon: 'i-lucide-save' })
+    await refreshList()
   } catch (err) {
     handle(err)
   } finally {
@@ -197,6 +237,7 @@ async function setStatus(status: ReportStatus) {
     if (error) throw error
     report.value.status = status
     toast.add({ title: status === 'submitted' ? 'أُرسل التقرير للمدير.' : status === 'approved' ? 'تم اعتماد التقرير.' : 'أُعيد فتح التقرير.', color: 'success', icon: 'i-lucide-circle-check' })
+    await refreshList()
   } catch (err) {
     handle(err)
   } finally {
@@ -212,7 +253,97 @@ async function setStatus(status: ReportStatus) {
       subtitle="تقرير الحلقة الشهري: حفظ ومراجعة وغياب وأنشطة لكل طالب — يرفعه المعلّم ويعتمده المدير."
     />
 
-    <!-- المُحدِّدات -->
+    <!-- قائمة التقارير -->
+    <ClientOnly>
+      <div class="card list-card">
+        <div class="list-head">
+          <h3>
+            تقارير الحلقات
+            <UBadge
+              v-if="submittedCount"
+              :label="`${submittedCount} بانتظار الاعتماد`"
+              color="warning"
+              variant="soft"
+              size="sm"
+            />
+          </h3>
+          <UiFilterChips
+            v-model="listFilter"
+            :options="listChips"
+          />
+        </div>
+        <UiEmptyState
+          v-if="!listFiltered.length"
+          icon="i-lucide-folder"
+          title="لا تقارير في هذا التصنيف"
+          description="أنشئ تقريراً جديداً من الأسفل (اختر حلقة وشهراً)."
+        />
+        <div
+          v-else
+          class="table-wrap"
+        >
+          <table>
+            <thead>
+              <tr>
+                <th class="ta-start">
+                  الحلقة
+                </th>
+                <th class="ta-start">
+                  المعلّم
+                </th>
+                <th class="ta-start">
+                  الشهر
+                </th>
+                <th class="ta-start">
+                  الحالة
+                </th>
+                <th class="ta-end">
+                  —
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                v-for="r in listFiltered"
+                :key="r.id"
+              >
+                <td class="strong">
+                  {{ r.halaqa?.name || '—' }}
+                </td>
+                <td class="muted">
+                  {{ r.halaqa?.teacher?.full_name || '—' }}
+                </td>
+                <td class="muted">
+                  {{ monthItems[r.report_month - 1]?.label }} {{ r.report_year }}
+                </td>
+                <td>
+                  <UBadge
+                    :label="STATUS_META[r.status].label"
+                    :color="STATUS_META[r.status].color"
+                    variant="soft"
+                  />
+                </td>
+                <td>
+                  <div class="ta-end">
+                    <UButton
+                      label="فتح"
+                      color="neutral"
+                      variant="outline"
+                      size="sm"
+                      icon="i-lucide-folder-open"
+                      :ui="{ base: 'rounded-[10px]' }"
+                      @click="openReport(r)"
+                    />
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </ClientOnly>
+
+    <!-- إنشاء/اختيار يدوي -->
     <div class="card pick">
       <div class="pick-fields">
         <div class="pf">
@@ -488,6 +619,10 @@ async function setStatus(status: ReportStatus) {
 <style scoped>
 .reports { max-width: 1280px; margin: 0 auto; }
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: 20px; box-shadow: var(--shadow); padding: 20px; margin-bottom: 18px; }
+
+.list-card { padding: 0; }
+.list-head { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; padding: 18px 20px; border-bottom: 1px solid var(--line); }
+.list-head h3 { margin: 0; font-size: 17px; font-weight: 700; color: var(--ink); display: flex; align-items: center; gap: 10px; }
 
 .pick-fields { display: flex; align-items: flex-end; gap: 14px; flex-wrap: wrap; }
 .pf { flex: 1; min-width: 200px; display: flex; flex-direction: column; gap: 8px; }
