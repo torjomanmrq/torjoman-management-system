@@ -274,6 +274,15 @@ async function confirmDelete() {
               color="neutral"
               variant="outline"
               size="sm"
+              icon="i-lucide-eye"
+              :ui="{ base: 'rounded-[10px]' }"
+              aria-label="عرض الملف"
+              @click="navigateTo(`/students/${row.id}`)"
+            />
+            <UButton
+              color="neutral"
+              variant="outline"
+              size="sm"
               icon="i-lucide-pencil"
               :ui="{ base: 'rounded-[10px]' }"
               aria-label="تعديل"
