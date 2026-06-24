@@ -12,6 +12,7 @@ const props = defineProps<{
   plan: PlanInput[]
   results?: ResultInput[]
   memorizationPages?: number | null
+  targetPerMonth?: number | null
   enrollmentDate?: string | null
 }>()
 
@@ -91,6 +92,12 @@ const pct = computed(() => Math.min(100, Math.round((j.value.parts / 30) * 100))
       />
       اجتاز كل محطات الخطة 🎉
     </div>
+
+    <StudentTimeProgress
+      :enrollment-date="enrollmentDate"
+      :memorization-pages="memorizationPages"
+      :target-per-month="targetPerMonth"
+    />
 
     <!-- المحطات -->
     <ul
