@@ -16,7 +16,7 @@ type PublicStudent = {
   enrollment_date: string | null
   halaqa: { name: string, daily_time: string | null, teacher: { full_name: string } | null } | null
   exam_plan: { id: number, parts_from: number, parts_to: number, stage_type: 'partial' | 'cumulative' }[]
-  results: { exam_plan_id: number | null, passed: boolean | null }[]
+  results: { exam_plan_id: number | null, passed: boolean | null, total_score: number | null }[]
 }
 
 const { data: student, error } = await useFetch<PublicStudent>(`/api/public/student/${token.value}`)

@@ -30,12 +30,13 @@ export default defineEventHandler(async (event) => {
 
   const { data: rawResults } = await admin
     .from('exam_results')
-    .select('passed, exam_list_item:exam_list_item_id(exam_plan_id)')
+    .select('passed, total_score, exam_list_item:exam_list_item_id(exam_plan_id)')
     .eq('student_id', data.id)
 
-  const results = (rawResults ?? []).map((r: { passed: boolean | null, exam_list_item: { exam_plan_id: number | null } | null }) => ({
+  const results = (rawResults ?? []).map((r: { passed: boolean | null, total_score: number | null, exam_list_item: { exam_plan_id: number | null } | null }) => ({
     exam_plan_id: r.exam_list_item?.exam_plan_id ?? null,
-    passed: r.passed
+    passed: r.passed,
+    total_score: r.total_score
   }))
 
   const { id: _id, ...safe } = data

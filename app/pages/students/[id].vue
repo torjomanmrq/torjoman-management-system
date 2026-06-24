@@ -43,14 +43,14 @@ const { data: plan } = await useAsyncData('journey-exam-plan', async () => {
   return data ?? []
 }, { server: false, default: () => [] })
 
-type ResultRow = { passed: boolean | null, exam_list_item: { exam_plan_id: number | null } | null }
+type ResultRow = { passed: boolean | null, total_score: number | null, exam_list_item: { exam_plan_id: number | null } | null }
 const { data: examResults } = await useAsyncData(() => `journey-results-${id.value}`, async () => {
   const { data } = await supabase
     .from('exam_results')
-    .select('passed, exam_list_item:exam_list_item_id(exam_plan_id)')
+    .select('passed, total_score, exam_list_item:exam_list_item_id(exam_plan_id)')
     .eq('student_id', id.value)
     .returns<ResultRow[]>()
-  return (data ?? []).map(r => ({ exam_plan_id: r.exam_list_item?.exam_plan_id ?? null, passed: r.passed }))
+  return (data ?? []).map(r => ({ exam_plan_id: r.exam_list_item?.exam_plan_id ?? null, passed: r.passed, total_score: r.total_score }))
 }, { server: false, default: () => [] })
 
 useSeoMeta({ title: () => student.value ? `${student.value.full_name} — ترجمان` : 'ملف الطالب — ترجمان' })
