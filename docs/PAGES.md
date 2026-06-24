@@ -18,8 +18,8 @@
 | الهيكل العام Shell | `layouts/dashboard.vue` | ✅ | §4.2 |
 | حماية المسارات | `middleware/auth.global.ts` | ✅ | §4.3 |
 | الملف الشخصي | `pages/profile/[id].vue` | 🟡 | §4.4, §4.5 |
-| الحالات الفارغة (مكوّن) | `components/ui/EmptyState.vue` | ⬜ | §4.15 |
-| مربّع التأكيد (مكوّن) | `components/ui/ConfirmModal.vue` | ⬜ | §4.15 |
+| الحالات الفارغة (مكوّن) | `components/ui/EmptyState.vue` | ✅ | §4.15 |
+| مربّع التأكيد (مكوّن) | `components/ui/ConfirmModal.vue` | ✅ | §4.15 |
 
 ---
 
@@ -46,8 +46,8 @@
 | إدارة المستخدمين | `pages/users/index.vue` | 🟡 | §4.12 |
 | الحلقات (قائمة + إنشاء/تعديل/حذف) | `pages/halqat/index.vue` | 🟡 | §4.13 |
 | تفاصيل الحلقة | `pages/halqat/[id].vue` | 🟡 | §4.14 |
-| دليل المشرفين | `pages/supervisors/index.vue` | ⬜ | §4.14أ |
-| تفاصيل المشرف | `pages/supervisors/[id].vue` | ⬜ | §4.14ب |
+| دليل المشرفين | `pages/supervisors/index.vue` | 🟡 | §4.14أ |
+| تفاصيل المشرف | `pages/supervisors/[id].vue` | 🟡 | §4.14ب |
 | دليل الطلاب | `pages/students/index.vue` | 🟡 | §4.23 |
 | ملف الطالب | `pages/students/[id].vue` | 🟡 | §4.23 |
 
@@ -80,7 +80,7 @@
 | التقرير الشهري للحلقة | `pages/reports/index.vue` | 🟡 | §4.17 |
 | مؤشر التقدّم الزمني (مكوّن) | `components/student/TimeProgress.vue` | ⬜ | §4.18 |
 | رحلة الطالب (قسم داخل ملف الطالب) | `pages/students/[id].vue` | 🟡 | §4.22 |
-| دليل المؤشرات والمعادلات | `pages/metrics/index.vue` | 🟡 | §4.24 |
+| دليل المؤشرات والمعادلات | `pages/metrics/index.vue` | ✅ | §4.24 |
 
 > **«رحلة الطالب» ليست شاشة مستقلة:** الطالب لا يدخل النظام، فمساره (§4.22) قسم ضمن ملف الطالب (`pages/students/[id].vue`) يطّلع عليه العاملون — لا صفحة `journey.vue` يدخلها الطالب بنفسه.
 
