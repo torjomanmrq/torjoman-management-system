@@ -13,7 +13,7 @@
 |---|---|---|---|
 | Landing | `pages/index.vue` | ✅ | §4.0 |
 | تسجيل الدخول | `pages/login.vue` | ✅ | §4.1 |
-| ضبط كلمة المرور (دعوة) | `pages/auth/confirm.vue` | 🟡 | §4.1 |
+| ضبط كلمة المرور (استعادة) | `pages/auth/confirm.vue` | 🟡 | §4.1 |
 | نسيت كلمة المرور | `pages/auth/reset.vue` | ⬜ | §4.1 |
 | الهيكل العام Shell | `layouts/dashboard.vue` | ✅ | §4.2 |
 | حماية المسارات | `middleware/auth.global.ts` | ✅ | §4.3 |
@@ -27,11 +27,11 @@
 
 | الشاشة | المسار المتوقّع | الحالة | البريف |
 |---|---|---|---|
-| لوحة التحكم (موجّهة بالدور) | `pages/dashboard.vue` | 🟡 | §4.3 |
+| لوحة التحكم (موجّهة بالدور) | `pages/dashboard.vue` | ✅ | §4.3 |
 | └ لوحة المدير | `pages/dashboard.vue` (فرع manager) | ✅ | §4.3 |
-| └ لوحة مشرف الجودة | `pages/dashboard.vue` (فرع quality) | ⬜ | §4.3 |
-| └ لوحة المشرف | `pages/dashboard.vue` (فرع supervisor) | ⬜ | §4.3 |
-| └ لوحة المعلم (حلقتي) | `pages/dashboard.vue` (فرع teacher) | ⬜ | §4.3 |
+| └ لوحة مشرف الجودة | `pages/dashboard.vue` (فرع quality) | 🟡 | §4.3 |
+| └ لوحة المشرف | `pages/dashboard.vue` (فرع supervisor) | 🟡 | §4.3 |
+| └ لوحة المعلم (حلقتي) | `pages/dashboard.vue` (فرع teacher) | 🟡 | §4.3 |
 
 > **لوحة موحّدة موجّهة بالدور:** صفحة `pages/dashboard.vue` واحدة تعرض محتوى كل دور حسب `useProfile().role`. لوحة المدير منفّذة (إحصائيات + إعدادات `app_settings`)؛ بقية الأدوار محتواها يُضاف في شرائحها.
 
