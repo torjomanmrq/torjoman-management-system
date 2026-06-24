@@ -92,7 +92,7 @@
 |---|---|---|---|
 | محاضر الاجتماعات | `pages/minutes/index.vue` | ⬜ | §4.19 |
 | الملف المالي (نظرة عامة/الحركات/الرواتب والحوافز) | `pages/finance/index.vue` | ⬜ | §4.20 |
-| التنبيهات الإدارية | `pages/alerts/index.vue` | ⬜ | §4.21 |
+| التنبيهات الإدارية | `pages/alerts/index.vue` | 🟡 | §4.21 |
 | الأخبار (إدارة + عرض على Landing) | `pages/news/index.vue` | ⬜ | §4.26 |
 
 ---
