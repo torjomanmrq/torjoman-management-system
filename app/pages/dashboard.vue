@@ -86,12 +86,13 @@ watch(isManager, (v) => {
   if (v) loadManagerData()
 }, { immediate: true })
 
+type Tone = 'blue' | 'green' | 'neutral' | 'err'
 const statCards = computed(() => [
-  { icon: 'i-lucide-graduation-cap', tone: 'blue', value: counts.students, label: 'إجمالي الطلاب' },
-  { icon: 'i-lucide-users', tone: 'green', value: counts.teachers, label: 'المعلمون' },
-  { icon: 'i-lucide-shield-check', tone: 'blue', value: counts.supervisors, label: 'المشرفون الميدانيون' },
-  { icon: 'i-lucide-award', tone: 'green', value: counts.quality, label: 'مشرفو الجودة' },
-  { icon: 'i-lucide-book-open', tone: 'neutral', value: counts.halqat, label: 'الحلقات النشطة' }
+  { icon: 'i-lucide-graduation-cap', tone: 'blue' as Tone, value: counts.students, label: 'إجمالي الطلاب' },
+  { icon: 'i-lucide-users', tone: 'green' as Tone, value: counts.teachers, label: 'المعلمون' },
+  { icon: 'i-lucide-shield-check', tone: 'blue' as Tone, value: counts.supervisors, label: 'المشرفون الميدانيون' },
+  { icon: 'i-lucide-award', tone: 'green' as Tone, value: counts.quality, label: 'مشرفو الجودة' },
+  { icon: 'i-lucide-book-open', tone: 'neutral' as Tone, value: counts.halqat, label: 'الحلقات النشطة' }
 ])
 
 const settingCards = [
@@ -112,27 +113,15 @@ const settingCards = [
     <template v-if="isManager">
       <!-- بطاقات إحصائية -->
       <div class="stats">
-        <div
+        <UiStatCard
           v-for="c in statCards"
           :key="c.label"
-          class="card stat"
-        >
-          <div
-            class="ico"
-            :class="`ico-${c.tone}`"
-          >
-            <UIcon
-              :name="c.icon"
-              class="size-6"
-            />
-          </div>
-          <div class="stat-num">
-            {{ c.value }}
-          </div>
-          <div class="stat-label">
-            {{ c.label }}
-          </div>
-        </div>
+          :icon="c.icon"
+          :tone="c.tone"
+          :value="c.value"
+          :label="c.label"
+          stacked
+        />
       </div>
 
       <!-- بطاقات الإعدادات -->
@@ -201,10 +190,6 @@ const settingCards = [
 
 /* الإحصائيات */
 .stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 18px; margin-bottom: 24px; }
-.stat { padding: 24px; }
-.stat .ico { margin-bottom: 18px; }
-.stat-num { font-size: 34px; font-weight: 700; color: var(--ink); line-height: 1; }
-.stat-label { font-size: 15px; color: var(--ink-2); margin-top: 8px; }
 
 /* الإعدادات */
 .settings { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }

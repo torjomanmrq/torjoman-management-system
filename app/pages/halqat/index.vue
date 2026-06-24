@@ -2,7 +2,6 @@
 /**
  * الحلقات (§4.13) — للمدير فقط (RLS: halaqat_write = is_manager).
  * إنشاء/تعديل/حذف حلقة وتعيين معلّم ومشرف لها، مع تصفية بالجنس والحالة.
- * شريط الإنجاز (من التقارير) يُضاف لاحقاً مع وحدة التقارير الشهرية.
  */
 import type { Database } from '~/types/database.types'
 
@@ -25,7 +24,6 @@ const { handle } = useErrorHandler()
 const toast = useToast()
 const isManager = computed(() => myRole.value === 'manager')
 
-// ── الجلب ──
 const { data: halqat, refresh, pending } = await useAsyncData<HalaqaRow[]>(
   'halqat-list',
   async () => {
@@ -43,44 +41,33 @@ const { data: halqat, refresh, pending } = await useAsyncData<HalaqaRow[]>(
   { server: false, default: () => [] }
 )
 
-const { data: teachers } = await useAsyncData<NameRow[]>(
-  'teachers-options',
-  async () => {
-    const { data } = await supabase.from('profiles').select('id, full_name').eq('role', 'teacher').eq('status', 'active').order('full_name')
-    return data ?? []
-  },
-  { server: false, default: () => [] }
-)
-const { data: supervisors } = await useAsyncData<NameRow[]>(
-  'supervisors-options',
-  async () => {
-    const { data } = await supabase.from('profiles').select('id, full_name').eq('role', 'supervisor').eq('status', 'active').order('full_name')
-    return data ?? []
-  },
-  { server: false, default: () => [] }
-)
+const { data: teachers } = await useAsyncData<NameRow[]>('teachers-options', async () => {
+  const { data } = await supabase.from('profiles').select('id, full_name').eq('role', 'teacher').eq('status', 'active').order('full_name')
+  return data ?? []
+}, { server: false, default: () => [] })
+const { data: supervisors } = await useAsyncData<NameRow[]>('supervisors-options', async () => {
+  const { data } = await supabase.from('profiles').select('id, full_name').eq('role', 'supervisor').eq('status', 'active').order('full_name')
+  return data ?? []
+}, { server: false, default: () => [] })
 
-const teacherItems = computed(() => (teachers.value ?? []).map(t => ({ label: t.full_name, value: t.id })))
 const NO_SUP = 'none'
+const teacherItems = computed(() => (teachers.value ?? []).map(t => ({ label: t.full_name, value: t.id })))
 const supervisorItems = computed(() => [{ label: 'بلا مشرف', value: NO_SUP }, ...(supervisors.value ?? []).map(s => ({ label: s.full_name, value: s.id }))])
 
-// ── التصفية ──
 const genderF = ref<Gender | 'all'>('all')
 const statusF = ref<Status | 'all'>('all')
-const genderChips: { key: Gender | 'all', label: string }[] = [
-  { key: 'all', label: 'الكل' },
-  { key: 'male', label: 'بنين' },
-  { key: 'female', label: 'بنات' }
+const genderChips = [
+  { value: 'all' as const, label: 'الكل' },
+  { value: 'male' as const, label: 'بنين' },
+  { value: 'female' as const, label: 'بنات' }
 ]
 const filtered = computed(() => (halqat.value ?? []).filter(h =>
   (genderF.value === 'all' || h.gender === genderF.value)
   && (statusF.value === 'all' || h.status === statusF.value)
 ))
-
 function studentsOf(h: HalaqaRow) {
   return h.student_count?.[0]?.count ?? 0
 }
-
 const GENDER_LABEL: Record<Gender, string> = { male: 'بنين', female: 'بنات' }
 const CLASS_LABEL: Record<Classification, string> = { a: 'الفئة أ', b: 'الفئة ب' }
 
@@ -95,7 +82,6 @@ const form = reactive({
 const genderItems = [{ label: 'بنين', value: 'male' }, { label: 'بنات', value: 'female' }]
 const classItems = [{ label: 'الفئة أ', value: 'a' }, { label: 'الفئة ب', value: 'b' }]
 const statusItems = [{ label: 'نشطة', value: 'active' }, { label: 'متوقفة', value: 'stopped' }]
-
 function openCreate() {
   editingId.value = null
   Object.assign(form, { name: '', teacher_id: '', supervisor_id: NO_SUP, daily_time: '', gender: 'male', classification: 'a', status: 'active' })
@@ -114,14 +100,12 @@ function openEdit(h: HalaqaRow) {
   })
   modalOpen.value = true
 }
-
 function validate(s: typeof form) {
   const errors: { name: string, message: string }[] = []
   if (!s.name.trim()) errors.push({ name: 'name', message: 'اسم الحلقة مطلوب.' })
   if (!s.teacher_id) errors.push({ name: 'teacher_id', message: 'تعيين المعلّم مطلوب.' })
   return errors
 }
-
 async function save() {
   saving.value = true
   try {
@@ -170,45 +154,34 @@ async function confirmDelete() {
 
 <template>
   <div class="halqat">
-    <div
+    <UiEmptyState
       v-if="!isManager"
-      class="card forbidden"
-    >
-      <UIcon
-        name="i-lucide-lock"
-        class="size-8"
-      />
-      <p>هذه الصفحة للمدير فقط.</p>
-    </div>
+      icon="i-lucide-lock"
+      title="هذه الصفحة للمدير فقط."
+    />
 
     <template v-else>
-      <div class="head">
-        <div>
-          <h2>الحلقات</h2>
-          <p>لكل حلقة معلّم ووقت يومي ثابت — أنشئ الحلقات وعيّن معلميها ومشرفيها.</p>
-        </div>
-        <UButton
-          label="إنشاء حلقة"
-          color="primary"
-          size="lg"
-          icon="i-lucide-plus"
-          :ui="{ base: 'rounded-[13px] font-semibold' }"
-          @click="openCreate"
-        />
-      </div>
+      <UiPageHeader
+        title="الحلقات"
+        subtitle="لكل حلقة معلّم ووقت يومي ثابت — أنشئ الحلقات وعيّن معلميها ومشرفيها."
+      >
+        <template #actions>
+          <UButton
+            label="إنشاء حلقة"
+            color="primary"
+            size="lg"
+            icon="i-lucide-plus"
+            :ui="{ base: 'rounded-[13px] font-semibold' }"
+            @click="openCreate"
+          />
+        </template>
+      </UiPageHeader>
 
       <div class="filters">
-        <div class="chips">
-          <button
-            v-for="c in genderChips"
-            :key="c.key"
-            class="chip"
-            :class="{ on: genderF === c.key }"
-            @click="genderF = c.key"
-          >
-            {{ c.label }}
-          </button>
-        </div>
+        <UiFilterChips
+          v-model="genderF"
+          :options="genderChips"
+        />
         <USelect
           v-model="statusF"
           :items="[{ label: 'كل الحالات', value: 'all' }, ...statusItems]"
@@ -218,115 +191,110 @@ async function confirmDelete() {
         />
       </div>
 
-      <div
-        v-if="pending"
-        class="card empty"
-      >
-        جارٍ التحميل…
-      </div>
-      <div
-        v-else-if="filtered.length === 0"
-        class="card empty"
-      >
-        <UIcon
-          name="i-lucide-book-open"
-          class="size-8"
+      <ClientOnly>
+        <UiEmptyState
+          v-if="pending"
+          title="جارٍ التحميل…"
         />
-        <h3>لا حلقات بعد</h3>
-        <p>أنشئ أول حلقة وعيّن لها معلّماً لتظهر هنا.</p>
-      </div>
-      <div
-        v-else
-        class="grid"
-      >
+        <UiEmptyState
+          v-else-if="filtered.length === 0"
+          icon="i-lucide-book-open"
+          title="لا حلقات بعد"
+          description="أنشئ أول حلقة وعيّن لها معلّماً لتظهر هنا."
+        />
         <div
-          v-for="h in filtered"
-          :key="h.id"
-          class="hcard"
+          v-else
+          class="grid"
         >
-          <div class="hcard-top">
-            <div class="hcard-id">
-              <div class="hicon">
-                <UIcon
-                  name="i-lucide-book-open"
-                  class="size-6"
+          <div
+            v-for="h in filtered"
+            :key="h.id"
+            class="hcard"
+          >
+            <div class="hcard-top">
+              <div class="hcard-id">
+                <div class="hicon">
+                  <UIcon
+                    name="i-lucide-book-open"
+                    class="size-6"
+                  />
+                </div>
+                <div>
+                  <h3>{{ h.name }}</h3>
+                  <div class="teacher">
+                    {{ h.teacher?.full_name || '—' }}
+                  </div>
+                  <div
+                    class="sup"
+                    :class="{ orphan: !h.supervisor }"
+                  >
+                    <UIcon
+                      name="i-lucide-shield"
+                      class="size-[13px]"
+                    />
+                    {{ h.supervisor?.full_name || 'بلا مشرف' }}
+                  </div>
+                </div>
+              </div>
+              <div class="badges">
+                <UBadge
+                  v-if="h.gender"
+                  :label="GENDER_LABEL[h.gender]"
+                  :color="h.gender === 'male' ? 'info' : 'secondary'"
+                  variant="soft"
+                  size="sm"
+                />
+                <UBadge
+                  v-if="h.classification"
+                  :label="CLASS_LABEL[h.classification]"
+                  color="neutral"
+                  variant="soft"
+                  size="sm"
                 />
               </div>
-              <div>
-                <h3>{{ h.name }}</h3>
-                <div class="teacher">
-                  {{ h.teacher?.full_name || '—' }}
-                </div>
-                <div
-                  class="sup"
-                  :class="{ orphan: !h.supervisor }"
-                >
-                  <UIcon
-                    name="i-lucide-shield"
-                    class="size-[13px]"
-                  />
-                  {{ h.supervisor?.full_name || 'بلا مشرف' }}
-                </div>
-              </div>
             </div>
-            <div class="badges">
+
+            <div class="meta">
+              <span><UIcon
+                name="i-lucide-users"
+                class="size-4"
+              />{{ studentsOf(h) }} طالب</span>
+              <span v-if="h.daily_time"><UIcon
+                name="i-lucide-clock"
+                class="size-4"
+              />{{ h.daily_time.slice(0, 5) }}</span>
               <UBadge
-                v-if="h.gender"
-                :label="GENDER_LABEL[h.gender]"
-                :color="h.gender === 'male' ? 'info' : 'secondary'"
+                :label="h.status === 'active' ? 'نشطة' : 'متوقفة'"
+                :color="h.status === 'active' ? 'success' : 'neutral'"
                 variant="soft"
                 size="sm"
               />
-              <UBadge
-                v-if="h.classification"
-                :label="CLASS_LABEL[h.classification]"
+            </div>
+
+            <div class="hcard-actions">
+              <UButton
+                label="تعديل"
                 color="neutral"
-                variant="soft"
+                variant="outline"
                 size="sm"
+                icon="i-lucide-pencil"
+                block
+                :ui="{ base: 'rounded-[11px]' }"
+                @click="openEdit(h)"
+              />
+              <UButton
+                color="neutral"
+                variant="outline"
+                size="sm"
+                icon="i-lucide-trash-2"
+                :ui="{ base: 'rounded-[11px]' }"
+                aria-label="حذف"
+                @click="deleteTarget = h"
               />
             </div>
-          </div>
-
-          <div class="meta">
-            <span><UIcon
-              name="i-lucide-users"
-              class="size-4"
-            />{{ studentsOf(h) }} طالب</span>
-            <span v-if="h.daily_time"><UIcon
-              name="i-lucide-clock"
-              class="size-4"
-            />{{ h.daily_time.slice(0, 5) }}</span>
-            <UBadge
-              :label="h.status === 'active' ? 'نشطة' : 'متوقفة'"
-              :color="h.status === 'active' ? 'success' : 'neutral'"
-              variant="soft"
-              size="sm"
-            />
-          </div>
-
-          <div class="hcard-actions">
-            <UButton
-              label="تعديل"
-              color="neutral"
-              variant="outline"
-              size="sm"
-              icon="i-lucide-pencil"
-              block
-              :ui="{ base: 'rounded-[11px]' }"
-              @click="openEdit(h)"
-            />
-            <UButton
-              color="neutral"
-              variant="outline"
-              size="sm"
-              icon="i-lucide-trash-2"
-              :ui="{ base: 'rounded-[11px]' }"
-              aria-label="حذف"
-              @click="deleteTarget = h"
-            />
           </div>
         </div>
-      </div>
+      </ClientOnly>
     </template>
 
     <!-- نافذة إنشاء/تعديل -->
@@ -358,13 +326,11 @@ async function confirmDelete() {
               name="teacher_id"
               class="f"
             >
-              <USelect
+              <UiSelect
                 v-model="form.teacher_id"
                 :items="teacherItems"
                 placeholder="اختر معلّماً"
                 size="lg"
-                class="w-full"
-                :ui="{ base: 'rounded-[13px]' }"
               />
             </UFormField>
             <UFormField
@@ -372,12 +338,10 @@ async function confirmDelete() {
               name="supervisor_id"
               class="f"
             >
-              <USelect
+              <UiSelect
                 v-model="form.supervisor_id"
                 :items="supervisorItems"
                 size="lg"
-                class="w-full"
-                :ui="{ base: 'rounded-[13px]' }"
               />
             </UFormField>
           </div>
@@ -461,57 +425,22 @@ async function confirmDelete() {
     </UModal>
 
     <!-- تأكيد الحذف -->
-    <UModal
+    <UiConfirmModal
       :open="!!deleteTarget"
       title="حذف الحلقة"
+      :loading="deleting"
       @update:open="v => { if (!v) deleteTarget = null }"
+      @confirm="confirmDelete"
     >
-      <template #body>
-        <p class="confirm-text">
-          هل أنت متأكّد من حذف حلقة «<strong>{{ deleteTarget?.name }}</strong>»؟ لا يمكن التراجع.
-        </p>
-        <div class="form-actions">
-          <UButton
-            label="إلغاء"
-            color="neutral"
-            variant="ghost"
-            size="lg"
-            :ui="{ base: 'rounded-[13px]' }"
-            @click="deleteTarget = null"
-          />
-          <UButton
-            label="حذف"
-            color="error"
-            size="lg"
-            icon="i-lucide-trash-2"
-            :loading="deleting"
-            :ui="{ base: 'rounded-[13px] font-semibold' }"
-            @click="confirmDelete"
-          />
-        </div>
-      </template>
-    </UModal>
+      هل أنت متأكّد من حذف حلقة «<strong>{{ deleteTarget?.name }}</strong>»؟ لا يمكن التراجع.
+    </UiConfirmModal>
   </div>
 </template>
 
 <style scoped>
 .halqat { max-width: 1280px; margin: 0 auto; }
-.card { background: var(--surface); border: 1px solid var(--line); border-radius: 20px; box-shadow: var(--shadow); }
-
-.head { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; flex-wrap: wrap; margin-bottom: 24px; }
-.head h2 { margin: 0; font-size: 26px; font-weight: 700; color: var(--ink); }
-.head p { margin: 8px 0 0; font-size: 16px; color: var(--ink-2); font-weight: 300; }
-
 .filters { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; margin-bottom: 20px; }
-.chips { display: flex; flex-wrap: wrap; gap: 10px; }
-.chip { height: 38px; padding: 0 18px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line-2); color: var(--ink-2); font-size: 14px; font-weight: 600; font-family: inherit; cursor: pointer; transition: all .15s; }
-.chip:hover { background: var(--surface-2); }
-.chip.on { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
 .status-sel { min-width: 150px; }
-
-.empty { padding: 56px 24px; text-align: center; color: var(--ink-2); display: flex; flex-direction: column; align-items: center; gap: 10px; }
-.empty h3 { margin: 6px 0 0; font-size: 19px; font-weight: 700; color: var(--ink); }
-.empty p { margin: 0; font-size: 15px; font-weight: 300; }
 
 .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
 .hcard { background: var(--surface); border: 1px solid var(--line); border-radius: 22px; padding: 24px; box-shadow: var(--shadow); transition: transform .2s, box-shadow .2s, border-color .2s; }
@@ -533,7 +462,6 @@ async function confirmDelete() {
 .row { display: flex; gap: 14px; flex-wrap: wrap; }
 .row .f { flex: 1; min-width: 150px; }
 .form-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px; }
-.confirm-text { font-size: 15.5px; color: var(--ink-2); line-height: 1.8; margin: 0 0 18px; }
 
 @media (max-width: 1024px) { .grid { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 640px) { .grid { grid-template-columns: 1fr; } }
