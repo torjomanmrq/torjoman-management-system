@@ -16,6 +16,8 @@ const route = useRoute()
 const supabase = useSupabaseClient<Database>()
 const { role } = useProfile()
 const { handle } = useErrorHandler()
+const { settings: gradeCfg, loadSettings } = useGrades()
+onMounted(loadSettings)
 const toast = useToast()
 const id = computed(() => String(route.params.id))
 const canManage = computed(() => role.value === 'manager' || role.value === 'teacher')
@@ -284,6 +286,7 @@ const sections = computed<{ title: string, icon: string, tone: string, fields: F
             :plan="plan"
             :results="examResults"
             :memorization-pages="memorizationPages"
+            :target-per-month="gradeCfg.target"
             :enrollment-date="student.enrollment_date"
           />
         </section>

@@ -18,6 +18,7 @@ type PublicStudent = {
   exam_plan: { id: number, parts_from: number, parts_to: number, stage_type: 'partial' | 'cumulative' }[]
   results: { exam_plan_id: number | null, passed: boolean | null, total_score: number | null }[]
   memorization_pages: number
+  target_per_month: number
 }
 
 const { data: student, error } = await useFetch<PublicStudent>(`/api/public/student/${token.value}`)
@@ -141,6 +142,7 @@ const fields = computed(() => {
           :plan="student.exam_plan"
           :results="student.results"
           :memorization-pages="student.memorization_pages"
+          :target-per-month="student.target_per_month"
           :enrollment-date="student.enrollment_date"
         />
       </div>

@@ -48,6 +48,10 @@ export default defineEventHandler(async (event) => {
     .filter((r: { report: { status: string } | null }) => r.report?.status === 'approved')
     .reduce((sum: number, r: { memorization_pages: number | null }) => sum + (r.memorization_pages ?? 0), 0)
 
+  // الهدف الشهري لمؤشّر التقدّم الزمني (إعدادات المدير)
+  const { data: settings } = await admin.from('app_settings').select('target_memorization_pages').eq('id', 1).single()
+  const target_per_month = settings?.target_memorization_pages ?? 30
+
   const { id: _id, ...safe } = data
-  return { ...safe, exam_plan: plan ?? [], results, memorization_pages }
+  return { ...safe, exam_plan: plan ?? [], results, memorization_pages, target_per_month }
 })

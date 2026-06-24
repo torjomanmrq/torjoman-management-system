@@ -78,7 +78,7 @@
 | الشاشة | المسار المتوقّع | الحالة | البريف |
 |---|---|---|---|
 | التقرير الشهري للحلقة | `pages/reports/index.vue` | 🟡 | §4.17 |
-| مؤشر التقدّم الزمني (مكوّن) | `components/student/TimeProgress.vue` | ⬜ | §4.18 |
+| مؤشر التقدّم الزمني (مكوّن) | `components/student/TimeProgress.vue` | ✅ | §4.18 |
 | رحلة الطالب (قسم داخل ملف الطالب) | `pages/students/[id].vue` | 🟡 | §4.22 |
 | دليل المؤشرات والمعادلات | `pages/metrics/index.vue` | ✅ | §4.24 |
 
