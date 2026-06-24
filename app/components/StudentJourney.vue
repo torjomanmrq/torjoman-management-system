@@ -108,11 +108,11 @@ const pct = computed(() => Math.min(100, Math.round((j.value.parts / 30) * 100))
           <span
             v-if="s.result === 'passed'"
             class="tag tag-ok"
-          >نجح</span>
+          >نجح<template v-if="s.score != null"> · {{ s.score }}/100</template></span>
           <span
             v-else-if="s.result === 'failed'"
             class="tag tag-fail"
-          >يعيد</span>
+          >يعيد<template v-if="s.score != null"> · {{ s.score }}/100</template></span>
           <span
             v-else-if="s.isNext"
             class="tag tag-next"

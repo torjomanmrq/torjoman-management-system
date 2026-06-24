@@ -4,7 +4,7 @@
  */
 export type PlanStage = 'partial' | 'cumulative'
 export type PlanInput = { id: number, parts_from: number, parts_to: number, stage_type: PlanStage }
-export type ResultInput = { exam_plan_id: number | null, passed: boolean | null }
+export type ResultInput = { exam_plan_id: number | null, passed: boolean | null, total_score: number | null }
 export type StationResult = 'passed' | 'failed' | null
 export type JourneyStation = {
   id: number
@@ -14,6 +14,7 @@ export type JourneyStation = {
   reached: boolean
   isNext: boolean
   result: StationResult
+  score: number | null
 }
 
 export function buildJourney(
@@ -22,13 +23,13 @@ export function buildJourney(
   results: ResultInput[] = []
 ) {
   const parts = quranParts ?? 0
-  const byPlan = new Map<number, StationResult>()
+  const byPlan = new Map<number, { result: StationResult, score: number | null }>()
   for (const r of results) {
     if (r.exam_plan_id == null) continue
     // النجاح يَغلِب: إن وُجد اجتياز لا يُلغى برسوب لاحق
     const prev = byPlan.get(r.exam_plan_id)
-    if (prev === 'passed') continue
-    byPlan.set(r.exam_plan_id, r.passed ? 'passed' : 'failed')
+    if (prev?.result === 'passed') continue
+    byPlan.set(r.exam_plan_id, { result: r.passed ? 'passed' : 'failed', score: r.total_score })
   }
 
   const stations: JourneyStation[] = [...plan]
@@ -39,7 +40,8 @@ export function buildJourney(
       stage: p.stage_type,
       reached: parts >= p.parts_to,
       isNext: false,
-      result: byPlan.get(p.id) ?? null
+      result: byPlan.get(p.id)?.result ?? null,
+      score: byPlan.get(p.id)?.score ?? null
     }))
     .sort((a, b) => (a.to - b.to) || (a.stage === 'partial' ? -1 : 1))
 
