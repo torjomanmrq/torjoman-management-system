@@ -1100,6 +1100,7 @@ export type Database = {
           status: Database["public"]["Enums"]["student_status"]
           tajweed_level: string | null
           updated_at: string
+          view_token: string
         }
         Insert: {
           avatar_url?: string | null
@@ -1123,6 +1124,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["student_status"]
           tajweed_level?: string | null
           updated_at?: string
+          view_token?: string
         }
         Update: {
           avatar_url?: string | null
@@ -1146,6 +1148,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["student_status"]
           tajweed_level?: string | null
           updated_at?: string
+          view_token?: string
         }
         Relationships: [
           {
