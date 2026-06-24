@@ -147,7 +147,7 @@ const fields = computed(() => {
 <style scoped>
 .pub { min-height: 100vh; background: var(--bg); color: var(--ink); }
 .top { max-width: 640px; margin: 0 auto; padding: 22px 20px; display: flex; align-items: center; justify-content: space-between; }
-.logo { height: 34px; width: auto; filter: var(--logo-filter); }
+.logo { height: 56px; width: auto; filter: var(--logo-filter); }
 .wrap { max-width: 640px; margin: 0 auto; padding: 10px 20px 48px; }
 
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: 22px; box-shadow: var(--shadow-lg); padding: 28px; }
