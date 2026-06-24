@@ -44,7 +44,7 @@ const mainNav: Item[] = [
   { key: 'exams', label: 'الاختبارات', icon: 'i-lucide-square-check-big', to: '/exams', roles: ['manager', 'supervisor', 'teacher'] },
   { key: 'examplan', label: 'خطة الاختبارات', icon: 'i-lucide-list-ordered', to: '/exam-plan', roles: ['manager', 'quality', 'supervisor', 'teacher'] },
   { key: 'reports', label: 'التقارير الشهرية', icon: 'i-lucide-file-text', to: '/reports', roles: ['manager', 'quality', 'supervisor', 'teacher'] },
-  { key: 'incentives', label: 'كشف الحوافز', icon: 'i-lucide-gift', roles: ['teacher'] },
+  { key: 'incentives', label: 'كشف الحوافز', icon: 'i-lucide-gift', to: '/incentives', roles: ['teacher'] },
   { key: 'alerts', label: 'التنبيهات الإدارية', icon: 'i-lucide-bell', to: '/alerts', roles: ['manager', 'quality', 'supervisor', 'teacher'] }
 ]
 
