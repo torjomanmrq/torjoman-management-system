@@ -13,7 +13,9 @@ type PublicStudent = {
   status: string
   quran_parts: number | null
   tajweed_level: string | null
+  enrollment_date: string | null
   halaqa: { name: string, daily_time: string | null, teacher: { full_name: string } | null } | null
+  exam_plan: { parts_from: number, parts_to: number, stage_type: 'partial' | 'cumulative' }[]
 }
 
 const { data: student, error } = await useFetch<PublicStudent>(`/api/public/student/${token.value}`)
@@ -120,6 +122,24 @@ const fields = computed(() => {
           صفحة اطّلاع للقراءة فقط — منصّة ترجمان القرآني.
         </p>
       </div>
+
+      <div
+        v-if="student"
+        class="card journey-card"
+      >
+        <h2 class="jtitle">
+          <UIcon
+            name="i-lucide-route"
+            class="size-5"
+          />
+          رحلة الطالب على خطة الاختبارات
+        </h2>
+        <StudentJourney
+          :quran-parts="student.quran_parts"
+          :plan="student.exam_plan"
+          :enrollment-date="student.enrollment_date"
+        />
+      </div>
     </main>
   </div>
 </template>
@@ -145,4 +165,7 @@ const fields = computed(() => {
 .field dd { margin: 0; font-size: 15.5px; font-weight: 700; color: var(--ink); }
 
 .note { margin: 22px 0 0; display: flex; align-items: center; gap: 7px; font-size: 13px; color: var(--ink-3); }
+
+.journey-card { margin-top: 18px; }
+.jtitle { margin: 0 0 18px; font-size: 18px; font-weight: 700; color: var(--ink); display: flex; align-items: center; gap: 9px; }
 </style>

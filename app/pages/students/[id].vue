@@ -37,6 +37,12 @@ const { data: student, pending, refresh } = await useAsyncData<StudentRow | null
   { server: false, default: () => null }
 )
 
+// خطة الاختبارات لرسم رحلة الطالب (حسب الحفظ)
+const { data: plan } = await useAsyncData('journey-exam-plan', async () => {
+  const { data } = await supabase.from('exam_plan').select('parts_from, parts_to, stage_type').order('parts_to')
+  return data ?? []
+}, { server: false, default: () => [] })
+
 useSeoMeta({ title: () => student.value ? `${student.value.full_name} — ترجمان` : 'ملف الطالب — ترجمان' })
 
 const GENDER: Record<string, string> = { male: 'ذكر', female: 'أنثى' }
@@ -243,18 +249,20 @@ const sections = computed<{ title: string, icon: string, tone: string, fields: F
           </section>
         </div>
 
-        <!-- رحلة الطالب (لاحقاً) -->
+        <!-- رحلة الطالب على خطة الاختبارات (حسب الحفظ) -->
         <section class="card journey">
           <h3>
             <span class="ico ico-green"><UIcon
               name="i-lucide-route"
               class="size-5"
             /></span>
-            رحلة الطالب
+            رحلة الطالب على خطة الاختبارات
           </h3>
-          <p class="soon">
-            سجلّ الحفظ والمراجعة ونتائج الاختبارات يظهر هنا مع وحدتي التقارير الشهرية والاختبارات.
-          </p>
+          <StudentJourney
+            :quran-parts="student.quran_parts"
+            :plan="plan"
+            :enrollment-date="student.enrollment_date"
+          />
         </section>
       </template>
     </ClientOnly>

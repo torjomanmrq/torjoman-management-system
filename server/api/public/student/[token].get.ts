@@ -14,12 +14,19 @@ export default defineEventHandler(async (event) => {
   const admin = serverSupabaseServiceRole<Database>(event)
   const { data, error } = await admin
     .from('students')
-    .select('full_name, status, quran_parts, tajweed_level, halaqa:halaqa_id(name, daily_time, teacher:teacher_id(full_name))')
+    .select('full_name, status, quran_parts, tajweed_level, enrollment_date, halaqa:halaqa_id(name, daily_time, teacher:teacher_id(full_name))')
     .eq('view_token', token)
     .single()
 
   if (error || !data) {
     throw createError({ statusCode: 404, statusMessage: 'الرابط غير صحيح أو لم يعد متاحاً.' })
   }
-  return data
+
+  // خطة الاختبارات لرسم رحلة الطالب (حسب الحفظ)
+  const { data: plan } = await admin
+    .from('exam_plan')
+    .select('parts_from, parts_to, stage_type')
+    .order('parts_to')
+
+  return { ...data, exam_plan: plan ?? [] }
 })
