@@ -36,9 +36,9 @@ type Item = { key: string, label: string, icon: string, to?: string, roles: stri
 const mainNav: Item[] = [
   { key: 'dashboard', label: 'لوحة التحكم', icon: 'i-lucide-layout-dashboard', to: '/dashboard', roles: ['manager', 'quality', 'supervisor', 'teacher'] },
   { key: 'users', label: 'إدارة المستخدمين', icon: 'i-lucide-users', to: '/users', roles: ['manager'] },
-  { key: 'supervisors', label: 'المشرفون', icon: 'i-lucide-users-round', roles: ['manager', 'quality'] },
+  { key: 'supervisors', label: 'المشرفون', icon: 'i-lucide-users-round', to: '/supervisors', roles: ['manager', 'quality'] },
   { key: 'halqat', label: 'الحلقات', icon: 'i-lucide-book-open', to: '/halqat', roles: ['manager', 'quality', 'supervisor'] },
-  { key: 'myhalqa', label: 'حلقتي', icon: 'i-lucide-book-open', roles: ['teacher'] },
+  { key: 'myhalqa', label: 'حلقتي', icon: 'i-lucide-book-open', to: '/dashboard', roles: ['teacher'] },
   { key: 'students', label: 'الطلاب', icon: 'i-lucide-graduation-cap', to: '/students', roles: ['manager', 'quality', 'supervisor', 'teacher'] },
   { key: 'visits', label: 'الزيارات الإشرافية', icon: 'i-lucide-clipboard-check', to: '/visits', roles: ['manager', 'quality', 'supervisor'] },
   { key: 'exams', label: 'الاختبارات', icon: 'i-lucide-square-check-big', to: '/exams', roles: ['manager', 'supervisor', 'teacher'] },
