@@ -1,0 +1,344 @@
+<script setup lang="ts">
+/**
+ * حوافز الحلقات (§4.20د) — تخصيص المبلغ لكل حلقة/شهر (قفل بالاعتماد)
+ * + جدول الكشوف الواردة من المعلمين (مستلَم/مصروف/متبقّي/حالة) مع «تمّ الاطّلاع».
+ */
+import type { Database } from '~/types/database.types'
+
+const supabase = useSupabaseClient<Database>()
+const { profile } = useProfile()
+const { handle } = useErrorHandler()
+const toast = useToast()
+
+const MONTHS = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر']
+const now = new Date()
+const monthItems = MONTHS.map((m, i) => ({ label: m, value: i + 1 }))
+const yearItems = [now.getFullYear() - 1, now.getFullYear()].map(y => ({ label: String(y), value: y }))
+const month = ref(now.getMonth() + 1)
+const year = ref(now.getFullYear())
+
+const STMT_STATUS: Record<string, { label: string, color: 'neutral' | 'warning' | 'success' }> = {
+  draft: { label: 'بانتظار', color: 'neutral' },
+  submitted: { label: 'مُسلّم', color: 'warning' },
+  reviewed: { label: 'مُطّلع عليه', color: 'success' }
+}
+
+type AllocRow = { halaqa_id: string, name: string, teacher: string, amount: string }
+type StmtRow = { id: string, halaqa: string, received: number, spent: number, status: string }
+const rows = ref<AllocRow[]>([])
+const statements = ref<StmtRow[]>([])
+const approved = ref(false)
+const loaded = ref(false)
+const loading = ref(false)
+const canEdit = computed(() => !approved.value)
+const total = computed(() => rows.value.reduce((s, r) => s + (Number(r.amount) || 0), 0))
+const fmt = (n: number) => n.toLocaleString('ar')
+
+async function load() {
+  loading.value = true
+  try {
+    const [{ data: halqat }, { data: alloc }, { data: stmts }] = await Promise.all([
+      supabase.from('halaqat').select('id, name, teacher:teacher_id(full_name)').order('name').returns<{ id: string, name: string, teacher: { full_name: string } | null }[]>(),
+      supabase.from('halaqa_incentives').select('halaqa_id, allocated_amount, approved').eq('incentive_month', month.value).eq('incentive_year', year.value),
+      supabase.from('incentive_statements').select('id, halaqa_id, received_amount, status, items:incentive_statement_items(amount), halaqa:halaqa_id(name)').eq('statement_month', month.value).eq('statement_year', year.value)
+        .returns<{ id: string, halaqa_id: string, received_amount: number, status: string, items: { amount: number }[], halaqa: { name: string } | null }[]>()
+    ])
+    const map: Record<string, number> = {}
+    for (const a of alloc ?? []) map[a.halaqa_id] = a.allocated_amount
+    approved.value = (alloc ?? []).some(a => a.approved)
+    rows.value = (halqat ?? []).map(h => ({ halaqa_id: h.id, name: h.name, teacher: h.teacher?.full_name ?? '—', amount: map[h.id] != null ? String(map[h.id]) : '' }))
+    statements.value = (stmts ?? []).map(s => ({
+      id: s.id, halaqa: s.halaqa?.name ?? '—', received: s.received_amount,
+      spent: (s.items ?? []).reduce((t, i) => t + i.amount, 0), status: s.status
+    }))
+    loaded.value = true
+  } catch (err) {
+    handle(err)
+  } finally {
+    loading.value = false
+  }
+}
+
+const saving = ref(false)
+async function save() {
+  saving.value = true
+  try {
+    await supabase.from('halaqa_incentives').delete().eq('incentive_month', month.value).eq('incentive_year', year.value)
+    const payload = rows.value.filter(r => Number(r.amount) > 0)
+      .map(r => ({ halaqa_id: r.halaqa_id, incentive_month: month.value, incentive_year: year.value, allocated_amount: Number(r.amount), approved: false }))
+    if (payload.length) {
+      const { error } = await supabase.from('halaqa_incentives').insert(payload)
+      if (error) throw error
+    }
+    toast.add({ title: 'حُفظ التخصيص.', color: 'success', icon: 'i-lucide-save' })
+  } catch (err) {
+    handle(err)
+  } finally {
+    saving.value = false
+  }
+}
+
+const working = ref(false)
+async function approveAlloc() {
+  working.value = true
+  try {
+    await save()
+    const { error } = await supabase.from('halaqa_incentives')
+      .update({ approved: true, approved_by: profile.value?.id ?? null, approved_at: new Date().toISOString() })
+      .eq('incentive_month', month.value).eq('incentive_year', year.value)
+    if (error) throw error
+    approved.value = true
+    toast.add({ title: 'تم اعتماد التخصيص.', color: 'success', icon: 'i-lucide-lock' })
+  } catch (err) {
+    handle(err)
+  } finally {
+    working.value = false
+  }
+}
+async function reopen() {
+  working.value = true
+  try {
+    const { error } = await supabase.from('halaqa_incentives')
+      .update({ approved: false, approved_by: null, approved_at: null })
+      .eq('incentive_month', month.value).eq('incentive_year', year.value)
+    if (error) throw error
+    approved.value = false
+    toast.add({ title: 'أُعيد فتح التخصيص.', color: 'success', icon: 'i-lucide-lock-open' })
+  } catch (err) {
+    handle(err)
+  } finally {
+    working.value = false
+  }
+}
+
+async function markReviewed(s: StmtRow) {
+  try {
+    const { error } = await supabase.from('incentive_statements').update({ status: 'reviewed', reviewed_by: profile.value?.id ?? null, reviewed_at: new Date().toISOString() }).eq('id', s.id)
+    if (error) throw error
+    s.status = 'reviewed'
+    toast.add({ title: 'تمّ الاطّلاع على الكشف.', color: 'success', icon: 'i-lucide-check' })
+  } catch (err) {
+    handle(err)
+  }
+}
+</script>
+
+<template>
+  <div>
+    <div class="bar">
+      <div class="picker">
+        <UiSelect
+          v-model="month"
+          :items="monthItems"
+          size="md"
+          class="sel"
+        />
+        <UiSelect
+          v-model="year"
+          :items="yearItems"
+          size="md"
+          class="sel"
+        />
+        <UButton
+          label="تحميل"
+          color="primary"
+          size="md"
+          icon="i-lucide-folder-open"
+          :loading="loading"
+          :ui="{ base: 'rounded-[12px] font-semibold' }"
+          @click="load"
+        />
+      </div>
+      <UBadge
+        v-if="loaded && approved"
+        label="التخصيص معتمد"
+        color="success"
+        variant="soft"
+        size="lg"
+      />
+    </div>
+
+    <ClientOnly>
+      <UiEmptyState
+        v-if="!loaded"
+        icon="i-lucide-gift"
+        title="اختر الشهر ثم «تحميل»"
+      />
+      <template v-else>
+        <!-- التخصيص -->
+        <h3 class="sec-t">
+          تخصيص الحوافز
+        </h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th class="ta-start">
+                  الحلقة
+                </th><th class="ta-start">
+                  المعلّم
+                </th><th>المخصّص (₪)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                v-for="r in rows"
+                :key="r.halaqa_id"
+              >
+                <td class="ta-start strong">
+                  {{ r.name }}
+                </td>
+                <td class="ta-start muted">
+                  {{ r.teacher }}
+                </td>
+                <td>
+                  <input
+                    v-model="r.amount"
+                    :disabled="!canEdit"
+                    type="number"
+                    class="cell"
+                    dir="ltr"
+                  >
+                </td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr>
+                <td
+                  colspan="2"
+                  class="ta-start strong"
+                >
+                  إجمالي المخصّص
+                </td><td class="strong num">
+                  {{ fmt(total) }}
+                </td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+        <div class="actions">
+          <UButton
+            v-if="canEdit"
+            label="حفظ"
+            color="primary"
+            size="lg"
+            icon="i-lucide-save"
+            :loading="saving"
+            :ui="{ base: 'rounded-[13px] font-semibold' }"
+            @click="save"
+          />
+          <UButton
+            v-if="canEdit"
+            label="اعتماد التخصيص"
+            color="success"
+            size="lg"
+            icon="i-lucide-lock"
+            :loading="working"
+            :ui="{ base: 'rounded-[13px] font-semibold' }"
+            @click="approveAlloc"
+          />
+          <UButton
+            v-else
+            label="فتح للتعديل"
+            color="neutral"
+            variant="outline"
+            size="lg"
+            icon="i-lucide-lock-open"
+            :loading="working"
+            :ui="{ base: 'rounded-[13px]' }"
+            @click="reopen"
+          />
+        </div>
+
+        <!-- الكشوف الواردة -->
+        <h3 class="sec-t mt">
+          الكشوف الواردة
+        </h3>
+        <UiEmptyState
+          v-if="!statements.length"
+          icon="i-lucide-inbox"
+          title="لا كشوف لهذا الشهر"
+        />
+        <div
+          v-else
+          class="table-wrap"
+        >
+          <table>
+            <thead>
+              <tr>
+                <th class="ta-start">
+                  الحلقة
+                </th><th>المستلَم</th><th>المصروف</th><th>المتبقّي</th><th>الحالة</th><th />
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                v-for="s in statements"
+                :key="s.id"
+              >
+                <td class="ta-start strong">
+                  {{ s.halaqa }}
+                </td>
+                <td class="num">
+                  {{ fmt(s.received) }}
+                </td>
+                <td class="num">
+                  {{ fmt(s.spent) }}
+                </td>
+                <td
+                  class="num"
+                  :class="(s.received - s.spent) < 0 ? 'out' : ''"
+                >
+                  {{ fmt(s.received - s.spent) }}
+                </td>
+                <td>
+                  <UBadge
+                    :label="STMT_STATUS[s.status]?.label"
+                    :color="STMT_STATUS[s.status]?.color"
+                    variant="soft"
+                    size="sm"
+                  />
+                </td>
+                <td>
+                  <UButton
+                    v-if="s.status === 'submitted'"
+                    label="تمّ الاطّلاع"
+                    color="primary"
+                    variant="outline"
+                    size="xs"
+                    icon="i-lucide-check"
+                    :ui="{ base: 'rounded-[9px]' }"
+                    @click="markReviewed(s)"
+                  />
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </template>
+    </ClientOnly>
+  </div>
+</template>
+
+<style scoped>
+.bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+.picker { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.sel { width: 130px; }
+.sec-t { margin: 0 0 12px; font-size: 16.5px; font-weight: 700; color: var(--ink); }
+.sec-t.mt { margin-top: 26px; }
+.table-wrap { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--shadow); }
+table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 560px; }
+thead tr, tfoot tr { background: var(--surface-2); }
+th { padding: 12px; font-weight: 600; color: var(--ink-3); font-size: 12.5px; text-align: center; }
+th.ta-start { text-align: start; }
+td { padding: 9px 12px; vertical-align: middle; text-align: center; border-top: 1px solid var(--line); }
+.ta-start { text-align: start; }
+.muted { color: var(--ink-3); }
+.strong { font-weight: 700; color: var(--ink); }
+.num { font-variant-numeric: tabular-nums; }
+.out { color: var(--err); font-weight: 600; }
+.cell { width: 130px; height: 38px; padding: 0 10px; border-radius: 9px; border: 1px solid var(--line-2); background: var(--surface-2); color: var(--ink); font-size: 14px; text-align: center; outline: none; }
+.cell:focus { border-color: var(--blue); box-shadow: 0 0 0 3px var(--ring); }
+.cell:disabled { opacity: .6; cursor: not-allowed; }
+.actions { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+</style>

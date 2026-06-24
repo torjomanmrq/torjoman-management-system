@@ -50,7 +50,7 @@ const mainNav: Item[] = [
 
 const managerNav: Item[] = [
   { key: 'minutes', label: 'محاضر الاجتماعات', icon: 'i-lucide-notebook-pen', to: '/minutes', roles: ['manager'] },
-  { key: 'finance', label: 'الملف المالي', icon: 'i-lucide-wallet', roles: ['manager'] },
+  { key: 'finance', label: 'الملف المالي', icon: 'i-lucide-wallet', to: '/finance', roles: ['manager'] },
   { key: 'news', label: 'الأخبار', icon: 'i-lucide-newspaper', to: '/news', roles: ['manager'] }
 ]
 
