@@ -364,13 +364,11 @@ async function confirmDelete() {
             name="halaqa_id"
             :hint="selectedHalqaTime ? `وقت الحلقة اليومي: ${selectedHalqaTime}` : ''"
           >
-            <USelect
+            <UiSelect
               v-model="sched.halaqa_id"
               :items="halqaItems"
               placeholder="اختر الحلقة"
               size="lg"
-              class="w-full"
-              :ui="{ base: 'rounded-[13px]', content: 'w-fit min-w-(--reka-select-trigger-width) max-w-[min(92vw,32rem)]' }"
             />
           </UFormField>
           <UFormField
@@ -378,13 +376,11 @@ async function confirmDelete() {
             name="supervisor_id"
             :hint="visitorItems.length ? 'المدير أو أحد المشرفين' : 'لا زائرون متاحون بعد'"
           >
-            <USelect
+            <UiSelect
               v-model="sched.supervisor_id"
               :items="visitorItems"
               placeholder="اختر الزائر"
               size="lg"
-              class="w-full"
-              :ui="{ base: 'rounded-[13px]' }"
             />
           </UFormField>
           <UFormField
