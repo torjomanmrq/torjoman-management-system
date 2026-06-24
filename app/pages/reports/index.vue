@@ -81,6 +81,18 @@ const num = (v: number | string) => (v === '' || v === null || v === undefined) 
 const pagesOf = (r: Row) => (num(r.memorization_to) ?? 0) - (num(r.memorization_from) ?? 0)
 const reviewOf = (r: Row) => (num(r.review_to) ?? 0) - (num(r.memorization_from) ?? 0)
 
+// ── الدرجات المحسوبة (§4.24) ──
+const { settings: gradeCfg, loadSettings, computeStudentGrade, computeHalqaAchievement, gradeLabel, achievementColor } = useGrades()
+onMounted(loadSettings)
+const gradeOf = (r: Row) => computeStudentGrade({
+  memoPages: pagesOf(r),
+  reviewPages: reviewOf(r),
+  absenceUnexcused: num(r.absence_unexcused) ?? 0,
+  points: num(r.monthly_points) ?? 0
+}, gradeCfg.value).total
+const activitiesPct = computed(() => Math.round(ALL_KEYS.filter(k => acts[k]).length / ALL_KEYS.length * 100))
+const halqaAchievement = computed(() => computeHalqaAchievement(rows.value.map(gradeOf), activitiesPct.value))
+
 async function load() {
   if (!halqaId.value) return
   loading.value = true
@@ -190,7 +202,7 @@ async function save() {
     // الطلاب: استبدال كامل
     await supabase.from('monthly_report_students').delete().eq('report_id', rid)
     const rowPayload = rows.value
-      .filter(r => [r.memorization_from, r.memorization_to, r.review_to, r.absence_excused, r.absence_unexcused, r.monthly_points, r.student_grade, r.notes].some(v => v !== '' && v !== null))
+      .filter(r => [r.memorization_from, r.memorization_to, r.review_to, r.absence_excused, r.absence_unexcused, r.monthly_points, r.notes].some(v => v !== '' && v !== null))
       .map(r => ({
         report_id: rid!,
         student_id: r.student_id,
@@ -200,7 +212,7 @@ async function save() {
         absence_excused: num(r.absence_excused) ?? 0,
         absence_unexcused: num(r.absence_unexcused) ?? 0,
         monthly_points: num(r.monthly_points),
-        student_grade: num(r.student_grade),
+        student_grade: gradeOf(r), // محسوبة تلقائيّاً (60/20/20)
         notes: r.notes.trim() || null
       }))
     if (rowPayload.length) {
@@ -258,6 +270,9 @@ async function setStatus(status: ReportStatus) {
       title="التقارير الشهرية"
       subtitle="تقرير الحلقة الشهري: حفظ ومراجعة وغياب وأنشطة لكل طالب — يرفعه المعلّم ويعتمده المدير."
     />
+
+    <!-- لوحة التكريم (للمراجِعين) -->
+    <ReportsHonorsBoard v-if="isManager || role === 'quality'" />
 
     <!-- قائمة التقارير -->
     <ClientOnly>
@@ -471,6 +486,33 @@ async function setStatus(status: ReportStatus) {
           </div>
         </div>
 
+        <!-- إنجاز الحلقة (محسوب) -->
+        <div
+          v-if="rows.length"
+          class="ach card"
+          :class="`ach-${achievementColor(halqaAchievement)}`"
+        >
+          <div class="ach-main">
+            <div class="ach-num">
+              {{ halqaAchievement }}<span class="ach-of">/100</span>
+            </div>
+            <div class="ach-meta">
+              <div class="ach-title">
+                إنجاز الحلقة · {{ gradeLabel(halqaAchievement) }}
+              </div>
+              <div class="ach-sub">
+                متوسط درجات الطلاب (80%) + الأنشطة المنفّذة {{ activitiesPct }}% (20%)
+              </div>
+            </div>
+          </div>
+          <div class="ach-bar">
+            <div
+              class="ach-fill"
+              :style="{ width: Math.min(100, halqaAchievement) + '%' }"
+            />
+          </div>
+        </div>
+
         <!-- جدول الطلاب -->
         <UiEmptyState
           v-if="!rows.length"
@@ -495,7 +537,7 @@ async function setStatus(status: ReportStatus) {
                 <th>غياب بعذر</th>
                 <th>بلا عذر</th>
                 <th>النقاط</th>
-                <th>الدرجة</th>
+                <th>الدرجة (محسوبة)</th>
               </tr>
             </thead>
             <tbody>
@@ -567,13 +609,10 @@ async function setStatus(status: ReportStatus) {
                   >
                 </td>
                 <td>
-                  <input
-                    v-model="r.student_grade"
-                    :disabled="!canEdit"
-                    type="number"
-                    class="cell"
-                    dir="ltr"
-                  >
+                  <span
+                    class="grade"
+                    :class="`g-${achievementColor(gradeOf(r))}`"
+                  >{{ gradeOf(r) }}</span>
                 </td>
               </tr>
             </tbody>
@@ -669,6 +708,24 @@ async function setStatus(status: ReportStatus) {
 .sticky { position: sticky; inset-inline-start: 0; background: var(--surface); z-index: 1; }
 thead .sticky { background: var(--surface-2); }
 .calc { font-weight: 700; color: var(--green-ink); background: var(--green-soft); }
+.grade { display: inline-flex; align-items: center; justify-content: center; min-width: 42px; height: 30px; padding: 0 10px; border-radius: 999px; font-weight: 700; font-size: 13.5px; font-variant-numeric: tabular-nums; }
+.g-success { background: var(--green-soft); color: var(--green-ink); }
+.g-info { background: var(--blue-soft); color: var(--blue-ink); }
+.g-error { background: var(--err-soft); color: var(--err); }
+
+.ach { padding: 20px 24px; margin-bottom: 18px; border-inline-start: 5px solid var(--line-2); }
+.ach-success { border-inline-start-color: var(--green); }
+.ach-info { border-inline-start-color: var(--blue); }
+.ach-error { border-inline-start-color: var(--err); }
+.ach-main { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+.ach-num { font-size: 40px; font-weight: 800; color: var(--ink); line-height: 1; font-variant-numeric: tabular-nums; }
+.ach-of { font-size: 18px; font-weight: 600; color: var(--ink-3); }
+.ach-title { font-size: 17px; font-weight: 700; color: var(--ink); }
+.ach-sub { font-size: 13px; color: var(--ink-3); margin-top: 5px; }
+.ach-bar { height: 9px; border-radius: 999px; background: var(--surface-3); overflow: hidden; margin-top: 16px; }
+.ach-fill { height: 100%; border-radius: 999px; background: var(--green); transition: width .4s ease; }
+.ach-info .ach-fill { background: var(--blue); }
+.ach-error .ach-fill { background: var(--err); }
 .cell { width: 70px; height: 38px; padding: 0 8px; border-radius: 9px; border: 1px solid var(--line-2); background: var(--surface-2); color: var(--ink); font-size: 14px; text-align: center; outline: none; }
 .cell:focus { border-color: var(--blue); box-shadow: 0 0 0 3px var(--ring); }
 .cell:disabled { opacity: .6; cursor: not-allowed; }
