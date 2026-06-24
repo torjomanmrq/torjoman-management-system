@@ -154,148 +154,146 @@ async function confirmDelete() {
 
 <template>
   <div class="halqat">
-    <UiEmptyState
-      v-if="!isManager"
-      icon="i-lucide-lock"
-      title="هذه الصفحة للمدير فقط."
-    />
-
-    <template v-else>
-      <UiPageHeader
-        title="الحلقات"
-        subtitle="لكل حلقة معلّم ووقت يومي ثابت — أنشئ الحلقات وعيّن معلميها ومشرفيها."
+    <UiPageHeader
+      title="الحلقات"
+      :subtitle="isManager ? 'لكل حلقة معلّم ووقت يومي ثابت — أنشئ الحلقات وعيّن معلميها ومشرفيها.' : 'الحلقات ضمن نطاقك — عرض للاطّلاع.'"
+    >
+      <template
+        v-if="isManager"
+        #actions
       >
-        <template #actions>
-          <UButton
-            label="إنشاء حلقة"
-            color="primary"
-            size="lg"
-            icon="i-lucide-plus"
-            :ui="{ base: 'rounded-[13px] font-semibold' }"
-            @click="openCreate"
-          />
-        </template>
-      </UiPageHeader>
+        <UButton
+          label="إنشاء حلقة"
+          color="primary"
+          size="lg"
+          icon="i-lucide-plus"
+          :ui="{ base: 'rounded-[13px] font-semibold' }"
+          @click="openCreate"
+        />
+      </template>
+    </UiPageHeader>
 
-      <div class="filters">
-        <UiFilterChips
-          v-model="genderF"
-          :options="genderChips"
-        />
-        <USelect
-          v-model="statusF"
-          :items="[{ label: 'كل الحالات', value: 'all' }, ...statusItems]"
-          size="md"
-          class="status-sel"
-          :ui="{ base: 'rounded-[11px]' }"
-        />
-      </div>
+    <div class="filters">
+      <UiFilterChips
+        v-model="genderF"
+        :options="genderChips"
+      />
+      <USelect
+        v-model="statusF"
+        :items="[{ label: 'كل الحالات', value: 'all' }, ...statusItems]"
+        size="md"
+        class="status-sel"
+        :ui="{ base: 'rounded-[11px]' }"
+      />
+    </div>
 
-      <ClientOnly>
-        <UiEmptyState
-          v-if="pending"
-          title="جارٍ التحميل…"
-        />
-        <UiEmptyState
-          v-else-if="filtered.length === 0"
-          icon="i-lucide-book-open"
-          title="لا حلقات بعد"
-          description="أنشئ أول حلقة وعيّن لها معلّماً لتظهر هنا."
-        />
+    <ClientOnly>
+      <UiEmptyState
+        v-if="pending"
+        title="جارٍ التحميل…"
+      />
+      <UiEmptyState
+        v-else-if="filtered.length === 0"
+        icon="i-lucide-book-open"
+        title="لا حلقات بعد"
+        :description="isManager ? 'أنشئ أول حلقة وعيّن لها معلّماً لتظهر هنا.' : 'لا حلقات ضمن نطاقك بعد.'"
+      />
+      <div
+        v-else
+        class="grid"
+      >
         <div
-          v-else
-          class="grid"
+          v-for="h in filtered"
+          :key="h.id"
+          class="hcard"
         >
-          <div
-            v-for="h in filtered"
-            :key="h.id"
-            class="hcard"
-          >
-            <div class="hcard-top">
-              <div class="hcard-id">
-                <div class="hicon">
-                  <UIcon
-                    name="i-lucide-book-open"
-                    class="size-6"
-                  />
-                </div>
-                <div>
-                  <h3>{{ h.name }}</h3>
-                  <div class="teacher">
-                    {{ h.teacher?.full_name || '—' }}
-                  </div>
-                  <div
-                    class="sup"
-                    :class="{ orphan: !h.supervisor }"
-                  >
-                    <UIcon
-                      name="i-lucide-shield"
-                      class="size-[13px]"
-                    />
-                    {{ h.supervisor?.full_name || 'بلا مشرف' }}
-                  </div>
-                </div>
+          <div class="hcard-top">
+            <div class="hcard-id">
+              <div class="hicon">
+                <UIcon
+                  name="i-lucide-book-open"
+                  class="size-6"
+                />
               </div>
-              <div class="badges">
-                <UBadge
-                  v-if="h.gender"
-                  :label="GENDER_LABEL[h.gender]"
-                  :color="h.gender === 'male' ? 'info' : 'secondary'"
-                  variant="soft"
-                  size="sm"
-                />
-                <UBadge
-                  v-if="h.classification"
-                  :label="CLASS_LABEL[h.classification]"
-                  color="neutral"
-                  variant="soft"
-                  size="sm"
-                />
+              <div>
+                <h3>{{ h.name }}</h3>
+                <div class="teacher">
+                  {{ h.teacher?.full_name || '—' }}
+                </div>
+                <div
+                  class="sup"
+                  :class="{ orphan: !h.supervisor }"
+                >
+                  <UIcon
+                    name="i-lucide-shield"
+                    class="size-[13px]"
+                  />
+                  {{ h.supervisor?.full_name || 'بلا مشرف' }}
+                </div>
               </div>
             </div>
-
-            <div class="meta">
-              <span><UIcon
-                name="i-lucide-users"
-                class="size-4"
-              />{{ studentsOf(h) }} طالب</span>
-              <span v-if="h.daily_time"><UIcon
-                name="i-lucide-clock"
-                class="size-4"
-              />{{ h.daily_time.slice(0, 5) }}</span>
+            <div class="badges">
               <UBadge
-                :label="h.status === 'active' ? 'نشطة' : 'متوقفة'"
-                :color="h.status === 'active' ? 'success' : 'neutral'"
+                v-if="h.gender"
+                :label="GENDER_LABEL[h.gender]"
+                :color="h.gender === 'male' ? 'info' : 'secondary'"
+                variant="soft"
+                size="sm"
+              />
+              <UBadge
+                v-if="h.classification"
+                :label="CLASS_LABEL[h.classification]"
+                color="neutral"
                 variant="soft"
                 size="sm"
               />
             </div>
+          </div>
 
-            <div class="hcard-actions">
-              <UButton
-                label="تعديل"
-                color="neutral"
-                variant="outline"
-                size="sm"
-                icon="i-lucide-pencil"
-                block
-                :ui="{ base: 'rounded-[11px]' }"
-                @click="openEdit(h)"
-              />
-              <UButton
-                color="neutral"
-                variant="outline"
-                size="sm"
-                icon="i-lucide-trash-2"
-                :ui="{ base: 'rounded-[11px]' }"
-                aria-label="حذف"
-                @click="deleteTarget = h"
-              />
-            </div>
+          <div class="meta">
+            <span><UIcon
+              name="i-lucide-users"
+              class="size-4"
+            />{{ studentsOf(h) }} طالب</span>
+            <span v-if="h.daily_time"><UIcon
+              name="i-lucide-clock"
+              class="size-4"
+            />{{ h.daily_time.slice(0, 5) }}</span>
+            <UBadge
+              :label="h.status === 'active' ? 'نشطة' : 'متوقفة'"
+              :color="h.status === 'active' ? 'success' : 'neutral'"
+              variant="soft"
+              size="sm"
+            />
+          </div>
+
+          <div
+            v-if="isManager"
+            class="hcard-actions"
+          >
+            <UButton
+              label="تعديل"
+              color="neutral"
+              variant="outline"
+              size="sm"
+              icon="i-lucide-pencil"
+              block
+              :ui="{ base: 'rounded-[11px]' }"
+              @click="openEdit(h)"
+            />
+            <UButton
+              color="neutral"
+              variant="outline"
+              size="sm"
+              icon="i-lucide-trash-2"
+              :ui="{ base: 'rounded-[11px]' }"
+              aria-label="حذف"
+              @click="deleteTarget = h"
+            />
           </div>
         </div>
-      </ClientOnly>
-    </template>
+      </div>
+    </ClientOnly>
 
     <!-- نافذة إنشاء/تعديل -->
     <UModal
