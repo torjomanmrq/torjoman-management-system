@@ -3,8 +3,10 @@
  * صفحة Landing العامّة (§4.0) — الواجهة التعريفية للزوّار قبل الدخول.
  * تعريفية فقط: لا تسجيل ذاتي. مبنيّة بمكوّنات Nuxt UI (UButton/UBadge) حيث يطابق
  * التصميم، وبتخطيط مخصّص للأقسام البصرية الفريدة (Hero/البطاقات) بالتوكنز + RTL.
- * قسم الأخبار بيانات وهمية الآن، يُربط بوحدة الأخبار (§4.26) لاحقاً.
+ * قسم الأخبار يجلب أحدث ٣ أخبار منشورة من وحدة الأخبار (§4.26).
  */
+import type { Database } from '~/types/database.types'
+
 definePageMeta({ layout: false })
 
 const colorMode = useColorMode()
@@ -81,30 +83,23 @@ const features = [
   }
 ]
 
-/** أحدث الأخبار (بيانات وهمية — تُربط بوحدة الأخبار §4.26). */
-const news = [
-  {
-    cat: 'إنجاز',
-    date: '12 يونيو 2026',
-    title: 'تخريج الدفعة الثانية من حفظة كتاب الله',
-    excerpt:
-      'احتفلت أسرة ترجمان بتخريج 24 طالباً أتمّوا حفظ القرآن الكريم كاملاً.'
-  },
-  {
-    cat: 'فعالية',
-    date: '5 يونيو 2026',
-    title: 'اللقاء التدبّري الشهري لطلاب الحلقات',
-    excerpt:
-      'لقاء جامع تناول تدبّر سورة الكهف ومقاصدها التربوية في حياة الطالب.'
-  },
-  {
-    cat: 'إعلان',
-    date: '28 مايو 2026',
-    title: 'انطلاق التسجيل في برنامج المراجعة الصيفي',
-    excerpt:
-      'برنامج مكثّف لتثبيت المحفوظ خلال العطلة الصيفية بإشراف نخبة من المعلمين.'
-  }
-]
+/** أحدث الأخبار المنشورة (§4.26) — قراءة عامّة (RLS يسمح للزوّار بالمنشور). */
+const supabase = useSupabaseClient<Database>()
+const { data: news } = await useAsyncData('landing-news', async () => {
+  const { data } = await supabase
+    .from('news')
+    .select('id, title, body, category, image_url, news_date')
+    .eq('published', true)
+    .order('news_date', { ascending: false })
+    .limit(3)
+  return (data ?? []).map(n => ({
+    cat: n.category || 'عام',
+    date: new Date(n.news_date).toLocaleDateString('ar', { day: 'numeric', month: 'long', year: 'numeric' }),
+    title: n.title,
+    excerpt: n.body || '',
+    image: n.image_url
+  }))
+}, { server: false, default: () => [] })
 
 /** استدارة موحّدة لأزرار الصفحة (لتطابق نظام التصميم). */
 const btnUi = { base: 'rounded-[14px] font-semibold' }
@@ -210,14 +205,29 @@ const btnUi = { base: 'rounded-[14px] font-semibold' }
             أخبار ترجمان
           </h2>
         </div>
-        <div class="news-grid">
+        <p
+          v-if="!news || !news.length"
+          class="news-empty"
+        >
+          لا أخبار منشورة حالياً.
+        </p>
+        <div
+          v-else
+          class="news-grid"
+        >
           <article
             v-for="n in news"
             :key="n.title"
             class="news-card"
           >
             <div class="news-img">
+              <img
+                v-if="n.image"
+                :src="n.image"
+                :alt="n.title"
+              >
               <UIcon
+                v-else
                 name="i-lucide-newspaper"
                 class="size-10 opacity-40"
               />
@@ -638,7 +648,10 @@ const btnUi = { base: 'rounded-[14px] font-semibold' }
   align-items: center;
   justify-content: center;
   color: var(--ink-3);
+  overflow: hidden;
 }
+.news-img img { width: 100%; height: 100%; object-fit: cover; }
+.news-empty { text-align: center; color: var(--ink-3); font-size: 15px; padding: 20px 0; }
 .news-body {
   padding: 18px 18px 20px;
   display: flex;
