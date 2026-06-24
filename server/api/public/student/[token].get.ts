@@ -14,7 +14,7 @@ export default defineEventHandler(async (event) => {
   const admin = serverSupabaseServiceRole<Database>(event)
   const { data, error } = await admin
     .from('students')
-    .select('full_name, status, quran_parts, tajweed_level, enrollment_date, halaqa:halaqa_id(name, daily_time, teacher:teacher_id(full_name))')
+    .select('id, full_name, status, quran_parts, tajweed_level, enrollment_date, halaqa:halaqa_id(name, daily_time, teacher:teacher_id(full_name))')
     .eq('view_token', token)
     .single()
 
@@ -22,11 +22,22 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, statusMessage: 'الرابط غير صحيح أو لم يعد متاحاً.' })
   }
 
-  // خطة الاختبارات لرسم رحلة الطالب (حسب الحفظ)
+  // خطة الاختبارات + نتائج الطالب لرسم رحلة الطالب
   const { data: plan } = await admin
     .from('exam_plan')
-    .select('parts_from, parts_to, stage_type')
+    .select('id, parts_from, parts_to, stage_type')
     .order('parts_to')
 
-  return { ...data, exam_plan: plan ?? [] }
+  const { data: rawResults } = await admin
+    .from('exam_results')
+    .select('passed, exam_list_item:exam_list_item_id(exam_plan_id)')
+    .eq('student_id', data.id)
+
+  const results = (rawResults ?? []).map((r: { passed: boolean | null, exam_list_item: { exam_plan_id: number | null } | null }) => ({
+    exam_plan_id: r.exam_list_item?.exam_plan_id ?? null,
+    passed: r.passed
+  }))
+
+  const { id: _id, ...safe } = data
+  return { ...safe, exam_plan: plan ?? [], results }
 })

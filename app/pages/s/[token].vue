@@ -15,7 +15,8 @@ type PublicStudent = {
   tajweed_level: string | null
   enrollment_date: string | null
   halaqa: { name: string, daily_time: string | null, teacher: { full_name: string } | null } | null
-  exam_plan: { parts_from: number, parts_to: number, stage_type: 'partial' | 'cumulative' }[]
+  exam_plan: { id: number, parts_from: number, parts_to: number, stage_type: 'partial' | 'cumulative' }[]
+  results: { exam_plan_id: number | null, passed: boolean | null }[]
 }
 
 const { data: student, error } = await useFetch<PublicStudent>(`/api/public/student/${token.value}`)
@@ -137,6 +138,7 @@ const fields = computed(() => {
         <StudentJourney
           :quran-parts="student.quran_parts"
           :plan="student.exam_plan"
+          :results="student.results"
           :enrollment-date="student.enrollment_date"
         />
       </div>
