@@ -37,10 +37,20 @@ const { data: student, pending, refresh } = await useAsyncData<StudentRow | null
   { server: false, default: () => null }
 )
 
-// خطة الاختبارات لرسم رحلة الطالب (حسب الحفظ)
+// خطة الاختبارات + نتائج الطالب لرسم رحلة الطالب (حسب الحفظ + النتائج)
 const { data: plan } = await useAsyncData('journey-exam-plan', async () => {
-  const { data } = await supabase.from('exam_plan').select('parts_from, parts_to, stage_type').order('parts_to')
+  const { data } = await supabase.from('exam_plan').select('id, parts_from, parts_to, stage_type').order('parts_to')
   return data ?? []
+}, { server: false, default: () => [] })
+
+type ResultRow = { passed: boolean | null, exam_list_item: { exam_plan_id: number | null } | null }
+const { data: examResults } = await useAsyncData(() => `journey-results-${id.value}`, async () => {
+  const { data } = await supabase
+    .from('exam_results')
+    .select('passed, exam_list_item:exam_list_item_id(exam_plan_id)')
+    .eq('student_id', id.value)
+    .returns<ResultRow[]>()
+  return (data ?? []).map(r => ({ exam_plan_id: r.exam_list_item?.exam_plan_id ?? null, passed: r.passed }))
 }, { server: false, default: () => [] })
 
 useSeoMeta({ title: () => student.value ? `${student.value.full_name} — ترجمان` : 'ملف الطالب — ترجمان' })
@@ -261,6 +271,7 @@ const sections = computed<{ title: string, icon: string, tone: string, fields: F
           <StudentJourney
             :quran-parts="student.quran_parts"
             :plan="plan"
+            :results="examResults"
             :enrollment-date="student.enrollment_date"
           />
         </section>
