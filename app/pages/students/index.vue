@@ -51,10 +51,7 @@ const { data: halqat } = await useAsyncData<HalqaOpt[]>('students-halqat', async
   return data ?? []
 }, { server: false, default: () => [] })
 function halqaLabel(h: HalqaOpt) {
-  const parts = [h.name]
-  if (h.teacher?.full_name) parts.push(h.teacher.full_name)
-  if (h.daily_time) parts.push(h.daily_time.slice(0, 5))
-  return parts.join(' — ')
+  return h.teacher?.full_name ? `${h.name} — ${h.teacher.full_name}` : h.name
 }
 // قائمة الإسناد: تفاصيل كاملة لتمييز الحلقة. قائمة التصفية: الاسم فقط (أوجز).
 const halqaItems = computed(() => [{ label: 'بلا حلقة', value: HALQA_NONE }, ...(halqat.value ?? []).map(h => ({ label: halqaLabel(h), value: h.id }))])
@@ -344,7 +341,7 @@ async function confirmDelete() {
                 :items="halqaItems"
                 size="lg"
                 class="w-full"
-                :ui="{ base: 'rounded-[13px]' }"
+                :ui="{ base: 'rounded-[13px]', content: 'w-fit min-w-(--reka-select-trigger-width) max-w-[min(92vw,32rem)]' }"
               />
             </UFormField>
           </div>
