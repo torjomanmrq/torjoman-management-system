@@ -2,7 +2,8 @@
 /**
  * رحلة الطالب على خطة الاختبارات (حسب الحفظ) — مكوّن مشترك:
  * يُستخدم في ملف الطالب الداخلي والرابط العام.
- * صفحات الحفظ ونتائج الاختبارات تُضاف لاحقاً (وحدتا التقارير والاختبارات).
+ * يجمع: الأجزاء المثبتة + نتائج الاختبارات (نجح/يعيد بالدرجة) + إجمالي صفحات
+ * الحفظ من التقارير المعتمدة + الزمن منذ الالتحاق.
  */
 import { buildJourney, stageLabel, sinceLabel, type PlanInput, type ResultInput } from '~/utils/journey'
 
@@ -10,6 +11,7 @@ const props = defineProps<{
   quranParts: number | null
   plan: PlanInput[]
   results?: ResultInput[]
+  memorizationPages?: number | null
   enrollmentDate?: string | null
 }>()
 
@@ -35,6 +37,17 @@ const pct = computed(() => Math.min(100, Math.round((j.value.parts / 30) * 100))
         </div>
         <div class="lbl">
           محطة اجتازها
+        </div>
+      </div>
+      <div
+        v-if="memorizationPages != null"
+        class="metric"
+      >
+        <div class="num">
+          {{ memorizationPages }}<span class="unit"> صفحة</span>
+        </div>
+        <div class="lbl">
+          إجمالي صفحات الحفظ
         </div>
       </div>
       <div
@@ -140,7 +153,7 @@ const pct = computed(() => Math.min(100, Math.round((j.value.parts / 30) * 100))
         name="i-lucide-info"
         class="size-[14px]"
       />
-      «مستحقّ» = أتمّ حفظ نطاقها واستحقّ اختبارها · «نجح/يعيد» = نتيجة اختباره. صفحات الحفظ تظهر مع التقارير الشهرية.
+      «مستحقّ» = أتمّ حفظ نطاقها واستحقّ اختبارها · «نجح/يعيد» = نتيجة اختباره · صفحات الحفظ من التقارير الشهرية المعتمدة.
     </p>
   </div>
 </template>
