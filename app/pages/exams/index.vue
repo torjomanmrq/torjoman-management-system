@@ -45,36 +45,87 @@ const { data: roster, refresh: refreshRoster } = await useAsyncData<RosterStuden
   return data ?? []
 }, { server: false, default: () => [], watch: [role] })
 
+// حالة اختبارات الطلاب: المُجتاز (لا يُرشَّح ثانيةً) والمعلّق (بانتظار الرصد)
+type ResRow = { student_id: string, exam_list_item: { exam_plan_id: number | null } | null }
+type ItemRow = { student_id: string, exam_plan_id: number | null, exam_results: { id: string }[] }
+const { data: examState, refresh: refreshState } = await useAsyncData<{ passed: Record<string, number[]>, pending: Record<string, number[]> }>('exams-state', async () => {
+  if (role.value !== 'teacher') return { passed: {} as Record<string, number[]>, pending: {} as Record<string, number[]> }
+  const [{ data: res }, { data: items }] = await Promise.all([
+    supabase.from('exam_results').select('student_id, exam_list_item:exam_list_item_id(exam_plan_id)').eq('passed', true).returns<ResRow[]>(),
+    supabase.from('exam_list_items').select('student_id, exam_plan_id, exam_results(id)').returns<ItemRow[]>()
+  ])
+  const passed: Record<string, number[]> = {}
+  for (const r of res ?? []) {
+    const pid = r.exam_list_item?.exam_plan_id
+    if (pid != null) (passed[r.student_id] ??= []).push(pid)
+  }
+  const pending: Record<string, number[]> = {}
+  for (const it of items ?? []) {
+    if (it.exam_plan_id != null && !it.exam_results?.length) (pending[it.student_id] ??= []).push(it.exam_plan_id)
+  }
+  return { passed, pending }
+}, { server: false, default: () => ({ passed: {}, pending: {} }), watch: [role] })
+
+const passedOf = (id: string) => new Set(examState.value?.passed[id] ?? [])
+const pendingOf = (id: string) => new Set(examState.value?.pending[id] ?? [])
+// المحطات المتاحة للترشيح: بلغها حفظاً + غير مُجتازة + غير معلّقة
+function availableStations(s: RosterStudent) {
+  const passed = passedOf(s.id)
+  const pending = pendingOf(s.id)
+  return eligibleStations(s.quran_parts).filter(p => !passed.has(p.id) && !pending.has(p.id))
+}
+
 const nominees = reactive<Record<string, { checked: boolean, planId: string }>>({})
 watchEffect(() => {
   for (const s of roster.value ?? []) {
-    if (!nominees[s.id]) {
-      const elig = eligibleStations(s.quran_parts)
-      nominees[s.id] = { checked: false, planId: elig.length ? String(elig[0]!.id) : '' }
+    const avail = availableStations(s)
+    const cur = nominees[s.id]
+    if (!cur) {
+      nominees[s.id] = { checked: false, planId: avail.length ? String(avail[0]!.id) : '' }
+    } else if (cur.planId && !avail.some(p => String(p.id) === cur.planId)) {
+      cur.planId = avail.length ? String(avail[0]!.id) : ''
+      if (!cur.planId) cur.checked = false
     }
   }
 })
-function stationOptions(parts: number | null) {
-  return eligibleStations(parts).map(p => ({ label: `الأجزاء ${p.parts_from}–${p.parts_to} (${stageLabel(p.stage_type)})`, value: String(p.id) }))
-}
 const nomineeCount = computed(() => Object.values(nominees).filter(n => n.checked).length)
 
-// صفوف القائمة مع كائن الترشيح مضموناً (لتفادي undefined في القالب)
-const rosterRows = computed(() => (roster.value ?? []).map(s => ({
-  ...s,
-  nom: nominees[s.id] ?? { checked: false, planId: '' },
-  options: stationOptions(s.quran_parts)
-})))
+const rosterRows = computed(() => (roster.value ?? []).map((s) => {
+  const elig = eligibleStations(s.quran_parts)
+  const avail = availableStations(s)
+  let blockReason = ''
+  if (!elig.length) blockReason = 'لم يبلغ محطة بعد'
+  else if (!avail.length) blockReason = pendingOf(s.id).size ? 'بانتظار رصد المشرف' : 'اجتاز كل المتاح'
+  return {
+    ...s,
+    nom: nominees[s.id] ?? { checked: false, planId: '' },
+    options: avail.map(p => ({ label: `الأجزاء ${p.parts_from}–${p.parts_to} (${stageLabel(p.stage_type)})`, value: String(p.id) })),
+    blockReason
+  }
+}))
 
 const sending = ref(false)
 async function sendNominees() {
   const chosen = (roster.value ?? []).filter(s => nominees[s.id]?.checked && nominees[s.id]?.planId)
   if (!chosen.length) return
+  // تحقّق دفاعي: استبعد المُجتاز/المعلّق (الحالتان 1 و2)
+  const valid: RosterStudent[] = []
+  const skipped: string[] = []
+  for (const s of chosen) {
+    const pid = Number(nominees[s.id]!.planId)
+    if (passedOf(s.id).has(pid)) skipped.push(`${s.full_name} (اجتاز هذا الاختبار مسبقاً)`)
+    else if (pendingOf(s.id).has(pid)) skipped.push(`${s.full_name} (مرشّح مسبقاً وبانتظار الرصد)`)
+    else valid.push(s)
+  }
+  if (skipped.length) {
+    toast.add({ title: `تُجوهل ${skipped.length}: ${skipped.join(' · ')}`, color: 'warning', icon: 'i-lucide-triangle-alert' })
+  }
+  if (!valid.length) return
   sending.value = true
   try {
     // مجموعة حسب الحلقة → قائمة لكل حلقة
     const byHalqa = new Map<string, RosterStudent[]>()
-    for (const s of chosen) {
+    for (const s of valid) {
       if (!s.halaqa_id) continue
       const arr = byHalqa.get(s.halaqa_id) ?? []
       arr.push(s)
@@ -91,9 +142,9 @@ async function sendNominees() {
       const { error: e2 } = await supabase.from('exam_list_items').insert(items)
       if (e2) throw e2
     }
-    toast.add({ title: `أُرسلت ${chosen.length} ترشيحاً للمشرف.`, color: 'success', icon: 'i-lucide-send' })
+    toast.add({ title: `أُرسلت ${valid.length} ترشيحاً للمشرف.`, color: 'success', icon: 'i-lucide-send' })
     for (const n of Object.values(nominees)) n.checked = false
-    await refreshRoster()
+    await Promise.all([refreshRoster(), refreshState()])
   } catch (err) {
     handle(err)
   } finally {
@@ -257,7 +308,7 @@ const { data: results, refresh: refreshResults } = await useAsyncData<ResultRow[
               >
                 <td>
                   <UCheckbox
-                    v-if="row.nom.planId"
+                    v-if="row.options.length"
                     v-model="row.nom.checked"
                   />
                   <span
@@ -273,7 +324,7 @@ const { data: results, refresh: refreshResults } = await useAsyncData<ResultRow[
                 </td>
                 <td>
                   <UiSelect
-                    v-if="row.nom.planId"
+                    v-if="row.options.length"
                     v-model="row.nom.planId"
                     :items="row.options"
                     size="sm"
@@ -281,7 +332,7 @@ const { data: results, refresh: refreshResults } = await useAsyncData<ResultRow[
                   <span
                     v-else
                     class="tag tag-soon"
-                  >لم يبلغ محطة بعد</span>
+                  >{{ row.blockReason }}</span>
                 </td>
               </tr>
             </tbody>
