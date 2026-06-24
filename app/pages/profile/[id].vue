@@ -167,6 +167,39 @@ async function save() {
     saving.value = false
   }
 }
+
+// ── تغيير كلمة المرور (لصاحب الملف) ──
+const pwOpen = ref(false)
+const pwSaving = ref(false)
+const pw = reactive({ next: '', confirm: '' })
+function openChangePw() {
+  pw.next = ''
+  pw.confirm = ''
+  pwOpen.value = true
+}
+async function changePassword() {
+  if (pw.next.length < 8) {
+    toast.add({ title: 'كلمة المرور 8 أحرف على الأقل.', color: 'error', icon: 'i-lucide-circle-alert' })
+    return
+  }
+  if (pw.next !== pw.confirm) {
+    toast.add({ title: 'الكلمتان غير متطابقتين.', color: 'error', icon: 'i-lucide-circle-alert' })
+    return
+  }
+  pwSaving.value = true
+  try {
+    const { error } = await supabase.auth.updateUser({ password: pw.next })
+    if (error) throw error
+    await supabase.from('profiles').update({ must_change_password: false }).eq('id', targetId.value)
+    toast.add({ title: 'تم تغيير كلمة المرور.', color: 'success', icon: 'i-lucide-circle-check' })
+    pwOpen.value = false
+    await refresh()
+  } catch (err) {
+    handle(err)
+  } finally {
+    pwSaving.value = false
+  }
+}
 </script>
 
 <template>
@@ -204,14 +237,46 @@ async function save() {
               </div>
             </div>
           </div>
+          <div class="band-actions">
+            <UButton
+              v-if="isSelf"
+              label="تغيير كلمة المرور"
+              color="neutral"
+              variant="outline"
+              size="lg"
+              icon="i-lucide-key-round"
+              :ui="{ base: 'rounded-[13px] font-semibold' }"
+              @click="openChangePw"
+            />
+            <UButton
+              v-if="canEdit"
+              label="تعديل البيانات"
+              color="primary"
+              size="lg"
+              icon="i-lucide-pencil"
+              :ui="{ base: 'rounded-[13px] font-semibold' }"
+              @click="openEdit"
+            />
+          </div>
+        </div>
+
+        <!-- تنبيه الكلمة الافتراضية -->
+        <div
+          v-if="isSelf && data.p.must_change_password"
+          class="pw-banner"
+        >
+          <UIcon
+            name="i-lucide-shield-alert"
+            class="size-5"
+          />
+          <span>كلمة مرورك ما زالت الافتراضية — يُرجى تغييرها لحماية حسابك.</span>
           <UButton
-            v-if="canEdit"
-            label="تعديل البيانات"
-            color="primary"
-            size="lg"
-            icon="i-lucide-pencil"
-            :ui="{ base: 'rounded-[13px] font-semibold' }"
-            @click="openEdit"
+            label="تغيير الآن"
+            color="warning"
+            size="sm"
+            icon="i-lucide-key-round"
+            :ui="{ base: 'rounded-[11px] font-semibold' }"
+            @click="openChangePw"
           />
         </div>
 
@@ -261,6 +326,58 @@ async function save() {
         </div>
       </template>
     </ClientOnly>
+
+    <!-- نافذة تغيير كلمة المرور -->
+    <UModal
+      v-model:open="pwOpen"
+      title="تغيير كلمة المرور"
+    >
+      <template #body>
+        <div class="form">
+          <UFormField
+            label="كلمة المرور الجديدة"
+            hint="8 أحرف على الأقل"
+          >
+            <UInput
+              v-model="pw.next"
+              type="password"
+              dir="ltr"
+              size="lg"
+              class="w-full"
+              :ui="{ base: 'rounded-[13px]' }"
+            />
+          </UFormField>
+          <UFormField label="تأكيد كلمة المرور">
+            <UInput
+              v-model="pw.confirm"
+              type="password"
+              dir="ltr"
+              size="lg"
+              class="w-full"
+              :ui="{ base: 'rounded-[13px]' }"
+            />
+          </UFormField>
+        </div>
+      </template>
+      <template #footer>
+        <div class="modal-foot">
+          <UButton
+            label="إلغاء"
+            color="neutral"
+            variant="ghost"
+            @click="pwOpen = false"
+          />
+          <UButton
+            label="حفظ"
+            color="primary"
+            icon="i-lucide-check"
+            :loading="pwSaving"
+            :ui="{ base: 'rounded-[13px] font-semibold' }"
+            @click="changePassword"
+          />
+        </div>
+      </template>
+    </UModal>
 
     <!-- نافذة التعديل -->
     <UModal
@@ -520,6 +637,9 @@ async function save() {
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--shadow); }
 
 .band { background: var(--surface); border: 1px solid var(--line); border-radius: 20px; box-shadow: var(--shadow); padding: 24px; display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; margin-bottom: 18px; }
+.band-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.pw-banner { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; background: var(--warn-soft, #fef3c7); color: var(--warn-ink, #92400e); border: 1px solid var(--warn, #f59e0b); border-radius: 14px; padding: 12px 16px; font-size: 14.5px; font-weight: 600; margin-bottom: 18px; }
+.pw-banner span { flex: 1; min-width: 180px; }
 .band-id { display: flex; align-items: center; gap: 16px; min-width: 0; }
 .av { width: 64px; height: 64px; border-radius: 18px; background: var(--navy); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 26px; font-weight: 700; flex: none; }
 .band h1 { margin: 0 0 8px; font-size: 24px; font-weight: 700; color: var(--ink); }
