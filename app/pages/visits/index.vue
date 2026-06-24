@@ -107,6 +107,11 @@ const schedOpen = ref(false)
 const saving = ref(false)
 const editingId = ref<string | null>(null)
 const sched = reactive({ halaqa_id: '', supervisor_id: '', scheduled_at: '' })
+// وقت الحلقة المختارة (يظهر كتلميح في نافذة الجدولة)
+const selectedHalqaTime = computed(() => {
+  const h = (halqat.value ?? []).find(x => x.id === sched.halaqa_id)
+  return h?.daily_time ? h.daily_time.slice(0, 5) : ''
+})
 function openSchedule() {
   editingId.value = null
   sched.halaqa_id = ''
@@ -357,6 +362,7 @@ async function confirmDelete() {
           <UFormField
             label="الحلقة"
             name="halaqa_id"
+            :hint="selectedHalqaTime ? `وقت الحلقة اليومي: ${selectedHalqaTime}` : ''"
           >
             <USelect
               v-model="sched.halaqa_id"
