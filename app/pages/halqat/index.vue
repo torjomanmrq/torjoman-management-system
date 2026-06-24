@@ -326,13 +326,11 @@ async function confirmDelete() {
               name="teacher_id"
               class="f"
             >
-              <USelect
+              <UiSelect
                 v-model="form.teacher_id"
                 :items="teacherItems"
                 placeholder="اختر معلّماً"
                 size="lg"
-                class="w-full"
-                :ui="{ base: 'rounded-[13px]' }"
               />
             </UFormField>
             <UFormField
@@ -340,12 +338,10 @@ async function confirmDelete() {
               name="supervisor_id"
               class="f"
             >
-              <USelect
+              <UiSelect
                 v-model="form.supervisor_id"
                 :items="supervisorItems"
                 size="lg"
-                class="w-full"
-                :ui="{ base: 'rounded-[13px]' }"
               />
             </UFormField>
           </div>

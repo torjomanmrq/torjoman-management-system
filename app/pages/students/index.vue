@@ -98,10 +98,21 @@ const STATUS_META: Record<StudentStatus, { label: string, color: 'success' | 'wa
 const modalOpen = ref(false)
 const saving = ref(false)
 const editingId = ref<string | null>(null)
+const TAJWEED_NONE = 'none'
 const form = reactive({
-  full_name: '', national_id: '', gender: 'male' as Gender, halaqa_id: HALQA_NONE,
-  guardian_name: '', guardian_phone: '', birth_date: '', quran_parts: '', status: 'active' as StudentStatus
+  full_name: '', national_id: '', gender: 'male' as Gender, birth_date: '', family_count: '',
+  halaqa_id: HALQA_NONE, quran_parts: '', tajweed_level: TAJWEED_NONE,
+  residence: '', nearest_mosque: '',
+  guardian_name: '', guardian_phone: '', phone: '', guardian_email: '', enrollment_date: '',
+  status: 'active' as StudentStatus
 })
+const tajweedItems = [
+  { label: '—', value: TAJWEED_NONE },
+  { label: 'تأهيلية', value: 'تأهيلية' },
+  { label: 'عليا', value: 'عليا' },
+  { label: 'تأهيل سند', value: 'تأهيل سند' },
+  { label: 'سند', value: 'سند' }
+]
 const genderItems = [{ label: 'ذكر', value: 'male' }, { label: 'أنثى', value: 'female' }]
 const statusItems = [
   { label: 'نشط', value: 'active' },
@@ -111,7 +122,13 @@ const statusItems = [
 ]
 function openCreate() {
   editingId.value = null
-  Object.assign(form, { full_name: '', national_id: '', gender: 'male', halaqa_id: HALQA_NONE, guardian_name: '', guardian_phone: '', birth_date: '', quran_parts: '', status: 'active' })
+  Object.assign(form, {
+    full_name: '', national_id: '', gender: 'male', birth_date: '', family_count: '',
+    halaqa_id: HALQA_NONE, quran_parts: '', tajweed_level: TAJWEED_NONE,
+    residence: '', nearest_mosque: '',
+    guardian_name: '', guardian_phone: '', phone: '', guardian_email: '', enrollment_date: '',
+    status: 'active'
+  })
   modalOpen.value = true
 }
 function openEdit(s: StudentRow) {
@@ -120,11 +137,18 @@ function openEdit(s: StudentRow) {
     full_name: s.full_name,
     national_id: s.national_id ?? '',
     gender: s.gender ?? 'male',
+    birth_date: s.birth_date ?? '',
+    family_count: s.family_count != null ? String(s.family_count) : '',
     halaqa_id: s.halaqa_id ?? HALQA_NONE,
+    quran_parts: s.quran_parts != null ? String(s.quran_parts) : '',
+    tajweed_level: s.tajweed_level ?? TAJWEED_NONE,
+    residence: s.residence ?? '',
+    nearest_mosque: s.nearest_mosque ?? '',
     guardian_name: s.guardian_name ?? '',
     guardian_phone: s.guardian_phone ?? '',
-    birth_date: s.birth_date ?? '',
-    quran_parts: s.quran_parts != null ? String(s.quran_parts) : '',
+    phone: s.phone ?? '',
+    guardian_email: s.guardian_email ?? '',
+    enrollment_date: s.enrollment_date ?? '',
     status: s.status
   })
   modalOpen.value = true
@@ -142,11 +166,18 @@ async function save() {
       full_name: form.full_name.trim(),
       national_id: form.national_id.trim() || null,
       gender: form.gender,
+      birth_date: form.birth_date || null,
+      family_count: form.family_count ? Number(form.family_count) : null,
       halaqa_id: form.halaqa_id === HALQA_NONE ? null : form.halaqa_id,
+      quran_parts: form.quran_parts ? Number(form.quran_parts) : null,
+      tajweed_level: form.tajweed_level === TAJWEED_NONE ? null : form.tajweed_level,
+      residence: form.residence.trim() || null,
+      nearest_mosque: form.nearest_mosque.trim() || null,
       guardian_name: form.guardian_name.trim() || null,
       guardian_phone: form.guardian_phone.trim() || null,
-      birth_date: form.birth_date || null,
-      quran_parts: form.quran_parts ? Number(form.quran_parts) : null,
+      phone: form.phone.trim() || null,
+      guardian_email: form.guardian_email.trim() || null,
+      enrollment_date: form.enrollment_date || null,
       status: form.status
     }
     const { error } = editingId.value
@@ -332,12 +363,10 @@ async function confirmDelete() {
               name="gender"
               class="f"
             >
-              <USelect
+              <UiSelect
                 v-model="form.gender"
                 :items="genderItems"
                 size="lg"
-                class="w-full"
-                :ui="{ base: 'rounded-[13px]' }"
               />
             </UFormField>
             <UFormField
@@ -345,12 +374,10 @@ async function confirmDelete() {
               name="halaqa_id"
               class="f"
             >
-              <USelect
+              <UiSelect
                 v-model="form.halaqa_id"
                 :items="halqaItems"
                 size="lg"
-                class="w-full"
-                :ui="{ base: 'rounded-[13px]', content: 'w-fit min-w-(--reka-select-trigger-width) max-w-[min(92vw,32rem)]' }"
               />
             </UFormField>
           </div>
@@ -432,15 +459,109 @@ async function confirmDelete() {
               name="status"
               class="f"
             >
-              <USelect
+              <UiSelect
                 v-model="form.status"
                 :items="statusItems"
+                size="lg"
+              />
+            </UFormField>
+          </div>
+          <div class="row">
+            <UFormField
+              label="عدد الأفراد"
+              name="family_count"
+              class="f"
+            >
+              <UInput
+                v-model="form.family_count"
+                type="number"
+                min="0"
+                dir="ltr"
+                size="lg"
+                class="w-full"
+                :ui="{ base: 'rounded-[13px]' }"
+              />
+            </UFormField>
+            <UFormField
+              label="الأحكام (التجويد)"
+              name="tajweed_level"
+              class="f"
+            >
+              <UiSelect
+                v-model="form.tajweed_level"
+                :items="tajweedItems"
+                size="lg"
+              />
+            </UFormField>
+          </div>
+          <div class="row">
+            <UFormField
+              label="السكن (المنطقة/الحي)"
+              name="residence"
+              class="f"
+            >
+              <UInput
+                v-model="form.residence"
+                size="lg"
+                class="w-full"
+                :ui="{ base: 'rounded-[13px]' }"
+              />
+            </UFormField>
+            <UFormField
+              label="أقرب مسجد"
+              name="nearest_mosque"
+              class="f"
+            >
+              <UInput
+                v-model="form.nearest_mosque"
                 size="lg"
                 class="w-full"
                 :ui="{ base: 'rounded-[13px]' }"
               />
             </UFormField>
           </div>
+          <div class="row">
+            <UFormField
+              label="جوال الطالب"
+              name="phone"
+              class="f"
+            >
+              <UInput
+                v-model="form.phone"
+                dir="ltr"
+                size="lg"
+                class="w-full"
+                :ui="{ base: 'rounded-[13px]' }"
+              />
+            </UFormField>
+            <UFormField
+              label="تاريخ الالتحاق"
+              name="enrollment_date"
+              class="f"
+            >
+              <UInput
+                v-model="form.enrollment_date"
+                type="date"
+                dir="ltr"
+                size="lg"
+                class="w-full"
+                :ui="{ base: 'rounded-[13px]' }"
+              />
+            </UFormField>
+          </div>
+          <UFormField
+            label="بريد وليّ الأمر (اختياري)"
+            name="guardian_email"
+          >
+            <UInput
+              v-model="form.guardian_email"
+              type="email"
+              dir="ltr"
+              size="lg"
+              class="w-full"
+              :ui="{ base: 'rounded-[13px]' }"
+            />
+          </UFormField>
           <div class="form-actions">
             <UButton
               label="إلغاء"
