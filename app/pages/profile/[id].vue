@@ -12,6 +12,7 @@ const route = useRoute()
 const supabase = useSupabaseClient<Database>()
 const { profile: myProfile, role: myRole } = useProfile()
 const { handle } = useErrorHandler()
+const { uploadImage } = useUpload()
 const toast = useToast()
 
 const ROLE_LABEL: Record<string, string> = { manager: 'المدير', quality: 'مشرف الجودة', supervisor: 'المشرف', teacher: 'المعلم' }
@@ -108,18 +109,33 @@ const sections = computed(() => {
 const modalOpen = ref(false)
 const saving = ref(false)
 const form = reactive({
-  full_name: '', gender: '' as '' | 'male' | 'female', birth_date: '', national_id: '', marital_status: '', family_count: '',
+  full_name: '', avatar_url: '', gender: '' as '' | 'male' | 'female', birth_date: '', national_id: '', marital_status: '', family_count: '',
   job_title: '', hire_date: '', years_experience: '',
   residence_area: '', nearest_mosque: '', address_detail: '', phone: '',
   education_level: '', academic_major: '', quran_parts: '', tajweed_level: ''
 })
 const numStr = (v: number | null) => v != null ? String(v) : ''
 
+const uploading = ref(false)
+async function onPickAvatar(e: Event) {
+  const file = (e.target as HTMLInputElement).files?.[0]
+  if (!file) return
+  uploading.value = true
+  try {
+    form.avatar_url = await uploadImage(file, 'avatars')
+    toast.add({ title: 'رُفعت الصورة.', color: 'success', icon: 'i-lucide-image' })
+  } catch (err) {
+    toast.add({ title: (err as Error).message || 'تعذّر رفع الصورة.', color: 'error', icon: 'i-lucide-circle-alert' })
+  } finally {
+    uploading.value = false
+  }
+}
+
 function openEdit() {
   const p = data.value?.p
   if (!p) return
   Object.assign(form, {
-    full_name: p.full_name, gender: p.gender ?? '', birth_date: p.birth_date ?? '', national_id: p.national_id ?? '', marital_status: p.marital_status ?? '', family_count: numStr(p.family_count),
+    full_name: p.full_name, avatar_url: p.avatar_url ?? '', gender: p.gender ?? '', birth_date: p.birth_date ?? '', national_id: p.national_id ?? '', marital_status: p.marital_status ?? '', family_count: numStr(p.family_count),
     job_title: p.job_title ?? '', hire_date: p.hire_date ?? '', years_experience: numStr(p.years_experience),
     residence_area: p.residence_area ?? '', nearest_mosque: p.nearest_mosque ?? '', address_detail: p.address_detail ?? '', phone: p.phone ?? '',
     education_level: p.education_level ?? '', academic_major: p.academic_major ?? '', quran_parts: numStr(p.quran_parts), tajweed_level: p.tajweed_level ?? ''
@@ -139,6 +155,7 @@ async function save() {
   try {
     const patch: Database['public']['Tables']['profiles']['Update'] = {
       full_name: form.full_name.trim(),
+      avatar_url: form.avatar_url || null,
       gender: form.gender || null,
       birth_date: strOrNull(form.birth_date),
       national_id: strOrNull(form.national_id),
@@ -220,7 +237,14 @@ async function changePassword() {
         <div class="band">
           <div class="band-id">
             <div class="av">
-              {{ initial }}
+              <img
+                v-if="data.p.avatar_url"
+                :src="data.p.avatar_url"
+                :alt="data.p.full_name"
+              >
+              <template v-else>
+                {{ initial }}
+              </template>
             </div>
             <div>
               <h1>{{ data.p.full_name }}</h1>
@@ -387,6 +411,44 @@ async function changePassword() {
     >
       <template #body>
         <div class="form">
+          <div class="avatar-edit">
+            <div class="ae-preview">
+              <img
+                v-if="form.avatar_url"
+                :src="form.avatar_url"
+                alt=""
+              >
+              <UIcon
+                v-else
+                name="i-lucide-user"
+                class="size-7 opacity-40"
+              />
+            </div>
+            <label class="up-btn">
+              <UIcon
+                :name="uploading ? 'i-lucide-loader-circle' : 'i-lucide-upload'"
+                :class="['size-4', uploading && 'spin']"
+              />
+              {{ uploading ? 'يجري الرفع…' : 'صورة شخصية' }}
+              <input
+                type="file"
+                accept="image/*"
+                hidden
+                :disabled="uploading"
+                @change="onPickAvatar"
+              >
+            </label>
+            <UButton
+              v-if="form.avatar_url"
+              label="إزالة"
+              color="error"
+              variant="ghost"
+              size="sm"
+              icon="i-lucide-x"
+              @click="form.avatar_url = ''"
+            />
+          </div>
+
           <div class="grp">
             بيانات أساسية
           </div>
@@ -641,7 +703,15 @@ async function changePassword() {
 .pw-banner { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; background: var(--warn-soft, #fef3c7); color: var(--warn-ink, #92400e); border: 1px solid var(--warn, #f59e0b); border-radius: 14px; padding: 12px 16px; font-size: 14.5px; font-weight: 600; margin-bottom: 18px; }
 .pw-banner span { flex: 1; min-width: 180px; }
 .band-id { display: flex; align-items: center; gap: 16px; min-width: 0; }
-.av { width: 64px; height: 64px; border-radius: 18px; background: var(--navy); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 26px; font-weight: 700; flex: none; }
+.av { width: 64px; height: 64px; border-radius: 18px; background: var(--navy); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 26px; font-weight: 700; flex: none; overflow: hidden; }
+.av img { width: 100%; height: 100%; object-fit: cover; }
+.avatar-edit { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; padding-bottom: 6px; }
+.ae-preview { width: 64px; height: 64px; border-radius: 16px; background: var(--surface-2); border: 1px solid var(--line); display: flex; align-items: center; justify-content: center; overflow: hidden; flex: none; }
+.ae-preview img { width: 100%; height: 100%; object-fit: cover; }
+.up-btn { display: inline-flex; align-items: center; gap: 8px; padding: 9px 16px; border-radius: 12px; border: 1px solid var(--line-2); background: var(--surface-2); color: var(--ink); font-size: 14px; font-weight: 600; cursor: pointer; }
+.up-btn:hover { border-color: var(--blue); }
+.spin { animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
 .band h1 { margin: 0 0 8px; font-size: 24px; font-weight: 700; color: var(--ink); }
 .band-sub { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
 .band-sub span { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; color: var(--ink-2); }
