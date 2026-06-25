@@ -53,8 +53,18 @@ const { data: myHalqa } = await useAsyncData<NameRow | null>('reports-my-halqa',
 watchEffect(() => {
   if (isTeacher.value && myHalqa.value && !halqaId.value) halqaId.value = myHalqa.value.id
 })
-const monthItems = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'].map((m, i) => ({ label: m, value: i + 1 }))
-const yearItems = [now.getFullYear() - 1, now.getFullYear()].map(y => ({ label: String(y), value: y }))
+const MONTH_NAMES = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر']
+const curMonth = now.getMonth() + 1
+const curYear = now.getFullYear()
+// لا تُتاح الأشهر التي لم تبدأ بعد (المُحفِّز يرفضها) — تُقصَر للسنة الحالية على ≤ الشهر الحالي
+const monthItems = computed(() => MONTH_NAMES
+  .map((m, i) => ({ label: m, value: i + 1 }))
+  .filter(it => year.value < curYear || it.value <= curMonth))
+const yearItems = [curYear - 1, curYear].map(y => ({ label: String(y), value: y }))
+// عند تغيير السنة للحالية وكان الشهر مستقبليّاً، أرجِعه للشهر الحالي
+watch(year, () => {
+  if (year.value === curYear && month.value > curMonth) month.value = curMonth
+})
 
 // ── حالة التقرير المحمّل ──
 type Row = {
@@ -104,7 +114,7 @@ async function doExport() {
       num(r.review_to) ?? '', reviewOf(r), num(r.absence_excused) ?? 0, num(r.absence_unexcused) ?? 0,
       num(r.monthly_points) ?? '', gradeOf(r)
     ])
-    const label = `${monthItems[month.value - 1]?.label}-${year.value}`
+    const label = `${MONTH_NAMES[month.value - 1]}-${year.value}`
     await exportXlsx(`تقرير-${label}`, headers, data, 'التقرير')
   } finally {
     exporting.value = false
@@ -218,6 +228,10 @@ async function openReport(r: ListRow) {
 const saving = ref(false)
 async function save() {
   if (!halqaId.value) return
+  if (year.value === curYear && month.value > curMonth) {
+    toast.add({ title: 'لا يمكن إنشاء تقرير لشهر لم يبدأ بعد.', color: 'error', icon: 'i-lucide-calendar-x' })
+    return
+  }
   saving.value = true
   try {
     let rid = report.value?.id
@@ -355,7 +369,7 @@ async function setStatus(status: ReportStatus) {
                   {{ r.halaqa?.name || '—' }}
                 </div>
                 <div class="rc-teacher">
-                  {{ r.halaqa?.teacher?.full_name || '—' }} · {{ monthItems[r.report_month - 1]?.label }} {{ r.report_year }}
+                  {{ r.halaqa?.teacher?.full_name || '—' }} · {{ MONTH_NAMES[r.report_month - 1] }} {{ r.report_year }}
                 </div>
               </div>
               <UBadge
@@ -477,7 +491,7 @@ async function setStatus(status: ReportStatus) {
               variant="soft"
               size="lg"
             />
-            <span class="sb-sub">{{ rows.length }} طالب · {{ monthItems[month - 1]?.label }} {{ year }}</span>
+            <span class="sb-sub">{{ rows.length }} طالب · {{ MONTH_NAMES[month - 1] }} {{ year }}</span>
           </div>
           <div class="sb-actions">
             <UButton
