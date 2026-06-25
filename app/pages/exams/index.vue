@@ -18,6 +18,7 @@ const { handle } = useErrorHandler()
 const toast = useToast()
 
 const isTeacher = computed(() => role.value === 'teacher')
+const isManager = computed(() => role.value === 'manager')
 const canGrade = computed(() => role.value === 'manager' || role.value === 'supervisor')
 
 const stageLabel = (s: string) => s === 'partial' ? 'مرحلي' : 'تجميعي'
@@ -264,28 +265,104 @@ async function saveGrade() {
   }
 }
 
-// ═══ النتائج ═══
-type ResultRow = {
+// ═══ النتائج + فلاتر هرمية (مشرف جودة → مشرف → حلقة) ═══
+const isQuality = computed(() => role.value === 'quality')
+const isSupervisor = computed(() => role.value === 'supervisor')
+
+type RawResult = {
   id: string
   exam_date: string
   total_score: number | null
   passed: boolean | null
-  student: { full_name: string } | null
+  student: {
+    full_name: string
+    halaqa: {
+      id: string
+      name: string
+      supervisor: { id: string, full_name: string, quality: { id: string, full_name: string } | null } | null
+    } | null
+  } | null
   exam_list_item: { exam_plan: { parts_from: number, parts_to: number } | null } | null
 }
-const { data: results, refresh: refreshResults } = await useAsyncData<ResultRow[]>('exams-results', async () => {
+type FlatResult = {
+  id: string
+  exam_date: string
+  total_score: number | null
+  passed: boolean | null
+  student: string
+  range: string
+  halqaId: string
+  halqa: string
+  supId: string
+  sup: string
+  qId: string
+  q: string
+}
+
+const { data: rawResults, refresh: refreshResults } = await useAsyncData<RawResult[]>('exams-results', async () => {
   const { data, error } = await supabase
     .from('exam_results')
-    .select('id, exam_date, total_score, passed, student:student_id(full_name), exam_list_item:exam_list_item_id(exam_plan:exam_plan_id(parts_from, parts_to))')
+    .select('id, exam_date, total_score, passed, student:student_id(full_name, halaqa:halaqa_id(id, name, supervisor:supervisor_id(id, full_name, quality:quality_supervisor_id(id, full_name)))), exam_list_item:exam_list_item_id(exam_plan:exam_plan_id(parts_from, parts_to))')
     .order('exam_date', { ascending: false })
-    .limit(50)
-    .returns<ResultRow[]>()
+    .limit(500)
+    .returns<RawResult[]>()
   if (error) {
     console.error('[exams] results:', error.message)
     return []
   }
   return data ?? []
 }, { server: false, default: () => [] })
+
+const allResults = computed<FlatResult[]>(() => (rawResults.value ?? []).map((r) => {
+  const h = r.student?.halaqa
+  const sup = h?.supervisor
+  const q = sup?.quality
+  return {
+    id: r.id, exam_date: r.exam_date, total_score: r.total_score, passed: r.passed,
+    student: r.student?.full_name ?? '—',
+    range: r.exam_list_item?.exam_plan ? `${r.exam_list_item.exam_plan.parts_from}–${r.exam_list_item.exam_plan.parts_to}` : '—',
+    halqaId: h?.id ?? '', halqa: h?.name ?? '—',
+    supId: sup?.id ?? '', sup: sup?.full_name ?? '—',
+    qId: q?.id ?? '', q: q?.full_name ?? '—'
+  }
+}))
+
+// فلاتر هرمية
+const fQuality = ref('all')
+const fSupervisor = ref('all')
+const fHalqa = ref('all')
+const uniq = (arr: { id: string, label: string }[]) => {
+  const m = new Map<string, string>()
+  for (const x of arr) if (x.id) m.set(x.id, x.label)
+  return [{ value: 'all', label: 'الكل' }, ...[...m].map(([value, label]) => ({ value, label }))]
+}
+const qualityOpts = computed(() => uniq(allResults.value.map(r => ({ id: r.qId, label: r.q }))))
+const supervisorOpts = computed(() => uniq(allResults.value
+  .filter(r => fQuality.value === 'all' || r.qId === fQuality.value)
+  .map(r => ({ id: r.supId, label: r.sup }))))
+const halqaOpts = computed(() => uniq(allResults.value
+  .filter(r => (fQuality.value === 'all' || r.qId === fQuality.value) && (fSupervisor.value === 'all' || r.supId === fSupervisor.value))
+  .map(r => ({ id: r.halqaId, label: r.halqa }))))
+watch(fQuality, () => {
+  fSupervisor.value = 'all'
+  fHalqa.value = 'all'
+})
+watch(fSupervisor, () => {
+  fHalqa.value = 'all'
+})
+
+const results = computed(() => allResults.value.filter(r =>
+  (fQuality.value === 'all' || r.qId === fQuality.value)
+  && (fSupervisor.value === 'all' || r.supId === fSupervisor.value)
+  && (fHalqa.value === 'all' || r.halqaId === fHalqa.value)))
+
+const { page: resPage, pageCount: resPageCount, total: resTotal, pageSize: resPageSize, paged: resPaged, resetPage: resetResPage } = usePagination(results, 12)
+watch([fQuality, fSupervisor, fHalqa], resetResPage)
+function clearResFilters() {
+  fQuality.value = 'all'
+  fSupervisor.value = 'all'
+  fHalqa.value = 'all'
+}
 </script>
 
 <template>
@@ -455,14 +532,54 @@ const { data: results, refresh: refreshResults } = await useAsyncData<ResultRow[
         description="هذه الشاشة للمعلّم (الترشيح) والمشرف/المدير (الرصد)."
       />
 
-      <!-- ═══ النتائج (للجميع) ═══ -->
+      <!-- ═══ النتائج (للجميع، بفلاتر هرمية حسب النطاق) ═══ -->
       <h3 class="sec-title mt">
-        أحدث النتائج
+        نتائج الطلاب <span class="count">{{ resTotal }}</span>
       </h3>
+
+      <div class="res-filters">
+        <USelect
+          v-if="isManager"
+          v-model="fQuality"
+          :items="qualityOpts"
+          placeholder="مشرف الجودة"
+          size="md"
+          class="rf"
+          :ui="{ base: 'rounded-[11px]' }"
+        />
+        <USelect
+          v-if="isManager || isQuality"
+          v-model="fSupervisor"
+          :items="supervisorOpts"
+          placeholder="المشرف"
+          size="md"
+          class="rf"
+          :ui="{ base: 'rounded-[11px]' }"
+        />
+        <USelect
+          v-if="!isTeacher"
+          v-model="fHalqa"
+          :items="halqaOpts"
+          placeholder="الحلقة"
+          size="md"
+          class="rf"
+          :ui="{ base: 'rounded-[11px]' }"
+        />
+        <UButton
+          v-if="fQuality !== 'all' || fSupervisor !== 'all' || fHalqa !== 'all'"
+          label="مسح الفلاتر"
+          color="neutral"
+          variant="ghost"
+          size="md"
+          icon="i-lucide-x"
+          @click="clearResFilters"
+        />
+      </div>
+
       <UiEmptyState
-        v-if="!(results || []).length"
+        v-if="!results.length"
         icon="i-lucide-file-text"
-        title="لا نتائج بعد"
+        title="لا نتائج مطابقة"
       />
       <div
         v-else
@@ -473,6 +590,15 @@ const { data: results, refresh: refreshResults } = await useAsyncData<ResultRow[
             <tr>
               <th class="ta-start">
                 الطالب
+              </th>
+              <th class="ta-start">
+                الحلقة
+              </th>
+              <th
+                v-if="!isTeacher && !isSupervisor"
+                class="ta-start"
+              >
+                المشرف
               </th>
               <th class="ta-start">
                 النطاق
@@ -490,15 +616,23 @@ const { data: results, refresh: refreshResults } = await useAsyncData<ResultRow[
           </thead>
           <tbody>
             <tr
-              v-for="r in results"
+              v-for="r in resPaged"
               :key="r.id"
             >
               <td class="strong">
-                {{ r.student?.full_name || '—' }}
+                {{ r.student }}
               </td>
               <td class="muted">
-                <span v-if="r.exam_list_item?.exam_plan">{{ r.exam_list_item.exam_plan.parts_from }}–{{ r.exam_list_item.exam_plan.parts_to }}</span>
-                <span v-else>—</span>
+                {{ r.halqa }}
+              </td>
+              <td
+                v-if="!isTeacher && !isSupervisor"
+                class="muted"
+              >
+                {{ r.sup }}
+              </td>
+              <td class="muted">
+                {{ r.range }}
               </td>
               <td class="muted">
                 {{ r.exam_date }}
@@ -515,6 +649,14 @@ const { data: results, refresh: refreshResults } = await useAsyncData<ResultRow[
           </tbody>
         </table>
       </div>
+      <UiPaginator
+        v-if="results.length"
+        :page="resPage"
+        :page-count="resPageCount"
+        :total="resTotal"
+        :page-size="resPageSize"
+        @update:page="resPage = $event"
+      />
     </ClientOnly>
 
     <!-- نافذة الرصد -->
@@ -624,6 +766,8 @@ const { data: results, refresh: refreshResults } = await useAsyncData<ResultRow[
 .sec-title { font-size: 18px; font-weight: 700; color: var(--ink); margin: 0 0 14px; display: flex; align-items: center; gap: 9px; }
 .sec-title.mt { margin-top: 30px; }
 .count { display: inline-flex; align-items: center; height: 24px; padding: 0 10px; border-radius: 999px; background: var(--blue-soft); color: var(--blue-ink); font-size: 13px; }
+.res-filters { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
+.rf { width: 200px; max-width: 100%; }
 
 .grade { display: flex; flex-direction: column; gap: 16px; }
 .grade-hint { margin: 0; font-size: 14px; color: var(--ink-2); }

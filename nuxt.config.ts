@@ -26,6 +26,12 @@ export default defineNuxtConfig({
 
   css: ['~/assets/css/main.css'],
 
+  // الخطوط: في وضع التطوير نعطّل المزوّدات الشبكية ليعمل الخادم دون إنترنت
+  // (يتجنّب انهيار vite-node عند انقطاع الشبكة). الإنتاج يبقى كامل المزوّدات.
+  fonts: process.env.NODE_ENV !== 'production'
+    ? { providers: { google: false, bunny: false, fontshare: false, googleicons: false } }
+    : {},
+
   routeRules: {
     '/': { prerender: true }
   },
