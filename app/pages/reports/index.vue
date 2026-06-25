@@ -272,6 +272,11 @@ async function save() {
 }
 
 const transitioning = ref(false)
+const submitConfirmOpen = ref(false)
+async function confirmSubmit() {
+  submitConfirmOpen.value = false
+  await setStatus('submitted')
+}
 async function setStatus(status: ReportStatus) {
   if (!report.value) {
     toast.add({ title: 'احفظ التقرير أولاً.', color: 'warning', icon: 'i-lucide-info' })
@@ -504,7 +509,7 @@ async function setStatus(status: ReportStatus) {
               icon="i-lucide-send"
               :loading="transitioning"
               :ui="{ base: 'rounded-[13px] font-semibold' }"
-              @click="setStatus('submitted')"
+              @click="submitConfirmOpen = true"
             />
             <UButton
               v-if="isManager && report && report.status !== 'approved'"
@@ -734,6 +739,19 @@ async function setStatus(status: ReportStatus) {
         </div>
       </template>
     </ClientOnly>
+
+    <!-- تأكيد الإرسال (يقفل التعديل) -->
+    <UiConfirmModal
+      :open="submitConfirmOpen"
+      title="إرسال التقرير للمدير"
+      message="بعد الإرسال يُقفل التقرير ولن تتمكّن من تعديله. هل أنت متأكّد من إرساله للاعتماد؟"
+      confirm-label="إرسال"
+      confirm-color="primary"
+      confirm-icon="i-lucide-send"
+      :loading="transitioning"
+      @confirm="confirmSubmit"
+      @update:open="(v) => { if (!v) submitConfirmOpen = false }"
+    />
   </div>
 </template>
 
