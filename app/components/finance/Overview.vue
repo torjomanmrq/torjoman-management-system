@@ -53,7 +53,64 @@ const byCategory = computed(() => {
   return entries.map(([cat, amt]) => ({ cat, amt, pct: expense.value ? Math.round(amt / expense.value * 100) : 0 }))
 })
 
+// ── الاتجاه مقارنةً بالشهر السابق ──
+const prevM = computed(() => month.value === 1 ? 12 : month.value - 1)
+const prevY = computed(() => month.value === 1 ? year.value - 1 : year.value)
+function ym(iso: string) {
+  const d = new Date(iso)
+  return { m: d.getMonth() + 1, y: d.getFullYear() }
+}
+const sumMonth = (m: number, y: number, type: 'income' | 'expense') => allTx.value
+  .filter(t => ym(t.transaction_date).m === m && ym(t.transaction_date).y === y && t.type === type)
+  .reduce((s, t) => s + t.amount, 0)
+const balanceUntil = (m: number, y: number) => allTx.value
+  .filter((t) => {
+    const d = ym(t.transaction_date)
+    return d.y < y || (d.y === y && d.m <= m)
+  })
+  .reduce((s, t) => s + (t.type === 'income' ? t.amount : -t.amount), 0)
+
+type Delta = { dir: 'up' | 'down' | 'flat', pct: number }
+const delta = (curr: number, prev: number): Delta => {
+  if (prev === 0) return { dir: curr === 0 ? 'flat' : 'up', pct: curr === 0 ? 0 : 100 }
+  const d = (curr - prev) / Math.abs(prev) * 100
+  return { dir: d > 0.5 ? 'up' : d < -0.5 ? 'down' : 'flat', pct: Math.abs(Math.round(d)) }
+}
+const incomeDelta = computed(() => delta(income.value, sumMonth(prevM.value, prevY.value, 'income')))
+const expenseDelta = computed(() => delta(expense.value, sumMonth(prevM.value, prevY.value, 'expense')))
+const balanceDelta = computed(() => delta(balance.value, balanceUntil(prevM.value, prevY.value)))
+
+// ── منحنى الرصيد (آخر 6 أشهر) ──
+const series = computed(() => {
+  const arr: { label: string, value: number }[] = []
+  for (let i = 5; i >= 0; i--) {
+    let m = month.value - i
+    let y = year.value
+    while (m <= 0) {
+      m += 12
+      y -= 1
+    }
+    arr.push({ label: MONTHS[m - 1]!.slice(0, 3), value: balanceUntil(m, y) })
+  }
+  return arr
+})
+const chart = computed(() => {
+  const W = 320, H = 80, pad = 8
+  const vals = series.value.map(s => s.value)
+  const min = Math.min(...vals, 0)
+  const max = Math.max(...vals, 0)
+  const range = (max - min) || 1
+  const n = series.value.length
+  const pts = series.value.map((s, i) => ({
+    x: pad + (n > 1 ? i * ((W - 2 * pad) / (n - 1)) : (W / 2)),
+    y: H - pad - ((s.value - min) / range) * (H - 2 * pad),
+    label: s.label
+  }))
+  return { W, H, pts, line: pts.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ') }
+})
+
 const fmt = (n: number) => n.toLocaleString('ar')
+const ARROW = { up: 'i-lucide-trending-up', down: 'i-lucide-trending-down', flat: 'i-lucide-minus' }
 </script>
 
 <template>
@@ -82,6 +139,16 @@ const fmt = (n: number) => n.toLocaleString('ar')
           <div class="c-val">
             {{ fmt(balance) }} <span class="cur">₪</span>
           </div>
+          <div
+            class="trend"
+            :class="`t-${balanceDelta.dir}`"
+          >
+            <UIcon
+              :name="ARROW[balanceDelta.dir]"
+              class="size-4"
+            />
+            {{ balanceDelta.pct }}% عن الشهر السابق
+          </div>
         </div>
         <div class="card">
           <div class="c-lbl">
@@ -89,6 +156,16 @@ const fmt = (n: number) => n.toLocaleString('ar')
           </div>
           <div class="c-val in">
             +{{ fmt(income) }}
+          </div>
+          <div
+            class="trend"
+            :class="`t-${incomeDelta.dir}`"
+          >
+            <UIcon
+              :name="ARROW[incomeDelta.dir]"
+              class="size-4"
+            />
+            {{ incomeDelta.pct }}%
           </div>
         </div>
         <div class="card">
@@ -98,6 +175,48 @@ const fmt = (n: number) => n.toLocaleString('ar')
           <div class="c-val out">
             −{{ fmt(expense) }}
           </div>
+          <div
+            class="trend"
+            :class="`t-${expenseDelta.dir}`"
+          >
+            <UIcon
+              :name="ARROW[expenseDelta.dir]"
+              class="size-4"
+            />
+            {{ expenseDelta.pct }}%
+          </div>
+        </div>
+      </div>
+
+      <div class="card curve">
+        <h3>منحنى الرصيد (آخر 6 أشهر)</h3>
+        <svg
+          :viewBox="`0 0 ${chart.W} ${chart.H}`"
+          class="svg"
+          preserveAspectRatio="none"
+        >
+          <polyline
+            :points="chart.line"
+            fill="none"
+            stroke="var(--blue)"
+            stroke-width="2"
+            stroke-linejoin="round"
+            stroke-linecap="round"
+          />
+          <circle
+            v-for="(p, i) in chart.pts"
+            :key="i"
+            :cx="p.x"
+            :cy="p.y"
+            r="2.5"
+            fill="var(--blue)"
+          />
+        </svg>
+        <div class="curve-labels">
+          <span
+            v-for="(p, i) in chart.pts"
+            :key="i"
+          >{{ p.label }}</span>
         </div>
       </div>
 
@@ -146,6 +265,17 @@ const fmt = (n: number) => n.toLocaleString('ar')
 .cur { font-size: 18px; opacity: .7; }
 .c-val.in { color: var(--green-ink); }
 .c-val.out { color: var(--err); }
+.trend { display: inline-flex; align-items: center; gap: 5px; margin-top: 10px; font-size: 12.5px; font-weight: 600; }
+.t-up { color: var(--green-ink); }
+.t-down { color: var(--err); }
+.t-flat { color: var(--ink-3); }
+.hero .trend { color: rgba(255,255,255,.85); }
+
+.curve { margin-bottom: 18px; }
+.curve h3 { margin: 0 0 14px; font-size: 17px; font-weight: 700; color: var(--ink); }
+.svg { width: 100%; height: 90px; display: block; }
+.curve-labels { display: flex; justify-content: space-between; margin-top: 6px; padding: 0 6px; }
+.curve-labels span { font-size: 11.5px; color: var(--ink-3); }
 
 .breakdown h3 { margin: 0 0 16px; font-size: 17px; font-weight: 700; color: var(--ink); }
 .bars { display: flex; flex-direction: column; gap: 14px; }
