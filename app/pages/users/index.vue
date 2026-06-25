@@ -128,6 +128,24 @@ async function toggleStatus(u: UserRow) {
     togglingId.value = null
   }
 }
+
+// ── إعادة تعيين كلمة المرور (طارئة، للمدير) ──
+const resetTarget = ref<UserRow | null>(null)
+const resetting = ref(false)
+async function confirmReset() {
+  if (!resetTarget.value) return
+  resetting.value = true
+  try {
+    await $fetch('/api/users/reset-password', { method: 'POST', body: { user_id: resetTarget.value.id, password: DEFAULT_PASSWORD } })
+    toast.add({ title: `أُعيدت كلمة مرور «${resetTarget.value.full_name}» إلى الافتراضية.`, color: 'success', icon: 'i-lucide-key-round' })
+    resetTarget.value = null
+  } catch (err) {
+    const msg = (err as { data?: { statusMessage?: string } })?.data?.statusMessage
+    toast.add({ title: msg || 'تعذّرت إعادة التعيين.', color: 'error', icon: 'i-lucide-circle-alert' })
+  } finally {
+    resetting.value = false
+  }
+}
 </script>
 
 <template>
@@ -223,6 +241,15 @@ async function toggleStatus(u: UserRow) {
                 size="sm"
                 icon="i-lucide-id-card"
                 :ui="{ base: 'rounded-[10px]' }"
+              />
+              <UButton
+                label="إعادة تعيين الكلمة"
+                color="neutral"
+                variant="outline"
+                size="sm"
+                icon="i-lucide-key-round"
+                :ui="{ base: 'rounded-[10px]' }"
+                @click="resetTarget = row"
               />
               <UButton
                 :label="row.status === 'disabled' ? 'تفعيل' : 'تعطيل'"
@@ -341,6 +368,19 @@ async function toggleStatus(u: UserRow) {
         </UForm>
       </template>
     </UModal>
+
+    <!-- تأكيد إعادة تعيين كلمة المرور -->
+    <UiConfirmModal
+      :open="!!resetTarget"
+      title="إعادة تعيين كلمة المرور"
+      :message="`ستُعاد كلمة مرور «${resetTarget?.full_name}» إلى الافتراضية (${DEFAULT_PASSWORD})، ويُطلب منه تغييرها عند الدخول.`"
+      confirm-label="إعادة التعيين"
+      confirm-color="primary"
+      confirm-icon="i-lucide-key-round"
+      :loading="resetting"
+      @confirm="confirmReset"
+      @update:open="(v) => { if (!v) resetTarget = null }"
+    />
   </div>
 </template>
 
