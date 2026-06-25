@@ -162,16 +162,32 @@ type ListRow = {
   report_year: number
   status: ReportStatus
   halaqa: { name: string, teacher: { full_name: string } | null } | null
+  students: { memorization_pages: number | null, review_pages: number | null, absence_unexcused: number, monthly_points: number | null }[]
+  activities: { done: boolean }[]
 }
 const { data: reportsList, refresh: refreshList } = await useAsyncData<ListRow[]>('reports-list', async () => {
   const { data } = await supabase
     .from('monthly_reports')
-    .select('id, halaqa_id, report_month, report_year, status, halaqa:halaqa_id(name, teacher:teacher_id(full_name))')
+    .select('id, halaqa_id, report_month, report_year, status, halaqa:halaqa_id(name, teacher:teacher_id(full_name)), students:monthly_report_students(memorization_pages, review_pages, absence_unexcused, monthly_points), activities:monthly_report_activities(done)')
     .order('report_year', { ascending: false })
     .order('report_month', { ascending: false })
     .returns<ListRow[]>()
   return data ?? []
 }, { server: false, default: () => [] })
+
+// إثراء كل تقرير بإنجاز الحلقة المحسوب (§4.17د)
+function cardOf(r: ListRow) {
+  const totals = (r.students ?? []).map(s => computeStudentGrade({
+    memoPages: s.memorization_pages ?? 0,
+    reviewPages: s.review_pages ?? 0,
+    absenceUnexcused: s.absence_unexcused ?? 0,
+    points: s.monthly_points ?? 0
+  }, gradeCfg.value))
+  const reg = totals.length ? Math.round(totals.reduce((a, b) => a + b.regularity, 0) / totals.length) : 0
+  const actPct = Math.round((r.activities ?? []).filter(a => a.done).length / ALL_KEYS.length * 100)
+  const achievement = computeHalqaAchievement(totals.map(t => t.total), actPct)
+  return { reg, actPct, achievement, students: totals.length }
+}
 
 const listFilter = ref<ReportStatus | 'all'>('all')
 const countByStatus = (st: ReportStatus) => (reportsList.value ?? []).filter(r => r.status === st).length
@@ -313,65 +329,64 @@ async function setStatus(status: ReportStatus) {
         />
         <div
           v-else
-          class="table-wrap"
+          class="rcards"
         >
-          <table>
-            <thead>
-              <tr>
-                <th class="ta-start">
-                  الحلقة
-                </th>
-                <th class="ta-start">
-                  المعلّم
-                </th>
-                <th class="ta-start">
-                  الشهر
-                </th>
-                <th class="ta-start">
-                  الحالة
-                </th>
-                <th class="ta-end">
-                  —
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr
-                v-for="r in listFiltered"
-                :key="r.id"
-              >
-                <td class="strong">
+          <button
+            v-for="r in listFiltered"
+            :key="r.id"
+            type="button"
+            class="rcard"
+            @click="openReport(r)"
+          >
+            <div class="rc-head">
+              <div class="rc-id">
+                <div class="rc-name">
                   {{ r.halaqa?.name || '—' }}
-                </td>
-                <td class="muted">
-                  {{ r.halaqa?.teacher?.full_name || '—' }}
-                </td>
-                <td class="muted">
-                  {{ monthItems[r.report_month - 1]?.label }} {{ r.report_year }}
-                </td>
-                <td>
-                  <UBadge
-                    :label="STATUS_META[r.status].label"
-                    :color="STATUS_META[r.status].color"
-                    variant="soft"
-                  />
-                </td>
-                <td>
-                  <div class="ta-end">
-                    <UButton
-                      label="فتح"
-                      color="neutral"
-                      variant="outline"
-                      size="sm"
-                      icon="i-lucide-folder-open"
-                      :ui="{ base: 'rounded-[10px]' }"
-                      @click="openReport(r)"
-                    />
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+                </div>
+                <div class="rc-teacher">
+                  {{ r.halaqa?.teacher?.full_name || '—' }} · {{ monthItems[r.report_month - 1]?.label }} {{ r.report_year }}
+                </div>
+              </div>
+              <UBadge
+                :label="STATUS_META[r.status].label"
+                :color="STATUS_META[r.status].color"
+                variant="soft"
+                size="sm"
+              />
+            </div>
+
+            <div
+              class="rc-hero"
+              :class="`ach-${achievementColor(cardOf(r).achievement)}`"
+            >
+              <div class="rc-num">
+                {{ cardOf(r).achievement }}<span class="rc-of">/100</span>
+              </div>
+              <div class="rc-label">
+                {{ gradeLabel(cardOf(r).achievement) }}
+              </div>
+            </div>
+            <div
+              class="rc-bar"
+              :class="`ach-${achievementColor(cardOf(r).achievement)}`"
+            >
+              <div
+                class="rc-fill"
+                :style="{ width: Math.min(100, cardOf(r).achievement) + '%' }"
+              />
+            </div>
+
+            <div class="rc-meta">
+              <span><UIcon
+                name="i-lucide-calendar-check"
+                class="size-[13px]"
+              />انتظام {{ cardOf(r).reg }}%</span>
+              <span><UIcon
+                name="i-lucide-list-checks"
+                class="size-[13px]"
+              />أنشطة {{ cardOf(r).actPct }}%</span>
+            </div>
+          </button>
         </div>
       </div>
     </ClientOnly>
@@ -706,6 +721,28 @@ async function setStatus(status: ReportStatus) {
 .list-card { padding: 0; }
 .list-head { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; padding: 18px 20px; border-bottom: 1px solid var(--line); }
 .list-head h3 { margin: 0; font-size: 17px; font-weight: 700; color: var(--ink); display: flex; align-items: center; gap: 10px; }
+
+/* بطاقات مراجعة التقارير (§4.17د) */
+.rcards { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; padding: 20px; }
+.rcard { text-align: start; background: var(--surface-2); border: 1px solid var(--line); border-radius: 16px; padding: 16px 18px; cursor: pointer; transition: all .15s; display: flex; flex-direction: column; gap: 12px; }
+.rcard:hover { border-color: var(--blue); box-shadow: var(--shadow); transform: translateY(-2px); }
+.rc-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.rc-name { font-size: 16px; font-weight: 700; color: var(--ink); }
+.rc-teacher { font-size: 12.5px; color: var(--ink-3); margin-top: 3px; }
+.rc-hero { display: flex; align-items: baseline; gap: 10px; }
+.rc-num { font-size: 34px; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; color: var(--ink); }
+.rc-of { font-size: 15px; font-weight: 600; color: var(--ink-3); }
+.rc-label { font-size: 14px; font-weight: 700; }
+.ach-success .rc-num, .ach-success .rc-label { color: var(--green-ink); }
+.ach-info .rc-num, .ach-info .rc-label { color: var(--blue-ink); }
+.ach-error .rc-num, .ach-error .rc-label { color: var(--err); }
+.rc-bar { height: 8px; border-radius: 999px; background: var(--surface-3); overflow: hidden; }
+.rc-fill { height: 100%; border-radius: 999px; }
+.ach-success .rc-fill { background: var(--green); }
+.ach-info .rc-fill { background: var(--blue); }
+.ach-error .rc-fill { background: var(--err); }
+.rc-meta { display: flex; gap: 16px; flex-wrap: wrap; }
+.rc-meta span { display: inline-flex; align-items: center; gap: 5px; font-size: 12.5px; color: var(--ink-2); }
 
 .halqa-auto { display: flex; align-items: center; gap: 9px; height: 48px; padding: 0 16px; border-radius: 13px; background: var(--surface-2); border: 1px solid var(--line); font-size: 15.5px; font-weight: 600; color: var(--ink); }
 .hint-card { display: flex; align-items: center; gap: 10px; color: var(--ink-2); font-size: 15px; }
