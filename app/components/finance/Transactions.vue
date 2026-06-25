@@ -5,6 +5,7 @@ import type { Database } from '~/types/database.types'
 const supabase = useSupabaseClient<Database>()
 const { profile } = useProfile()
 const { handle } = useErrorHandler()
+const { exportCsv } = useExport()
 const toast = useToast()
 
 const CATEGORIES = ['رواتب', 'حوافز', 'تشغيل', 'تبرعات', 'أخرى']
@@ -103,6 +104,19 @@ async function confirmDelete() {
 
 const fmt = (n: number) => n.toLocaleString('ar')
 const fmtDate = (iso: string) => new Date(iso).toLocaleDateString('ar', { day: 'numeric', month: 'short', year: 'numeric' })
+
+function doExport() {
+  const headers = ['التاريخ', 'البيان', 'التصنيف', 'النوع', 'المبلغ', 'الرصيد']
+  const data = filtered.value.map(t => [
+    t.transaction_date,
+    t.description ?? '',
+    t.category ?? '',
+    t.type === 'income' ? 'وارد' : 'صادر',
+    t.amount,
+    t.balance
+  ])
+  exportCsv(`الحركات-المالية-${new Date().toISOString().slice(0, 10)}`, headers, data)
+}
 </script>
 
 <template>
@@ -122,14 +136,26 @@ const fmtDate = (iso: string) => new Date(iso).toLocaleDateString('ar', { day: '
           :ui="{ base: 'rounded-[11px]' }"
         />
       </div>
-      <UButton
-        label="حركة جديدة"
-        color="primary"
-        size="md"
-        icon="i-lucide-plus"
-        :ui="{ base: 'rounded-[12px] font-semibold' }"
-        @click="openCreate"
-      />
+      <div class="bar-actions">
+        <UButton
+          label="تصدير Excel"
+          color="neutral"
+          variant="outline"
+          size="md"
+          icon="i-lucide-download"
+          :disabled="!filtered.length"
+          :ui="{ base: 'rounded-[12px]' }"
+          @click="doExport"
+        />
+        <UButton
+          label="حركة جديدة"
+          color="primary"
+          size="md"
+          icon="i-lucide-plus"
+          :ui="{ base: 'rounded-[12px] font-semibold' }"
+          @click="openCreate"
+        />
+      </div>
     </div>
 
     <ClientOnly>
@@ -337,6 +363,7 @@ const fmtDate = (iso: string) => new Date(iso).toLocaleDateString('ar', { day: '
 <style scoped>
 .bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
 .filters { display: flex; gap: 10px; flex-wrap: wrap; }
+.bar-actions { display: flex; gap: 10px; flex-wrap: wrap; }
 .table-wrap { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--shadow); }
 table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 720px; }
 thead tr, tfoot tr { background: var(--surface-2); }

@@ -1,0 +1,23 @@
+/**
+ * رفع الصور إلى Supabase Storage (باكت media العامّ) وإرجاع الرابط العام.
+ * يُستخدم لصور الأخبار والصور الشخصية. يتحقّق من النوع والحجم.
+ */
+const MAX_BYTES = 5 * 1024 * 1024 // 5MB
+
+export function useUpload() {
+  const supabase = useSupabaseClient()
+
+  async function uploadImage(file: File, folder: string): Promise<string> {
+    if (!file.type.startsWith('image/')) throw new Error('الملف يجب أن يكون صورة.')
+    if (file.size > MAX_BYTES) throw new Error('حجم الصورة يتجاوز 5 ميغابايت.')
+
+    const ext = (file.name.split('.').pop() || 'jpg').toLowerCase()
+    const path = `${folder}/${crypto.randomUUID()}.${ext}`
+    const { error } = await supabase.storage.from('media').upload(path, file, { cacheControl: '3600', upsert: false })
+    if (error) throw new Error(error.message)
+
+    return supabase.storage.from('media').getPublicUrl(path).data.publicUrl
+  }
+
+  return { uploadImage }
+}

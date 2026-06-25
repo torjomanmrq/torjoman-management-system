@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
  * إدارة الأخبار (§4.26) — للمدير فقط. تظهر المنشورة للزوّار على صفحة الهبوط.
- * إنشاء/تعديل/حذف + نشر/إخفاء + فتح للقراءة. الصورة عبر رابط (اختياري).
+ * إنشاء/تعديل/حذف + نشر/إخفاء + فتح للقراءة. رفع الصورة إلى Storage (اختياري).
  */
 import type { Database } from '~/types/database.types'
 
@@ -11,8 +11,24 @@ useSeoMeta({ title: 'الأخبار — ترجمان' })
 const supabase = useSupabaseClient<Database>()
 const { role, profile } = useProfile()
 const { handle } = useErrorHandler()
+const { uploadImage } = useUpload()
 const toast = useToast()
 const isManager = computed(() => role.value === 'manager')
+
+const uploading = ref(false)
+async function onPickImage(e: Event) {
+  const file = (e.target as HTMLInputElement).files?.[0]
+  if (!file) return
+  uploading.value = true
+  try {
+    form.image_url = await uploadImage(file, 'news')
+    toast.add({ title: 'رُفعت الصورة.', color: 'success', icon: 'i-lucide-image' })
+  } catch (err) {
+    toast.add({ title: (err as Error).message || 'تعذّر رفع الصورة.', color: 'error', icon: 'i-lucide-circle-alert' })
+  } finally {
+    uploading.value = false
+  }
+}
 
 const CATEGORIES = ['إعلان', 'إنجاز', 'فعالية', 'عام']
 const categoryItems = CATEGORIES.map(c => ({ label: c, value: c }))
@@ -314,14 +330,46 @@ const fmtDate = (iso: string) => new Date(iso).toLocaleDateString('ar', { day: '
               :ui="{ base: 'rounded-[13px]' }"
             />
           </UFormField>
-          <UFormField label="رابط الصورة (اختياري)">
-            <UInput
-              v-model="form.image_url"
-              placeholder="https://…"
-              size="lg"
-              class="w-full"
-              :ui="{ base: 'rounded-[13px]' }"
-            />
+          <UFormField label="الصورة (اختياري)">
+            <div class="uploader">
+              <div class="up-preview">
+                <img
+                  v-if="form.image_url"
+                  :src="form.image_url"
+                  alt=""
+                >
+                <UIcon
+                  v-else
+                  name="i-lucide-image"
+                  class="size-7 opacity-40"
+                />
+              </div>
+              <div class="up-actions">
+                <label class="up-btn">
+                  <UIcon
+                    :name="uploading ? 'i-lucide-loader-circle' : 'i-lucide-upload'"
+                    :class="['size-4', uploading && 'spin']"
+                  />
+                  {{ uploading ? 'يجري الرفع…' : 'رفع صورة' }}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    hidden
+                    :disabled="uploading"
+                    @change="onPickImage"
+                  >
+                </label>
+                <UButton
+                  v-if="form.image_url"
+                  label="إزالة"
+                  color="error"
+                  variant="ghost"
+                  size="sm"
+                  icon="i-lucide-x"
+                  @click="form.image_url = ''"
+                />
+              </div>
+            </div>
           </UFormField>
           <USwitch
             v-model="form.published"
@@ -413,6 +461,14 @@ const fmtDate = (iso: string) => new Date(iso).toLocaleDateString('ar', { day: '
 .nactions { display: flex; gap: 2px; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); flex-wrap: wrap; }
 
 .form { display: flex; flex-direction: column; gap: 16px; }
+.uploader { display: flex; align-items: center; gap: 14px; }
+.up-preview { width: 86px; height: 64px; border-radius: 12px; background: var(--surface-2); border: 1px solid var(--line); display: flex; align-items: center; justify-content: center; overflow: hidden; flex: none; }
+.up-preview img { width: 100%; height: 100%; object-fit: cover; }
+.up-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.up-btn { display: inline-flex; align-items: center; gap: 8px; padding: 9px 16px; border-radius: 12px; border: 1px solid var(--line-2); background: var(--surface-2); color: var(--ink); font-size: 14px; font-weight: 600; cursor: pointer; }
+.up-btn:hover { border-color: var(--blue); }
+.spin { animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
 .row { display: flex; gap: 14px; }
 .f1 { flex: 1; }
 .modal-foot { display: flex; justify-content: flex-end; gap: 10px; }
