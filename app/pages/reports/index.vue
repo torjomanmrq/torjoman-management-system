@@ -530,6 +530,22 @@ async function setStatus(status: ReportStatus) {
           </div>
         </div>
 
+        <!-- مرجع إعدادات المدير (للقراءة فقط) -->
+        <div class="settings-ref">
+          <span class="sr-item"><UIcon
+            name="i-lucide-book-open"
+            class="size-4"
+          />صفحات الحفظ المستهدفة: <strong>{{ gradeCfg.target }}</strong></span>
+          <span class="sr-item"><UIcon
+            name="i-lucide-star"
+            class="size-4"
+          />النقاط الافتراضية: <strong>{{ gradeCfg.points }}</strong></span>
+          <span class="sr-item"><UIcon
+            name="i-lucide-calendar-check"
+            class="size-4"
+          />أيام الدوام الفعلي: <strong>{{ gradeCfg.attendanceDays }}</strong></span>
+        </div>
+
         <!-- إنجاز الحلقة (محسوب) -->
         <div
           v-if="rows.length"
@@ -761,6 +777,9 @@ async function setStatus(status: ReportStatus) {
 .statusbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
 .sb-info { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .sb-sub { font-size: 14px; color: var(--ink-2); }
+.settings-ref { display: flex; gap: 10px 22px; flex-wrap: wrap; padding: 12px 18px; margin-bottom: 18px; background: var(--surface-2); border: 1px dashed var(--line-2); border-radius: 14px; }
+.sr-item { display: inline-flex; align-items: center; gap: 7px; font-size: 13.5px; color: var(--ink-2); }
+.sr-item strong { color: var(--ink); font-weight: 700; }
 .sb-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 
 .table-wrap { overflow-x: auto; padding: 0; }
