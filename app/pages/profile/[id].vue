@@ -42,12 +42,25 @@ const { data, pending, refresh } = await useAsyncData(() => `profile-${targetId.
   } else if (p.role === 'supervisor') {
     const { count } = await supabase.from('halaqat').select('*', { count: 'exact', head: true }).eq('supervisor_id', p.id)
     scope.push({ label: 'الحلقات المُسندة', value: count ?? 0 })
+    if (p.quality_supervisor_id) {
+      const { data: q } = await supabase.from('profiles').select('full_name').eq('id', p.quality_supervisor_id).maybeSingle()
+      if (q) scope.push({ label: 'مشرف الجودة المسؤول', value: q.full_name })
+    }
   } else if (p.role === 'quality') {
     const { count } = await supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('quality_supervisor_id', p.id).eq('role', 'supervisor')
     scope.push({ label: 'المشرفون التابعون', value: count ?? 0 })
   }
   return { p, scope }
 }, { server: false, default: () => null, watch: [targetId] })
+
+// قائمة مشرفي الجودة (لإسناد المشرف — للمدير)
+const QUALITY_NONE = 'none'
+const { data: qualityList } = await useAsyncData('quality-options', async () => {
+  if (myRole.value !== 'manager') return []
+  const { data } = await supabase.from('profiles').select('id, full_name').eq('role', 'quality').eq('status', 'active').order('full_name')
+  return data ?? []
+}, { server: false, default: () => [], watch: [myRole] })
+const qualityItems = computed(() => [{ label: 'بلا مشرف جودة', value: QUALITY_NONE }, ...(qualityList.value ?? []).map(q => ({ label: q.full_name, value: q.id }))])
 
 useSeoMeta({ title: () => data.value?.p ? `${data.value.p.full_name} — ترجمان` : 'الملف الشخصي — ترجمان' })
 
@@ -110,7 +123,7 @@ const modalOpen = ref(false)
 const saving = ref(false)
 const form = reactive({
   full_name: '', avatar_url: '', gender: '' as '' | 'male' | 'female', birth_date: '', national_id: '', marital_status: '', family_count: '',
-  job_title: '', hire_date: '', years_experience: '',
+  job_title: '', hire_date: '', years_experience: '', quality_supervisor_id: QUALITY_NONE,
   residence_area: '', nearest_mosque: '', address_detail: '', phone: '',
   education_level: '', academic_major: '', quran_parts: '', tajweed_level: ''
 })
@@ -136,7 +149,7 @@ function openEdit() {
   if (!p) return
   Object.assign(form, {
     full_name: p.full_name, avatar_url: p.avatar_url ?? '', gender: p.gender ?? '', birth_date: p.birth_date ?? '', national_id: p.national_id ?? '', marital_status: p.marital_status ?? '', family_count: numStr(p.family_count),
-    job_title: p.job_title ?? '', hire_date: p.hire_date ?? '', years_experience: numStr(p.years_experience),
+    job_title: p.job_title ?? '', hire_date: p.hire_date ?? '', years_experience: numStr(p.years_experience), quality_supervisor_id: p.quality_supervisor_id ?? QUALITY_NONE,
     residence_area: p.residence_area ?? '', nearest_mosque: p.nearest_mosque ?? '', address_detail: p.address_detail ?? '', phone: p.phone ?? '',
     education_level: p.education_level ?? '', academic_major: p.academic_major ?? '', quran_parts: numStr(p.quran_parts), tajweed_level: p.tajweed_level ?? ''
   })
@@ -164,6 +177,10 @@ async function save() {
       job_title: strOrNull(form.job_title),
       hire_date: strOrNull(form.hire_date),
       years_experience: numOrNull(form.years_experience),
+      // إسناد مشرف الجودة — للمشرف فقط ومن المدير
+      ...(data.value?.p?.role === 'supervisor' && myRole.value === 'manager'
+        ? { quality_supervisor_id: form.quality_supervisor_id === QUALITY_NONE ? null : form.quality_supervisor_id }
+        : {}),
       residence_area: strOrNull(form.residence_area),
       nearest_mosque: strOrNull(form.nearest_mosque),
       address_detail: strOrNull(form.address_detail),
@@ -563,6 +580,16 @@ async function changePassword() {
               size="lg"
               class="w-full"
               :ui="{ base: 'rounded-[13px]' }"
+            />
+          </UFormField>
+          <UFormField
+            v-if="data?.p?.role === 'supervisor' && myRole === 'manager'"
+            label="مشرف الجودة المسؤول"
+          >
+            <UiSelect
+              v-model="form.quality_supervisor_id"
+              :items="qualityItems"
+              size="lg"
             />
           </UFormField>
 
