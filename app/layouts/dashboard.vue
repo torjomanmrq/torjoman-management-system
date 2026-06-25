@@ -94,18 +94,10 @@ const isActive = (item: Item) => item.to === route.path
     >
       <div class="side-head">
         <img
-          src="/brand/turjuman-mark.png"
-          alt=""
-          class="side-mark"
+          src="/brand/turjuman-full.svg"
+          alt="ترجمان"
+          class="side-logo"
         >
-        <div>
-          <div class="side-name">
-            ترجمان
-          </div>
-          <div class="side-tag">
-            حفظ وفهم وعمل
-          </div>
-        </div>
       </div>
 
       <nav class="side-nav">
@@ -312,10 +304,8 @@ const isActive = (item: Item) => item.to === route.path
 
 /* SIDEBAR */
 .side { width: 274px; flex-shrink: 0; background: var(--side-bg); display: flex; flex-direction: column; height: 100vh; position: sticky; top: 0; }
-.side-head { padding: 24px 22px 20px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--side-line); }
-.side-mark { height: 40px; width: auto; filter: brightness(0) invert(1); }
-.side-name { font-size: 21px; font-weight: 700; color: #fff; line-height: 1; }
-.side-tag { font-size: 11px; color: var(--side-ink); margin-top: 5px; letter-spacing: .5px; }
+.side-head { padding: 24px 22px 20px; display: flex; align-items: center; border-bottom: 1px solid var(--side-line); }
+.side-logo { height: 56px; width: auto; filter: brightness(0) invert(1); }
 .side-nav { flex: 1; overflow-y: auto; padding: 16px 14px; display: flex; flex-direction: column; gap: 3px; }
 .nav-group { font-size: 11.5px; font-weight: 600; color: var(--side-ink); padding: 14px 12px 8px; opacity: .75; }
 .nav-item { display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 14px; border-radius: 11px; background: transparent; border: none; color: var(--side-ink); font-size: 15px; font-weight: 500; font-family: inherit; cursor: pointer; width: 100%; text-align: start; transition: background .15s, color .15s; }
