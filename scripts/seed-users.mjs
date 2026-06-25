@@ -13,9 +13,9 @@ if (!URL || !KEY) {
 }
 
 // توزيع الأدوار على 20: مدير 1 · جودة 2 · مشرف 4 · معلّم 13
-const roleFor = (i) => i === 1 ? 'manager' : i <= 3 ? 'quality' : i <= 7 ? 'supervisor' : 'teacher'
+const roleFor = i => i === 1 ? 'manager' : i <= 3 ? 'quality' : i <= 7 ? 'supervisor' : 'teacher'
 
-const h = { apikey: KEY, Authorization: `Bearer ${KEY}`, 'Content-Type': 'application/json' }
+const h = { 'apikey': KEY, 'Authorization': `Bearer ${KEY}`, 'Content-Type': 'application/json' }
 
 async function createAuthUser(email, fullName) {
   const r = await fetch(`${URL}/auth/v1/admin/users`, {
