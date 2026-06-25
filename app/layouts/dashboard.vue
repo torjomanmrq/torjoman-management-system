@@ -229,12 +229,7 @@ const isActive = (item: Item) => item.to === route.path
         </div>
         <div class="top-end">
           <UPopover :ui="{ content: 'w-80 max-w-[92vw]' }">
-            <UChip
-              :text="notifCount"
-              :show="notifCount > 0"
-              color="error"
-              size="2xl"
-            >
+            <div class="bell-wrap">
               <button
                 class="top-icon"
                 aria-label="التنبيهات"
@@ -244,7 +239,11 @@ const isActive = (item: Item) => item.to === route.path
                   class="size-5"
                 />
               </button>
-            </UChip>
+              <span
+                v-if="notifCount > 0"
+                class="bell-badge"
+              >{{ notifCount > 99 ? '99+' : notifCount }}</span>
+            </div>
             <template #content>
               <div class="notif">
                 <div class="notif-head">
@@ -340,6 +339,8 @@ const isActive = (item: Item) => item.to === route.path
 .top-end { display: flex; align-items: center; gap: 16px; }
 .top-icon { width: 44px; height: 44px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface-2); color: var(--ink-2); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all .2s; }
 .top-icon:hover { color: var(--ink); border-color: var(--blue); }
+.bell-wrap { position: relative; display: inline-flex; }
+.bell-badge { position: absolute; top: -7px; inset-inline-end: -7px; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 999px; background: var(--err); color: #fff; font-size: 13px; font-weight: 800; line-height: 22px; text-align: center; box-shadow: 0 0 0 2px var(--surface); font-variant-numeric: tabular-nums; pointer-events: none; }
 
 .notif { padding: 6px; }
 .notif-head { font-size: 14px; font-weight: 700; color: var(--ink); padding: 8px 10px 10px; border-bottom: 1px solid var(--line); }
