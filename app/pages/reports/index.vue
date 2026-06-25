@@ -16,7 +16,7 @@ type ActivityKey = Database['public']['Enums']['activity_key']
 const supabase = useSupabaseClient<Database>()
 const { role, profile } = useProfile()
 const { handle } = useErrorHandler()
-const { exportCsv } = useExport()
+const { exportXlsx } = useExport()
 const toast = useToast()
 const isManager = computed(() => role.value === 'manager')
 const isTeacher = computed(() => role.value === 'teacher')
@@ -94,15 +94,21 @@ const gradeOf = (r: Row) => computeStudentGrade({
 const activitiesPct = computed(() => Math.round(ALL_KEYS.filter(k => acts[k]).length / ALL_KEYS.length * 100))
 const halqaAchievement = computed(() => computeHalqaAchievement(rows.value.map(gradeOf), activitiesPct.value))
 
-function doExport() {
-  const headers = ['الطالب', 'من', 'إلى', 'صفحات الحفظ', 'مراجعة لـ', 'صفحات المراجعة', 'غياب بعذر', 'بلا عذر', 'النقاط', 'الدرجة']
-  const data = rows.value.map(r => [
-    r.full_name, num(r.memorization_from) ?? '', num(r.memorization_to) ?? '', pagesOf(r),
-    num(r.review_to) ?? '', reviewOf(r), num(r.absence_excused) ?? 0, num(r.absence_unexcused) ?? 0,
-    num(r.monthly_points) ?? '', gradeOf(r)
-  ])
-  const label = `${monthItems[month.value - 1]?.label}-${year.value}`
-  exportCsv(`تقرير-${label}`, headers, data)
+const exporting = ref(false)
+async function doExport() {
+  exporting.value = true
+  try {
+    const headers = ['الطالب', 'من', 'إلى', 'صفحات الحفظ', 'مراجعة لـ', 'صفحات المراجعة', 'غياب بعذر', 'بلا عذر', 'النقاط', 'الدرجة']
+    const data = rows.value.map(r => [
+      r.full_name, num(r.memorization_from) ?? '', num(r.memorization_to) ?? '', pagesOf(r),
+      num(r.review_to) ?? '', reviewOf(r), num(r.absence_excused) ?? 0, num(r.absence_unexcused) ?? 0,
+      num(r.monthly_points) ?? '', gradeOf(r)
+    ])
+    const label = `${monthItems[month.value - 1]?.label}-${year.value}`
+    await exportXlsx(`تقرير-${label}`, headers, data, 'التقرير')
+  } finally {
+    exporting.value = false
+  }
 }
 
 async function load() {
@@ -476,6 +482,7 @@ async function setStatus(status: ReportStatus) {
               variant="outline"
               size="lg"
               icon="i-lucide-download"
+              :loading="exporting"
               :ui="{ base: 'rounded-[13px]' }"
               @click="doExport"
             />
