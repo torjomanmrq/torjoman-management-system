@@ -74,6 +74,8 @@ const filtered = computed(() => (students.value ?? []).filter(s =>
   (statusF.value === 'all' || s.status === statusF.value)
   && (halqaF.value === 'all' || s.halaqa_id === halqaF.value)
 ))
+const { page, pageCount, total, pageSize, paged, resetPage } = usePagination(filtered, 12)
+watch([statusF, halqaF], resetPage)
 const columns = computed(() => {
   const base = [
     { key: 'student', label: 'الطالب' },
@@ -261,7 +263,7 @@ async function confirmDelete() {
       <UiDataTable
         v-else
         :columns="columns"
-        :rows="filtered"
+        :rows="paged"
         row-key="id"
       >
         <template #student="{ row }">
@@ -332,6 +334,14 @@ async function confirmDelete() {
           </div>
         </template>
       </UiDataTable>
+      <UiPaginator
+        v-if="filtered.length"
+        :page="page"
+        :page-count="pageCount"
+        :total="total"
+        :page-size="pageSize"
+        @update:page="page = $event"
+      />
     </ClientOnly>
 
     <!-- نافذة إضافة/تعديل -->

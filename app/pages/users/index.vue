@@ -64,6 +64,8 @@ const filteredUsers = computed(() => {
   const list = users.value ?? []
   return filter.value === 'all' ? list : list.filter(u => u.role === filter.value)
 })
+const { page, pageCount, total, pageSize, paged, resetPage } = usePagination(filteredUsers, 12)
+watch(filter, resetPage)
 const columns = [
   { key: 'user', label: 'المستخدم' },
   { key: 'role', label: 'الدور' },
@@ -193,7 +195,7 @@ async function confirmReset() {
         <UiDataTable
           v-else
           :columns="columns"
-          :rows="filteredUsers"
+          :rows="paged"
           row-key="id"
         >
           <template #user="{ row }">
@@ -264,6 +266,14 @@ async function confirmReset() {
             </div>
           </template>
         </UiDataTable>
+        <UiPaginator
+          v-if="filteredUsers.length"
+          :page="page"
+          :page-count="pageCount"
+          :total="total"
+          :page-size="pageSize"
+          @update:page="page = $event"
+        />
       </ClientOnly>
     </template>
 
