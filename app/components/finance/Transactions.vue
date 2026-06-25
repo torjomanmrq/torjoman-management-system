@@ -5,7 +5,7 @@ import type { Database } from '~/types/database.types'
 const supabase = useSupabaseClient<Database>()
 const { profile } = useProfile()
 const { handle } = useErrorHandler()
-const { exportCsv } = useExport()
+const { exportXlsx } = useExport()
 const toast = useToast()
 
 const CATEGORIES = ['رواتب', 'حوافز', 'تشغيل', 'تبرعات', 'أخرى']
@@ -105,17 +105,23 @@ async function confirmDelete() {
 const fmt = (n: number) => n.toLocaleString('ar')
 const fmtDate = (iso: string) => new Date(iso).toLocaleDateString('ar', { day: 'numeric', month: 'short', year: 'numeric' })
 
-function doExport() {
-  const headers = ['التاريخ', 'البيان', 'التصنيف', 'النوع', 'المبلغ', 'الرصيد']
-  const data = filtered.value.map(t => [
-    t.transaction_date,
-    t.description ?? '',
-    t.category ?? '',
-    t.type === 'income' ? 'وارد' : 'صادر',
-    t.amount,
-    t.balance
-  ])
-  exportCsv(`الحركات-المالية-${new Date().toISOString().slice(0, 10)}`, headers, data)
+const exporting = ref(false)
+async function doExport() {
+  exporting.value = true
+  try {
+    const headers = ['التاريخ', 'البيان', 'التصنيف', 'النوع', 'المبلغ', 'الرصيد']
+    const data = filtered.value.map(t => [
+      t.transaction_date,
+      t.description ?? '',
+      t.category ?? '',
+      t.type === 'income' ? 'وارد' : 'صادر',
+      t.amount,
+      t.balance
+    ])
+    await exportXlsx(`الحركات-المالية-${new Date().toISOString().slice(0, 10)}`, headers, data, 'الحركات')
+  } finally {
+    exporting.value = false
+  }
 }
 </script>
 
@@ -144,6 +150,7 @@ function doExport() {
           size="md"
           icon="i-lucide-download"
           :disabled="!filtered.length"
+          :loading="exporting"
           :ui="{ base: 'rounded-[12px]' }"
           @click="doExport"
         />
