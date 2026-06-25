@@ -16,6 +16,7 @@ type ActivityKey = Database['public']['Enums']['activity_key']
 const supabase = useSupabaseClient<Database>()
 const { role, profile } = useProfile()
 const { handle } = useErrorHandler()
+const { exportCsv } = useExport()
 const toast = useToast()
 const isManager = computed(() => role.value === 'manager')
 const isTeacher = computed(() => role.value === 'teacher')
@@ -92,6 +93,17 @@ const gradeOf = (r: Row) => computeStudentGrade({
 }, gradeCfg.value).total
 const activitiesPct = computed(() => Math.round(ALL_KEYS.filter(k => acts[k]).length / ALL_KEYS.length * 100))
 const halqaAchievement = computed(() => computeHalqaAchievement(rows.value.map(gradeOf), activitiesPct.value))
+
+function doExport() {
+  const headers = ['الطالب', 'من', 'إلى', 'صفحات الحفظ', 'مراجعة لـ', 'صفحات المراجعة', 'غياب بعذر', 'بلا عذر', 'النقاط', 'الدرجة']
+  const data = rows.value.map(r => [
+    r.full_name, num(r.memorization_from) ?? '', num(r.memorization_to) ?? '', pagesOf(r),
+    num(r.review_to) ?? '', reviewOf(r), num(r.absence_excused) ?? 0, num(r.absence_unexcused) ?? 0,
+    num(r.monthly_points) ?? '', gradeOf(r)
+  ])
+  const label = `${monthItems[month.value - 1]?.label}-${year.value}`
+  exportCsv(`تقرير-${label}`, headers, data)
+}
 
 async function load() {
   if (!halqaId.value) return
@@ -442,6 +454,16 @@ async function setStatus(status: ReportStatus) {
             <span class="sb-sub">{{ rows.length }} طالب · {{ monthItems[month - 1]?.label }} {{ year }}</span>
           </div>
           <div class="sb-actions">
+            <UButton
+              v-if="rows.length"
+              label="تصدير Excel"
+              color="neutral"
+              variant="outline"
+              size="lg"
+              icon="i-lucide-download"
+              :ui="{ base: 'rounded-[13px]' }"
+              @click="doExport"
+            />
             <UButton
               v-if="canEdit"
               label="حفظ"
