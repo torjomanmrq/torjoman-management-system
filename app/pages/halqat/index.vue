@@ -65,6 +65,8 @@ const filtered = computed(() => (halqat.value ?? []).filter(h =>
   (genderF.value === 'all' || h.gender === genderF.value)
   && (statusF.value === 'all' || h.status === statusF.value)
 ))
+const { page, pageCount, total, pageSize, paged, resetPage } = usePagination(filtered, 9)
+watch([genderF, statusF], resetPage)
 function studentsOf(h: HalaqaRow) {
   return h.student_count?.[0]?.count ?? 0
 }
@@ -203,7 +205,7 @@ async function confirmDelete() {
         class="grid"
       >
         <div
-          v-for="h in filtered"
+          v-for="h in paged"
           :key="h.id"
           class="hcard"
         >
@@ -301,6 +303,14 @@ async function confirmDelete() {
           </div>
         </div>
       </div>
+      <UiPaginator
+        v-if="filtered.length"
+        :page="page"
+        :page-count="pageCount"
+        :total="total"
+        :page-size="pageSize"
+        @update:page="page = $event"
+      />
     </ClientOnly>
 
     <!-- نافذة إنشاء/تعديل -->
