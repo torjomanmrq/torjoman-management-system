@@ -8,11 +8,18 @@
  */
 const URL = process.env.SUPABASE_URL
 const KEY = process.env.NUXT_SUPABASE_SECRET_KEY
-if (!URL || !KEY) { console.error('✗ مفاتيح ناقصة'); process.exit(1) }
+if (!URL || !KEY) {
+  console.error('✗ مفاتيح ناقصة')
+  process.exit(1)
+}
 
-const H = { apikey: KEY, Authorization: `Bearer ${KEY}`, 'Content-Type': 'application/json' }
-const api = (path) => `${URL}/rest/v1/${path}`
-const get = async (path) => { const r = await fetch(api(path), { headers: H }); if (!r.ok) throw new Error(await r.text()); return r.json() }
+const H = { 'apikey': KEY, 'Authorization': `Bearer ${KEY}`, 'Content-Type': 'application/json' }
+const api = path => `${URL}/rest/v1/${path}`
+const get = async (path) => {
+  const r = await fetch(api(path), { headers: H })
+  if (!r.ok) throw new Error(await r.text())
+  return r.json()
+}
 const post = async (path, body, prefer = 'return=representation') => {
   const r = await fetch(api(path), { method: 'POST', headers: { ...H, Prefer: prefer }, body: JSON.stringify(body) })
   if (!r.ok) throw new Error(await r.text())
@@ -26,9 +33,12 @@ const patch = async (path, body) => {
 // 1) خريطة المستخدمين التجريبيين
 const profiles = await get('profiles?select=id,email,role&email=like.test*%40test.com')
 const byEmail = Object.fromEntries(profiles.map(p => [p.email, p]))
-const id = (n) => byEmail[`test${n}@test.com`]?.id
+const id = n => byEmail[`test${n}@test.com`]?.id
 const manager = id(1)
-if (!manager) { console.error('✗ لم يُعثر على المستخدمين التجريبيين — شغّل seed-users.mjs أولاً'); process.exit(1) }
+if (!manager) {
+  console.error('✗ لم يُعثر على المستخدمين التجريبيين — شغّل seed-users.mjs أولاً')
+  process.exit(1)
+}
 
 // 2) ربط المشرفين بمشرفي الجودة
 const qLinks = [[4, 2], [5, 2], [6, 3], [7, 3]]
@@ -69,7 +79,10 @@ let studentsAdded = 0
 for (const h of plan) {
   const hid = halqaId[h.name]
   const cur = await get(`students?select=id&halaqa_id=eq.${hid}`)
-  if (cur.length) { console.log(`• للحلقة ${h.name} طلاب مسبقاً (${cur.length})`); continue }
+  if (cur.length) {
+    console.log(`• للحلقة ${h.name} طلاب مسبقاً (${cur.length})`)
+    continue
+  }
   const batch = names.slice(0, 5).map((nm, i) => ({
     full_name: `${nm} (${h.name})`, halaqa_id: hid, gender: 'male',
     quran_parts: parts[i], enrollment_date: enroll[i], status: 'active'
@@ -87,7 +100,10 @@ const amounts = { 'حلقة الإيمان': 500, 'حلقة الإحسان': 400
 for (const h of plan) {
   const hid = halqaId[h.name]
   const ex = await get(`halaqa_incentives?select=id&halaqa_id=eq.${hid}&incentive_month=eq.${m}&incentive_year=eq.${y}`)
-  if (ex.length) { console.log(`• تخصيص ${h.name} موجود`); continue }
+  if (ex.length) {
+    console.log(`• تخصيص ${h.name} موجود`)
+    continue
+  }
   await post('halaqa_incentives', [{
     halaqa_id: hid, incentive_month: m, incentive_year: y, allocated_amount: amounts[h.name],
     approved: true, approved_by: manager
