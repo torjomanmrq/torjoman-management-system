@@ -369,7 +369,7 @@ function clearResFilters() {
   <div class="exams">
     <UiPageHeader
       title="الاختبارات"
-      :subtitle="isTeacher ? 'رشّح طلابك الذين بلغوا محطتهم في الخطة وأرسل القائمة للمشرف.' : 'الاختبارات الواردة من المعلّمين — افتح كلّ اختبار وارصد نتيجته من 100.'"
+      :subtitle="isTeacher ? 'رشّح طلابك الذين بلغوا محطتهم في الخطة وأرسل القائمة للمشرف.' : canGrade ? 'الاختبارات الواردة من المعلّمين — افتح كلّ اختبار وارصد نتيجته من 100، وتابع النتائج في نطاقك.' : 'تابع نتائج اختبارات الطلاب في نطاقك.'"
     />
 
     <ClientOnly>
@@ -525,45 +525,35 @@ function clearResFilters() {
         </div>
       </template>
 
-      <UiEmptyState
-        v-else
-        icon="i-lucide-lock"
-        title="لا صلاحية"
-        description="هذه الشاشة للمعلّم (الترشيح) والمشرف/المدير (الرصد)."
-      />
-
       <!-- ═══ النتائج (للجميع، بفلاتر هرمية حسب النطاق) ═══ -->
       <h3 class="sec-title mt">
         نتائج الطلاب <span class="count">{{ resTotal }}</span>
       </h3>
 
       <div class="res-filters">
-        <USelect
+        <UiSelect
           v-if="isManager"
           v-model="fQuality"
           :items="qualityOpts"
           placeholder="مشرف الجودة"
           size="md"
           class="rf"
-          :ui="{ base: 'rounded-[11px]' }"
         />
-        <USelect
+        <UiSelect
           v-if="isManager || isQuality"
           v-model="fSupervisor"
           :items="supervisorOpts"
           placeholder="المشرف"
           size="md"
           class="rf"
-          :ui="{ base: 'rounded-[11px]' }"
         />
-        <USelect
+        <UiSelect
           v-if="!isTeacher"
           v-model="fHalqa"
           :items="halqaOpts"
           placeholder="الحلقة"
           size="md"
           class="rf"
-          :ui="{ base: 'rounded-[11px]' }"
         />
         <UButton
           v-if="fQuality !== 'all' || fSupervisor !== 'all' || fHalqa !== 'all'"
