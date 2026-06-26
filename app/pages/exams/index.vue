@@ -531,32 +531,29 @@ function clearResFilters() {
       </h3>
 
       <div class="res-filters">
-        <USelect
+        <UiSelect
           v-if="isManager"
           v-model="fQuality"
           :items="qualityOpts"
           placeholder="مشرف الجودة"
           size="md"
           class="rf"
-          :ui="{ base: 'rounded-[11px]' }"
         />
-        <USelect
+        <UiSelect
           v-if="isManager || isQuality"
           v-model="fSupervisor"
           :items="supervisorOpts"
           placeholder="المشرف"
           size="md"
           class="rf"
-          :ui="{ base: 'rounded-[11px]' }"
         />
-        <USelect
+        <UiSelect
           v-if="!isTeacher"
           v-model="fHalqa"
           :items="halqaOpts"
           placeholder="الحلقة"
           size="md"
           class="rf"
-          :ui="{ base: 'rounded-[11px]' }"
         />
         <UButton
           v-if="fQuality !== 'all' || fSupervisor !== 'all' || fHalqa !== 'all'"
