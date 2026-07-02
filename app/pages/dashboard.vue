@@ -185,7 +185,6 @@ const fmtDateTime = (iso: string) => {
 }
 
 // ── لوحة الجودة ──
-const MONTHS = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر']
 type QSup = { id: string, name: string, halqat: number }
 type QReport = { id: string, halqa: string, label: string }
 const qSupervisors = ref<QSup[]>([])
@@ -218,7 +217,7 @@ async function loadQualityData() {
       .eq('status', 'submitted')
       .order('report_year', { ascending: false }).order('report_month', { ascending: false }).limit(8)
       .returns<{ id: string, report_month: number, report_year: number, halaqa: { name: string } | null }[]>()
-    qReports.value = (reps ?? []).map(r => ({ id: r.id, halqa: r.halaqa?.name ?? '—', label: `${MONTHS[r.report_month - 1]} ${r.report_year}` }))
+    qReports.value = (reps ?? []).map(r => ({ id: r.id, halqa: r.halaqa?.name ?? '—', label: `${monthName(r.report_month)} ${r.report_year}` }))
   } catch (err) {
     handle(err)
   }

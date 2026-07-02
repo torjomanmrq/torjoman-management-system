@@ -11,9 +11,7 @@ const { handle } = useErrorHandler()
 const toast = useToast()
 
 const ROLE_LABEL: Record<string, string> = { manager: 'المدير', quality: 'مشرف الجودة', supervisor: 'المشرف', teacher: 'المعلم' }
-const MONTHS = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر']
 const now = new Date()
-const monthItems = MONTHS.map((m, i) => ({ label: m, value: i + 1 }))
 const yearItems = [now.getFullYear() - 1, now.getFullYear()].map(y => ({ label: String(y), value: y }))
 const month = ref(now.getMonth() + 1)
 const year = ref(now.getFullYear())
@@ -50,11 +48,17 @@ const saving = ref(false)
 async function save() {
   saving.value = true
   try {
-    await supabase.from('monthly_salaries').delete().eq('salary_month', month.value).eq('salary_year', year.value)
+    // upsert أولاً ثم حذف المُفرَّغ فقط — لا نحذف الشهر كاملاً قبل الإدراج كي لا تضيع البيانات لو فشل
     const payload = rows.value.filter(r => Number(r.amount) > 0)
       .map(r => ({ profile_id: r.profile_id, salary_month: month.value, salary_year: year.value, amount: Number(r.amount), approved: false }))
     if (payload.length) {
-      const { error } = await supabase.from('monthly_salaries').insert(payload)
+      const { error } = await supabase.from('monthly_salaries').upsert(payload, { onConflict: 'profile_id,salary_month,salary_year' })
+      if (error) throw error
+    }
+    const cleared = rows.value.filter(r => !(Number(r.amount) > 0)).map(r => r.profile_id)
+    if (cleared.length) {
+      const { error } = await supabase.from('monthly_salaries').delete()
+        .eq('salary_month', month.value).eq('salary_year', year.value).in('profile_id', cleared)
       if (error) throw error
     }
     toast.add({ title: 'حُفظت الرواتب.', color: 'success', icon: 'i-lucide-save' })
@@ -107,7 +111,7 @@ async function postAsTransaction() {
   try {
     const { error } = await supabase.from('financial_transactions').insert({
       transaction_date: new Date().toISOString().slice(0, 10),
-      description: `رواتب ${MONTHS[month.value - 1]} ${year.value}`,
+      description: `رواتب ${monthName(month.value)} ${year.value}`,
       category: 'رواتب', type: 'expense', amount: total.value, created_by: profile.value?.id ?? null
     })
     if (error) throw error

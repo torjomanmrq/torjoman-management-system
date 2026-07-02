@@ -15,18 +15,6 @@ const supabase = useSupabaseClient<Database>()
 
 const GENDER_LABEL: Record<string, string> = { male: 'بنين', female: 'بنات' }
 const CLASS_LABEL: Record<string, string> = { excellent: 'متميّزة', good: 'جيّدة', normal: 'عادية', weak: 'ضعيفة' }
-const REPORT_STATUS: Record<string, { label: string, color: 'neutral' | 'warning' | 'success' }> = {
-  draft: { label: 'مسودّة', color: 'neutral' },
-  submitted: { label: 'مُرسل', color: 'warning' },
-  approved: { label: 'معتمد', color: 'success' }
-}
-const VISIT_STATUS: Record<string, { label: string, color: 'neutral' | 'warning' | 'success' | 'error' }> = {
-  scheduled: { label: 'مجدولة', color: 'warning' },
-  done: { label: 'تمّت', color: 'success' },
-  late: { label: 'متأخّرة', color: 'warning' },
-  missed: { label: 'فائتة', color: 'error' }
-}
-const MONTHS = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر']
 
 type Halqa = {
   id: string
@@ -233,7 +221,7 @@ const fmtDate = (iso: string) => new Date(iso).toLocaleDateString('ar', { day: '
                 v-if="data.report"
                 class="report-row"
               >
-                <span class="report-month">{{ MONTHS[data.report.report_month - 1] }} {{ data.report.report_year }}</span>
+                <span class="report-month">{{ monthName(data.report.report_month) }} {{ data.report.report_year }}</span>
                 <UBadge
                   :label="REPORT_STATUS[data.report.status]?.label"
                   :color="REPORT_STATUS[data.report.status]?.color"
