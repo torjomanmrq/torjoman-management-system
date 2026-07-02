@@ -2,8 +2,8 @@
 /**
  * الاختبارات (§4.16) — موجّهة بالدور:
  * - المعلّم: يرشّح طلابه المستحقّين (بلغوا محطتهم في الخطة) ويرسل القائمة.
- * - المشرف/المدير: يرصد نتيجة كل اختبار وارد (حفظ/فهم/تدبّر/تجويد) من 100.
- * يبني على خطة الاختبارات ورحلة الطالب (الاستحقاق حسب الحفظ).
+ * - المشرف/المدير: يرصد نتيجة كل اختبار وارد (ExamsGradeModal).
+ * - الجميع: متابعة النتائج حسب النطاق (ExamsResultsBrowser بفلاتر هرمية).
  */
 import type { Database } from '~/types/database.types'
 
@@ -18,21 +18,15 @@ const { handle } = useErrorHandler()
 const toast = useToast()
 
 const isTeacher = computed(() => role.value === 'teacher')
-const isManager = computed(() => role.value === 'manager')
 const canGrade = computed(() => role.value === 'manager' || role.value === 'supervisor')
 
 const stageLabel = (s: string) => s === 'partial' ? 'مرحلي' : 'تجميعي'
 
-// خطة الاختبارات + علامة الاجتياز
+// خطة الاختبارات (محطات الاستحقاق)
 const { data: plan } = await useAsyncData<PlanRow[]>('exams-plan', async () => {
   const { data } = await supabase.from('exam_plan').select('id, parts_from, parts_to, stage_type').order('parts_to')
   return (data ?? []) as PlanRow[]
 }, { server: false, default: () => [] })
-
-const { data: passMark } = await useAsyncData<number>('exams-passmark', async () => {
-  const { data } = await supabase.from('app_settings').select('pass_mark').eq('id', 1).single()
-  return data?.pass_mark ?? 80
-}, { server: false, default: () => 80 })
 
 function eligibleStations(parts: number | null) {
   return (plan.value ?? []).filter(p => (parts ?? 0) >= p.parts_to)
@@ -176,192 +170,16 @@ const { data: queueRaw, refresh: refreshQueue } = await useAsyncData<QueueItem[]
 }, { server: false, default: () => [], watch: [role] })
 const queue = computed(() => (queueRaw.value ?? []).filter(i => !i.exam_results?.length))
 
-// نافذة الرصد
+// نافذة الرصد (ExamsGradeModal) + تحديث القائمة والنتائج بعد الحفظ
 const gradeOpen = ref(false)
 const gradeTarget = ref<QueueItem | null>(null)
-const grading = ref(false)
-const scores = reactive({
-  q1_memorization: '', q1_understanding: '', q1_reflection: '',
-  q2_memorization: '', q2_understanding: '', q2_reflection: '',
-  q3_memorization: '', q3_understanding: '', q3_reflection: '',
-  tajweed_score: '', notes: ''
-})
-type ScoreKey = 'q1_memorization' | 'q1_understanding' | 'q1_reflection'
-  | 'q2_memorization' | 'q2_understanding' | 'q2_reflection'
-  | 'q3_memorization' | 'q3_understanding' | 'q3_reflection' | 'tajweed_score'
-
-const scoreFields: { key: ScoreKey, label: string }[] = [
-  { key: 'q1_memorization', label: 'س1 حفظ' }, { key: 'q1_understanding', label: 'س1 فهم' }, { key: 'q1_reflection', label: 'س1 تدبّر' },
-  { key: 'q2_memorization', label: 'س2 حفظ' }, { key: 'q2_understanding', label: 'س2 فهم' }, { key: 'q2_reflection', label: 'س2 تدبّر' },
-  { key: 'q3_memorization', label: 'س3 حفظ' }, { key: 'q3_understanding', label: 'س3 فهم' }, { key: 'q3_reflection', label: 'س3 تدبّر' },
-  { key: 'tajweed_score', label: 'التجويد' }
-]
-
-// مجموعات العرض: كل سؤال بتفريعاته منفصلاً (حفظ/فهم/تدبّر) + التجويد
-const BRANCH: Record<string, string> = { memorization: 'الحفظ', understanding: 'الفهم', reflection: 'التدبّر' }
-const branchLabel = (key: ScoreKey) => key === 'tajweed_score' ? 'الدرجة' : (BRANCH[key.split('_')[1] ?? ''] ?? key)
-const scoreGroups: { title: string, keys: ScoreKey[] }[] = [
-  { title: 'السؤال الأول', keys: ['q1_memorization', 'q1_understanding', 'q1_reflection'] },
-  { title: 'السؤال الثاني', keys: ['q2_memorization', 'q2_understanding', 'q2_reflection'] },
-  { title: 'السؤال الثالث', keys: ['q3_memorization', 'q3_understanding', 'q3_reflection'] },
-  { title: 'التجويد', keys: ['tajweed_score'] }
-]
-
-// حدّ كل فرع 10 (لا يقبل النظام أكثر)
-function clampScore(key: ScoreKey) {
-  const raw = scores[key]
-  if (raw === '') return
-  let n = Number(raw)
-  if (Number.isNaN(n)) {
-    scores[key] = ''
-    return
-  }
-  if (n > 10) n = 10
-  if (n < 0) n = 0
-  scores[key] = String(n)
-}
-
-const liveTotal = computed(() => scoreFields.reduce((sum, f) => sum + (Number(scores[f.key]) || 0), 0))
-
+const resultsRef = ref<{ refresh: () => Promise<void> } | null>(null)
 function openGrade(item: QueueItem) {
   gradeTarget.value = item
-  for (const f of scoreFields) scores[f.key] = ''
-  scores.notes = ''
   gradeOpen.value = true
 }
-async function saveGrade() {
-  if (!gradeTarget.value?.student) return
-  grading.value = true
-  try {
-    const sc = (k: ScoreKey) => Math.min(10, Math.max(0, Number(scores[k]) || 0))
-    const payload = {
-      student_id: gradeTarget.value.student.id,
-      exam_list_item_id: gradeTarget.value.id,
-      examiner_id: profile.value?.id ?? null,
-      pass_mark_snapshot: passMark.value ?? 80,
-      exam_date: new Date().toISOString().slice(0, 10),
-      q1_memorization: sc('q1_memorization'),
-      q1_understanding: sc('q1_understanding'),
-      q1_reflection: sc('q1_reflection'),
-      q2_memorization: sc('q2_memorization'),
-      q2_understanding: sc('q2_understanding'),
-      q2_reflection: sc('q2_reflection'),
-      q3_memorization: sc('q3_memorization'),
-      q3_understanding: sc('q3_understanding'),
-      q3_reflection: sc('q3_reflection'),
-      tajweed_score: sc('tajweed_score'),
-      notes: scores.notes.trim() || null
-    }
-    const { error } = await supabase.from('exam_results').insert(payload)
-    if (error) throw error
-    toast.add({ title: 'تم رصد النتيجة.', color: 'success', icon: 'i-lucide-circle-check' })
-    gradeOpen.value = false
-    await refreshQueue()
-    await refreshResults()
-  } catch (err) {
-    handle(err)
-  } finally {
-    grading.value = false
-  }
-}
-
-// ═══ النتائج + فلاتر هرمية (مشرف جودة → مشرف → حلقة) ═══
-const isQuality = computed(() => role.value === 'quality')
-const isSupervisor = computed(() => role.value === 'supervisor')
-
-type RawResult = {
-  id: string
-  exam_date: string
-  total_score: number | null
-  passed: boolean | null
-  student: {
-    full_name: string
-    halaqa: {
-      id: string
-      name: string
-      supervisor: { id: string, full_name: string, quality: { id: string, full_name: string } | null } | null
-    } | null
-  } | null
-  exam_list_item: { exam_plan: { parts_from: number, parts_to: number } | null } | null
-}
-type FlatResult = {
-  id: string
-  exam_date: string
-  total_score: number | null
-  passed: boolean | null
-  student: string
-  range: string
-  halqaId: string
-  halqa: string
-  supId: string
-  sup: string
-  qId: string
-  q: string
-}
-
-const { data: rawResults, refresh: refreshResults } = await useAsyncData<RawResult[]>('exams-results', async () => {
-  const { data, error } = await supabase
-    .from('exam_results')
-    .select('id, exam_date, total_score, passed, student:student_id(full_name, halaqa:halaqa_id(id, name, supervisor:supervisor_id(id, full_name, quality:quality_supervisor_id(id, full_name)))), exam_list_item:exam_list_item_id(exam_plan:exam_plan_id(parts_from, parts_to))')
-    .order('exam_date', { ascending: false })
-    .limit(500)
-    .returns<RawResult[]>()
-  if (error) {
-    console.error('[exams] results:', error.message)
-    return []
-  }
-  return data ?? []
-}, { server: false, default: () => [] })
-
-const allResults = computed<FlatResult[]>(() => (rawResults.value ?? []).map((r) => {
-  const h = r.student?.halaqa
-  const sup = h?.supervisor
-  const q = sup?.quality
-  return {
-    id: r.id, exam_date: r.exam_date, total_score: r.total_score, passed: r.passed,
-    student: r.student?.full_name ?? '—',
-    range: r.exam_list_item?.exam_plan ? `${r.exam_list_item.exam_plan.parts_from}–${r.exam_list_item.exam_plan.parts_to}` : '—',
-    halqaId: h?.id ?? '', halqa: h?.name ?? '—',
-    supId: sup?.id ?? '', sup: sup?.full_name ?? '—',
-    qId: q?.id ?? '', q: q?.full_name ?? '—'
-  }
-}))
-
-// فلاتر هرمية
-const fQuality = ref('all')
-const fSupervisor = ref('all')
-const fHalqa = ref('all')
-const uniq = (arr: { id: string, label: string }[]) => {
-  const m = new Map<string, string>()
-  for (const x of arr) if (x.id) m.set(x.id, x.label)
-  return [{ value: 'all', label: 'الكل' }, ...[...m].map(([value, label]) => ({ value, label }))]
-}
-const qualityOpts = computed(() => uniq(allResults.value.map(r => ({ id: r.qId, label: r.q }))))
-const supervisorOpts = computed(() => uniq(allResults.value
-  .filter(r => fQuality.value === 'all' || r.qId === fQuality.value)
-  .map(r => ({ id: r.supId, label: r.sup }))))
-const halqaOpts = computed(() => uniq(allResults.value
-  .filter(r => (fQuality.value === 'all' || r.qId === fQuality.value) && (fSupervisor.value === 'all' || r.supId === fSupervisor.value))
-  .map(r => ({ id: r.halqaId, label: r.halqa }))))
-watch(fQuality, () => {
-  fSupervisor.value = 'all'
-  fHalqa.value = 'all'
-})
-watch(fSupervisor, () => {
-  fHalqa.value = 'all'
-})
-
-const results = computed(() => allResults.value.filter(r =>
-  (fQuality.value === 'all' || r.qId === fQuality.value)
-  && (fSupervisor.value === 'all' || r.supId === fSupervisor.value)
-  && (fHalqa.value === 'all' || r.halqaId === fHalqa.value)))
-
-const { page: resPage, pageCount: resPageCount, total: resTotal, pageSize: resPageSize, paged: resPaged, resetPage: resetResPage } = usePagination(results, 12)
-watch([fQuality, fSupervisor, fHalqa], resetResPage)
-function clearResFilters() {
-  fQuality.value = 'all'
-  fSupervisor.value = 'all'
-  fHalqa.value = 'all'
+async function onGraded() {
+  await Promise.all([refreshQueue(), resultsRef.value?.refresh()])
 }
 </script>
 
@@ -526,209 +344,16 @@ function clearResFilters() {
       </template>
 
       <!-- ═══ النتائج (للجميع، بفلاتر هرمية حسب النطاق) ═══ -->
-      <h3 class="sec-title mt">
-        نتائج الطلاب <span class="count">{{ resTotal }}</span>
-      </h3>
-
-      <div class="res-filters">
-        <UiSelect
-          v-if="isManager"
-          v-model="fQuality"
-          :items="qualityOpts"
-          placeholder="مشرف الجودة"
-          size="md"
-          class="rf"
-        />
-        <UiSelect
-          v-if="isManager || isQuality"
-          v-model="fSupervisor"
-          :items="supervisorOpts"
-          placeholder="المشرف"
-          size="md"
-          class="rf"
-        />
-        <UiSelect
-          v-if="!isTeacher"
-          v-model="fHalqa"
-          :items="halqaOpts"
-          placeholder="الحلقة"
-          size="md"
-          class="rf"
-        />
-        <UButton
-          v-if="fQuality !== 'all' || fSupervisor !== 'all' || fHalqa !== 'all'"
-          label="مسح الفلاتر"
-          color="neutral"
-          variant="ghost"
-          size="md"
-          icon="i-lucide-x"
-          @click="clearResFilters"
-        />
+      <div class="results-slot">
+        <ExamsResultsBrowser ref="resultsRef" />
       </div>
-
-      <UiEmptyState
-        v-if="!results.length"
-        icon="i-lucide-file-text"
-        title="لا نتائج مطابقة"
-      />
-      <div
-        v-else
-        class="card table-wrap"
-      >
-        <table>
-          <thead>
-            <tr>
-              <th class="ta-start">
-                الطالب
-              </th>
-              <th class="ta-start">
-                الحلقة
-              </th>
-              <th
-                v-if="!isTeacher && !isSupervisor"
-                class="ta-start"
-              >
-                المشرف
-              </th>
-              <th class="ta-start">
-                النطاق
-              </th>
-              <th class="ta-start">
-                التاريخ
-              </th>
-              <th class="ta-start">
-                العلامة
-              </th>
-              <th class="ta-start">
-                النتيجة
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr
-              v-for="r in resPaged"
-              :key="r.id"
-            >
-              <td class="strong">
-                {{ r.student }}
-              </td>
-              <td class="muted">
-                {{ r.halqa }}
-              </td>
-              <td
-                v-if="!isTeacher && !isSupervisor"
-                class="muted"
-              >
-                {{ r.sup }}
-              </td>
-              <td class="muted">
-                {{ r.range }}
-              </td>
-              <td class="muted">
-                {{ r.exam_date }}
-              </td>
-              <td><strong>{{ r.total_score ?? '—' }}</strong> / 100</td>
-              <td>
-                <UBadge
-                  :label="r.passed ? 'مجتاز' : 'غير مجتاز'"
-                  :color="r.passed ? 'success' : 'error'"
-                  variant="soft"
-                />
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <UiPaginator
-        v-if="results.length"
-        :page="resPage"
-        :page-count="resPageCount"
-        :total="resTotal"
-        :page-size="resPageSize"
-        @update:page="resPage = $event"
-      />
     </ClientOnly>
 
-    <!-- نافذة الرصد -->
-    <UModal
+    <ExamsGradeModal
       v-model:open="gradeOpen"
-      :title="`رصد نتيجة: ${gradeTarget?.student?.full_name || ''}`"
-    >
-      <template #body>
-        <div class="grade">
-          <p class="grade-hint">
-            كل خانة من 10 (المجموع من 100). علامة الاجتياز: <strong>{{ passMark }}</strong>.
-          </p>
-          <div class="groups">
-            <div
-              v-for="g in scoreGroups"
-              :key="g.title"
-              class="qgroup"
-              :class="{ single: g.keys.length === 1 }"
-            >
-              <div class="qgroup-title">
-                {{ g.title }}
-              </div>
-              <div class="qgroup-fields">
-                <div
-                  v-for="k in g.keys"
-                  :key="k"
-                  class="qfield"
-                >
-                  <label class="qfield-label">{{ branchLabel(k) }}</label>
-                  <input
-                    v-model="scores[k]"
-                    type="number"
-                    min="0"
-                    max="10"
-                    inputmode="numeric"
-                    dir="ltr"
-                    class="qfield-input"
-                    @input="clampScore(k)"
-                  >
-                  <span class="qfield-of">/10</span>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div
-            class="total"
-            :class="{ ok: liveTotal >= (passMark || 80) }"
-          >
-            المجموع: <strong>{{ liveTotal }}</strong> / 100
-            <span class="pill">{{ liveTotal >= (passMark || 80) ? 'مجتاز' : 'غير مجتاز' }}</span>
-          </div>
-          <UFormField label="ملاحظات (اختياري)">
-            <UTextarea
-              v-model="scores.notes"
-              :rows="2"
-              size="lg"
-              class="w-full"
-              :ui="{ base: 'rounded-[13px]' }"
-            />
-          </UFormField>
-          <div class="form-actions">
-            <UButton
-              label="إلغاء"
-              color="neutral"
-              variant="ghost"
-              size="lg"
-              :ui="{ base: 'rounded-[13px]' }"
-              @click="gradeOpen = false"
-            />
-            <UButton
-              label="حفظ النتيجة"
-              color="primary"
-              size="lg"
-              icon="i-lucide-check"
-              :loading="grading"
-              :ui="{ base: 'rounded-[13px] font-semibold' }"
-              @click="saveGrade"
-            />
-          </div>
-        </div>
-      </template>
-    </UModal>
+      :target="gradeTarget"
+      @saved="onGraded"
+    />
   </div>
 </template>
 
@@ -754,29 +379,6 @@ function clearResFilters() {
 .send-bar strong { color: var(--ink); }
 
 .sec-title { font-size: 18px; font-weight: 700; color: var(--ink); margin: 0 0 14px; display: flex; align-items: center; gap: 9px; }
-.sec-title.mt { margin-top: 30px; }
 .count { display: inline-flex; align-items: center; height: 24px; padding: 0 10px; border-radius: 999px; background: var(--blue-soft); color: var(--blue-ink); font-size: 13px; }
-.res-filters { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
-.rf { width: 200px; max-width: 100%; }
-
-.grade { display: flex; flex-direction: column; gap: 16px; }
-.grade-hint { margin: 0; font-size: 14px; color: var(--ink-2); }
-.groups { display: flex; flex-direction: column; gap: 14px; }
-.qgroup { background: var(--surface-2); border: 1px solid var(--line); border-radius: 15px; padding: 14px 16px; }
-.qgroup-title { font-size: 14px; font-weight: 700; color: var(--ink); margin-bottom: 12px; }
-.qgroup-fields { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
-.qgroup.single .qgroup-fields { grid-template-columns: 1fr; max-width: 240px; }
-.qfield { display: flex; flex-direction: column; gap: 6px; position: relative; }
-.qfield-label { font-size: 13px; color: var(--ink-2); font-weight: 600; }
-.qfield-input { width: 100%; height: 52px; padding: 0 14px; border-radius: 12px; border: 1.5px solid var(--line-2); background: var(--surface); color: var(--ink); font-size: 20px; font-weight: 700; text-align: center; outline: none; font-variant-numeric: tabular-nums; }
-.qfield-input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px var(--ring); }
-.qfield-of { position: absolute; inset-inline-end: 12px; bottom: 15px; font-size: 12px; color: var(--ink-3); pointer-events: none; }
-
-.total { display: flex; align-items: center; gap: 10px; font-size: 16px; color: var(--ink-2); padding: 12px 16px; border-radius: 13px; background: var(--surface-2); border: 1px solid var(--line); }
-.total strong { font-size: 22px; color: var(--ink); }
-.total .pill { margin-inline-start: auto; height: 28px; padding: 0 12px; display: inline-flex; align-items: center; border-radius: 999px; background: var(--err-soft); color: var(--err); font-size: 13px; font-weight: 700; }
-.total.ok .pill { background: var(--green-soft); color: var(--green-ink); }
-.form-actions { display: flex; justify-content: flex-end; gap: 10px; }
-
-@media (max-width: 560px) { .qgroup-fields { grid-template-columns: 1fr 1fr; } }
+.results-slot { margin-top: 30px; }
 </style>

@@ -69,12 +69,6 @@ const { data: memorizationPages } = await useAsyncData(() => `journey-pages-${id
 useSeoMeta({ title: () => student.value ? `${student.value.full_name} — ترجمان` : 'ملف الطالب — ترجمان' })
 
 const GENDER: Record<string, string> = { male: 'ذكر', female: 'أنثى' }
-const STATUS_META: Record<string, { label: string, color: 'success' | 'warning' | 'neutral' | 'info' }> = {
-  active: { label: 'نشط', color: 'success' },
-  withdrawn: { label: 'منقطع', color: 'warning' },
-  graduated: { label: 'متخرّج', color: 'info' },
-  transferred: { label: 'منقول', color: 'neutral' }
-}
 function ageFrom(d: string | null) {
   if (!d) return '—'
   const years = Math.floor((Date.now() - new Date(d).getTime()) / (365.25 * 24 * 3600 * 1000))
@@ -193,8 +187,8 @@ const sections = computed<{ title: string, icon: string, tone: string, fields: F
             <div class="band-top">
               <h2>{{ student.full_name }}</h2>
               <UBadge
-                :label="STATUS_META[student.status]?.label"
-                :color="STATUS_META[student.status]?.color"
+                :label="STUDENT_STATUS[student.status]?.label"
+                :color="STUDENT_STATUS[student.status]?.color"
                 variant="soft"
               />
             </div>

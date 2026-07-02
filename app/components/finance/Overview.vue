@@ -5,9 +5,7 @@ import type { Database } from '~/types/database.types'
 const supabase = useSupabaseClient<Database>()
 const { handle } = useErrorHandler()
 
-const MONTHS = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر']
 const now = new Date()
-const monthItems = MONTHS.map((m, i) => ({ label: m, value: i + 1 }))
 const yearItems = [now.getFullYear() - 1, now.getFullYear()].map(y => ({ label: String(y), value: y }))
 const month = ref(now.getMonth() + 1)
 const year = ref(now.getFullYear())
@@ -90,7 +88,7 @@ const series = computed(() => {
       m += 12
       y -= 1
     }
-    arr.push({ label: MONTHS[m - 1]!.slice(0, 3), value: balanceUntil(m, y) })
+    arr.push({ label: MONTH_NAMES[m - 1]!.slice(0, 3), value: balanceUntil(m, y) })
   }
   return arr
 })
@@ -134,7 +132,7 @@ const ARROW = { up: 'i-lucide-trending-up', down: 'i-lucide-trending-down', flat
       <div class="cards">
         <div class="card hero">
           <div class="c-lbl">
-            الرصيد الحالي (حتى {{ MONTHS[month - 1] }})
+            الرصيد الحالي (حتى {{ monthName(month) }})
           </div>
           <div class="c-val">
             {{ fmt(balance) }} <span class="cur">₪</span>

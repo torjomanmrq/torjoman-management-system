@@ -34,12 +34,6 @@ function toggleTheme() {
   colorMode.preference = isDark.value ? 'light' : 'dark'
 }
 
-const STATUS: Record<string, { label: string, color: 'success' | 'warning' | 'neutral' | 'info' }> = {
-  active: { label: 'نشط', color: 'success' },
-  withdrawn: { label: 'منقطع', color: 'warning' },
-  graduated: { label: 'متخرّج', color: 'info' },
-  transferred: { label: 'منقول', color: 'neutral' }
-}
 const dash = (v: string | number | null | undefined) => (v === null || v === undefined || v === '') ? '—' : String(v)
 
 const fields = computed(() => {
@@ -99,8 +93,8 @@ const fields = computed(() => {
           <div>
             <h1>{{ student.full_name }}</h1>
             <UBadge
-              :label="STATUS[student.status]?.label"
-              :color="STATUS[student.status]?.color"
+              :label="STUDENT_STATUS[student.status]?.label"
+              :color="STUDENT_STATUS[student.status]?.color"
               variant="soft"
             />
           </div>

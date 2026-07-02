@@ -65,12 +65,6 @@ const visitorItems = computed(() => (visitors.value ?? []).map(v => ({
 })))
 
 const statusF = ref<VisitStatus | 'all'>('all')
-const STATUS_META: Record<VisitStatus, { label: string, color: 'info' | 'success' | 'warning' | 'error' }> = {
-  scheduled: { label: 'مجدولة', color: 'info' },
-  done: { label: 'تمّت', color: 'success' },
-  late: { label: 'متأخّرة', color: 'warning' },
-  missed: { label: 'فائتة', color: 'error' }
-}
 const VISITOR_ROLE: Record<string, string> = { manager: 'مدير', supervisor: 'مشرف', quality: 'مشرف جودة' }
 const chipOptions = [
   { value: 'all' as const, label: 'الكل' },
@@ -306,8 +300,8 @@ async function confirmDelete() {
         </template>
         <template #status="{ row }">
           <UBadge
-            :label="STATUS_META[row.status].label"
-            :color="STATUS_META[row.status].color"
+            :label="VISIT_STATUS[row.status]?.label"
+            :color="VISIT_STATUS[row.status]?.color"
             variant="soft"
           />
         </template>

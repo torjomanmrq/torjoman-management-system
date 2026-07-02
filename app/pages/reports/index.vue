@@ -30,12 +30,6 @@ const ACTIVITY_GROUPS: { title: string, keys: { key: ActivityKey, label: string 
 ]
 const ALL_KEYS = ACTIVITY_GROUPS.flatMap(g => g.keys.map(k => k.key))
 
-const STATUS_META: Record<ReportStatus, { label: string, color: 'neutral' | 'warning' | 'success' }> = {
-  draft: { label: 'مسودّة', color: 'neutral' },
-  submitted: { label: 'مُرسل', color: 'warning' },
-  approved: { label: 'معتمد', color: 'success' }
-}
-
 // ── المُحدِّدات ──
 const now = new Date()
 const halqaId = ref('')
@@ -53,7 +47,6 @@ const { data: myHalqa } = await useAsyncData<NameRow | null>('reports-my-halqa',
 watchEffect(() => {
   if (isTeacher.value && myHalqa.value && !halqaId.value) halqaId.value = myHalqa.value.id
 })
-const MONTH_NAMES = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر']
 const curMonth = now.getMonth() + 1
 const curYear = now.getFullYear()
 // لا تُتاح الأشهر التي لم تبدأ بعد (المُحفِّز يرفضها) — تُقصَر للسنة الحالية على ≤ الشهر الحالي
@@ -373,8 +366,8 @@ async function setStatus(status: ReportStatus) {
                 </div>
               </div>
               <UBadge
-                :label="STATUS_META[r.status].label"
-                :color="STATUS_META[r.status].color"
+                :label="REPORT_STATUS[r.status]?.label"
+                :color="REPORT_STATUS[r.status]?.color"
                 variant="soft"
                 size="sm"
               />
@@ -486,8 +479,8 @@ async function setStatus(status: ReportStatus) {
         <div class="statusbar card">
           <div class="sb-info">
             <UBadge
-              :label="report ? STATUS_META[report.status].label : 'جديد (لم يُحفظ)'"
-              :color="report ? STATUS_META[report.status].color : 'neutral'"
+              :label="report ? REPORT_STATUS[report.status]?.label : 'جديد (لم يُحفظ)'"
+              :color="report ? REPORT_STATUS[report.status]?.color : 'neutral'"
               variant="soft"
               size="lg"
             />

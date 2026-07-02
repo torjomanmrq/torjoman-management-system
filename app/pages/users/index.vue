@@ -25,12 +25,6 @@ const ROLE_LABEL: Record<Role, string> = {
 const ROLE_COLOR: Record<Role, 'primary' | 'secondary' | 'info' | 'success'> = {
   manager: 'primary', quality: 'secondary', supervisor: 'info', teacher: 'success'
 }
-const STATUS_META: Record<string, { label: string, color: 'success' | 'warning' | 'neutral' }> = {
-  active: { label: 'نشط', color: 'success' },
-  pending: { label: 'بانتظار التفعيل', color: 'warning' },
-  disabled: { label: 'معطّل', color: 'neutral' }
-}
-
 const { data: users, refresh, pending } = await useAsyncData<UserRow[]>(
   'users-list',
   async () => {
@@ -228,8 +222,8 @@ async function confirmReset() {
           </template>
           <template #status="{ row }">
             <UBadge
-              :label="STATUS_META[row.status]?.label"
-              :color="STATUS_META[row.status]?.color"
+              :label="WORKER_STATUS[row.status]?.label"
+              :color="WORKER_STATUS[row.status]?.color"
               variant="soft"
             />
           </template>
