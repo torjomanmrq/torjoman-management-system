@@ -10,18 +10,10 @@ const { profile } = useProfile()
 const { handle } = useErrorHandler()
 const toast = useToast()
 
-const MONTHS = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر']
 const now = new Date()
-const monthItems = MONTHS.map((m, i) => ({ label: m, value: i + 1 }))
 const yearItems = [now.getFullYear() - 1, now.getFullYear()].map(y => ({ label: String(y), value: y }))
 const month = ref(now.getMonth() + 1)
 const year = ref(now.getFullYear())
-
-const STMT_STATUS: Record<string, { label: string, color: 'neutral' | 'warning' | 'success' }> = {
-  draft: { label: 'بانتظار', color: 'neutral' },
-  submitted: { label: 'مُسلّم', color: 'warning' },
-  reviewed: { label: 'مُطّلع عليه', color: 'success' }
-}
 
 type AllocRow = { halaqa_id: string, name: string, teacher: string, amount: string }
 type StmtRow = { id: string, halaqa: string, received: number, spent: number, status: string }
@@ -63,11 +55,17 @@ const saving = ref(false)
 async function save() {
   saving.value = true
   try {
-    await supabase.from('halaqa_incentives').delete().eq('incentive_month', month.value).eq('incentive_year', year.value)
+    // upsert أولاً ثم حذف المُفرَّغ فقط — لا نحذف الشهر كاملاً قبل الإدراج كي لا تضيع البيانات لو فشل
     const payload = rows.value.filter(r => Number(r.amount) > 0)
       .map(r => ({ halaqa_id: r.halaqa_id, incentive_month: month.value, incentive_year: year.value, allocated_amount: Number(r.amount), approved: false }))
     if (payload.length) {
-      const { error } = await supabase.from('halaqa_incentives').insert(payload)
+      const { error } = await supabase.from('halaqa_incentives').upsert(payload, { onConflict: 'halaqa_id,incentive_month,incentive_year' })
+      if (error) throw error
+    }
+    const cleared = rows.value.filter(r => !(Number(r.amount) > 0)).map(r => r.halaqa_id)
+    if (cleared.length) {
+      const { error } = await supabase.from('halaqa_incentives').delete()
+        .eq('incentive_month', month.value).eq('incentive_year', year.value).in('halaqa_id', cleared)
       if (error) throw error
     }
     toast.add({ title: 'حُفظ التخصيص.', color: 'success', icon: 'i-lucide-save' })
@@ -293,8 +291,8 @@ async function markReviewed(s: StmtRow) {
                 </td>
                 <td>
                   <UBadge
-                    :label="STMT_STATUS[s.status]?.label"
-                    :color="STMT_STATUS[s.status]?.color"
+                    :label="STATEMENT_STATUS[s.status]?.label"
+                    :color="STATEMENT_STATUS[s.status]?.color"
                     variant="soft"
                     size="sm"
                   />

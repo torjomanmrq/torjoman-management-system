@@ -77,13 +77,21 @@ export function useNotifications() {
     items.value = out
   }
 
+  // الاستطلاع الدوري يتوقّف والتبويب مخفي (توفير طلبات)، ويُحدَّث فور العودة إليه
   let timer: ReturnType<typeof setInterval> | null = null
+  function onVisible() {
+    if (!document.hidden) refresh()
+  }
   onMounted(() => {
     refresh()
-    timer = setInterval(refresh, 60000)
+    timer = setInterval(() => {
+      if (!document.hidden) refresh()
+    }, 60000)
+    document.addEventListener('visibilitychange', onVisible)
   })
   onUnmounted(() => {
     if (timer) clearInterval(timer)
+    document.removeEventListener('visibilitychange', onVisible)
   })
   watch(role, refresh)
   watch(() => route.path, refresh)

@@ -11,13 +11,6 @@ const route = useRoute()
 const id = computed(() => String(route.params.id))
 const supabase = useSupabaseClient<Database>()
 
-const VISIT_STATUS: Record<string, { label: string, color: 'neutral' | 'warning' | 'success' | 'error' }> = {
-  scheduled: { label: 'مجدولة', color: 'warning' },
-  done: { label: 'تمّت', color: 'success' },
-  late: { label: 'متأخّرة', color: 'warning' },
-  missed: { label: 'فائتة', color: 'error' }
-}
-
 type Sup = { id: string, full_name: string, email: string | null, role: string }
 type Halqa = { id: string, name: string, teacher: { full_name: string } | null }
 type Visit = { id: string, scheduled_at: string, executed_at: string | null, status: string, halaqa: { name: string } | null }

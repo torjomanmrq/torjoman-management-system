@@ -18,14 +18,7 @@ const isTeacher = computed(() => role.value === 'teacher')
 
 const CATEGORIES = ['جوائز', 'أنشطة', 'ضيافة', 'أخرى']
 const categoryItems = CATEGORIES.map(c => ({ label: c, value: c }))
-const STATUS_META: Record<StatementStatus, { label: string, color: 'neutral' | 'warning' | 'success' }> = {
-  draft: { label: 'مسودّة', color: 'neutral' },
-  submitted: { label: 'مُرسل', color: 'warning' },
-  reviewed: { label: 'مُراجَع', color: 'success' }
-}
-const MONTHS = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر']
 const now = new Date()
-const monthItems = MONTHS.map((m, i) => ({ label: m, value: i + 1 }))
 const yearItems = [now.getFullYear() - 1, now.getFullYear()].map(y => ({ label: String(y), value: y }))
 
 // حلقة المعلّم تلقائيّاً
@@ -237,8 +230,8 @@ const fmt = (n: number) => n.toLocaleString('ar')
             </div>
             <div class="sm-status">
               <UBadge
-                :label="statement ? STATUS_META[statement.status].label : 'جديد (لم يُحفظ)'"
-                :color="statement ? STATUS_META[statement.status].color : 'neutral'"
+                :label="statement ? STATEMENT_STATUS[statement.status]?.label : 'جديد (لم يُحفظ)'"
+                :color="statement ? STATEMENT_STATUS[statement.status]?.color : 'neutral'"
                 variant="soft"
                 size="lg"
               />

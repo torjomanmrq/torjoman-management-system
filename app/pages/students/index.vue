@@ -89,13 +89,6 @@ const columns = computed(() => {
 function initialOf(name: string) {
   return name.trim().charAt(0) || '؟'
 }
-const STATUS_META: Record<StudentStatus, { label: string, color: 'success' | 'warning' | 'neutral' | 'info' }> = {
-  active: { label: 'نشط', color: 'success' },
-  withdrawn: { label: 'منقطع', color: 'warning' },
-  graduated: { label: 'متخرّج', color: 'info' },
-  transferred: { label: 'منقول', color: 'neutral' }
-}
-
 // ── إضافة/تعديل ──
 const modalOpen = ref(false)
 const saving = ref(false)
@@ -296,8 +289,8 @@ async function confirmDelete() {
         </template>
         <template #status="{ row }">
           <UBadge
-            :label="STATUS_META[row.status].label"
-            :color="STATUS_META[row.status].color"
+            :label="STUDENT_STATUS[row.status]?.label"
+            :color="STUDENT_STATUS[row.status]?.color"
             variant="soft"
           />
         </template>
