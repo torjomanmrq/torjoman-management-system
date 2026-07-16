@@ -1,11 +1,6 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
-  modules: [
-    '@nuxt/eslint',
-    '@nuxt/ui',
-    '@pinia/nuxt',
-    '@nuxtjs/supabase'
-  ],
+  modules: ['@nuxt/eslint', '@nuxt/ui', '@pinia/nuxt', '@nuxtjs/supabase', '@vite-pwa/nuxt'],
 
   devtools: {
     enabled: true
@@ -19,7 +14,12 @@ export default defineNuxtConfig({
         dir: 'rtl'
       },
       link: [
-        { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' }
+        { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' },
+        // رابط المانيفست: @vite-pwa/nuxt يولّده لكنه لا يحقن الرابط، فنضيفه هنا ليكتشفه Chrome
+        { rel: 'manifest', href: '/manifest.webmanifest' }
+      ],
+      meta: [
+        { name: 'theme-color', content: '#094064' }
       ]
     }
   },
@@ -44,6 +44,30 @@ export default defineNuxtConfig({
         commaDangle: 'never',
         braceStyle: '1tbs'
       }
+    }
+  },
+
+  // PWA: التطبيق قابل للتثبيت (مانيفست + service worker لهيكل التطبيق فقط).
+  // لا يخزّن استدعاءات Supabase — البيانات تبقى حيّة. النصوص عربية RTL.
+  pwa: {
+    registerType: 'autoUpdate',
+    manifest: {
+      name: 'ترجمان',
+      short_name: 'ترجمان',
+      lang: 'ar',
+      dir: 'rtl',
+      display: 'standalone',
+      start_url: '/',
+      theme_color: '#094064',
+      background_color: '#FFFFFF',
+      icons: [
+        { src: '/icon-192.png', sizes: '192x192', type: 'image/png' },
+        { src: '/icon-512.png', sizes: '512x512', type: 'image/png' },
+        { src: '/icon-512-maskable.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' }
+      ]
+    },
+    workbox: {
+      navigateFallback: '/'
     }
   },
 
