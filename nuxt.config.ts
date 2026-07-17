@@ -75,5 +75,13 @@ export default defineNuxtConfig({
   // redirect معطّل الآن — سنبني حماية المسارات حسب الدور كـ middleware خاص بنا (المهمة 7).
   supabase: {
     redirect: false
+  },
+
+  // النطاق العامّ للموقع (canonical / og:url / sitemap / robots).
+  // اضبطه عند معرفة النطاق عبر متغيّر البيئة NUXT_PUBLIC_SITE_URL على Vercel.
+  runtimeConfig: {
+    public: {
+      siteUrl: process.env.NUXT_PUBLIC_SITE_URL || 'https://turjuman.vercel.app'
+    }
   }
 })

@@ -15,10 +15,56 @@ function toggleTheme() {
   colorMode.preference = isDark.value ? 'light' : 'dark'
 }
 
+const site = useRuntimeConfig().public.siteUrl.replace(/\/$/, '')
+const seoTitle = 'ترجمان — منصّة إدارة حِلَق تحفيظ القرآن'
+const seoDesc = 'منظومة قرآنية تربوية متكاملة ترافق الطالب في رحلته: حفظ كتاب الله وفهمه وتدبّره والعمل به — إدارة الحلقات والطلاب والإشراف والتقارير في مكان واحد.'
+
 useSeoMeta({
-  title: 'ترجمان — حفظ وفهم وعمل',
-  description:
-    'منظومة قرآنية تربوية متكاملة ترافق الطالب في رحلته: حفظ كتاب الله وفهمه وتدبّره والعمل به — إدارة الحلقات والطلاب والإشراف والتقارير في مكان واحد.'
+  title: seoTitle,
+  description: seoDesc,
+  ogType: 'website',
+  ogTitle: seoTitle,
+  ogDescription: seoDesc,
+  ogUrl: site + '/',
+  ogImage: site + '/og-image.png',
+  ogImageWidth: 1200,
+  ogImageHeight: 630,
+  ogSiteName: 'ترجمان',
+  ogLocale: 'ar_AR',
+  twitterCard: 'summary_large_image',
+  twitterTitle: seoTitle,
+  twitterDescription: seoDesc,
+  twitterImage: site + '/og-image.png'
+})
+
+// canonical + بيانات منظّمة (JSON-LD) تربط الاسم بالعلامة وتفعّل روابط الموقع في نتائج Google
+useHead({
+  link: [{ rel: 'canonical', href: site + '/' }],
+  script: [{
+    type: 'application/ld+json',
+    innerHTML: JSON.stringify({
+      '@context': 'https://schema.org',
+      '@graph': [
+        {
+          '@type': 'Organization',
+          '@id': site + '/#org',
+          'name': 'ترجمان',
+          'alternateName': 'ترجمان القرآني',
+          'url': site + '/',
+          'logo': site + '/icon-512.png',
+          'description': seoDesc
+        },
+        {
+          '@type': 'WebSite',
+          '@id': site + '/#website',
+          'name': 'ترجمان',
+          'url': site + '/',
+          'inLanguage': 'ar',
+          'publisher': { '@id': site + '/#org' }
+        }
+      ]
+    })
+  }]
 })
 
 /** ركائز المشروع الثلاث. */
