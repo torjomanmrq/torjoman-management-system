@@ -4,12 +4,20 @@
  * الموقع قابلاً للتثبيت. زرّ «تثبيت التطبيق» يفتح الحوار الأصلي؛ على iOS يظهر
  * إرشاد يدوي (شارك ← أضف إلى الشاشة الرئيسية). قابل للإغلاق مع ذاكرة.
  */
-const { visible, ios, install, dismiss } = usePwaInstall()
-const showIosSteps = ref(false)
+const { visible, manual, install, dismiss } = usePwaInstall()
+const showSteps = ref(false)
+
+/** Safari يحتاج تثبيتاً يدويّاً (لا يدعم beforeinstallprompt). */
+const isManual = computed(() => manual.value !== 'none')
+/** الخطوة الثانية تختلف: الجوّال ← الشاشة الرئيسية · الماك ← Dock. */
+const targetLabel = computed(() => manual.value === 'mac' ? 'إضافة إلى Dock' : 'إضافة إلى الشاشة الرئيسية')
+const shareHint = computed(() => manual.value === 'mac'
+  ? 'اضغط زرّ «المشاركة» في شريط Safari'
+  : 'اضغط زرّ «المشاركة» في أسفل Safari')
 
 async function onInstall() {
-  if (ios.value) {
-    showIosSteps.value = !showIosSteps.value
+  if (isManual.value) {
+    showSteps.value = !showSteps.value
     return
   }
   await install()
@@ -52,9 +60,9 @@ async function onInstall() {
           </div>
         </div>
 
-        <!-- إرشاد iOS -->
+        <!-- إرشاد Safari (لا يدعم التثبيت البرمجي) -->
         <div
-          v-if="ios && showIosSteps"
+          v-if="isManual && showSteps"
           class="pwa-ios"
         >
           <p class="pwa-ios-step">
@@ -62,20 +70,20 @@ async function onInstall() {
               name="i-lucide-share"
               class="size-4"
             />
-            اضغط زرّ «المشاركة» في أسفل Safari
+            {{ shareHint }}
           </p>
           <p class="pwa-ios-step">
             <UIcon
               name="i-lucide-plus-square"
               class="size-4"
             />
-            اختر «إضافة إلى الشاشة الرئيسية»
+            اختر «{{ targetLabel }}»
           </p>
         </div>
 
         <UButton
-          :label="ios ? (showIosSteps ? 'إخفاء الخطوات' : 'كيف أثبّته؟') : 'تثبيت التطبيق'"
-          :icon="ios ? 'i-lucide-share' : 'i-lucide-download'"
+          :label="isManual ? (showSteps ? 'إخفاء الخطوات' : 'كيف أثبّته؟') : 'تثبيت التطبيق'"
+          :icon="isManual ? 'i-lucide-share' : 'i-lucide-download'"
           color="primary"
           size="lg"
           block
