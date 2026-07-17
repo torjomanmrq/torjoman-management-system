@@ -11,5 +11,6 @@
     <NuxtLayout>
       <NuxtPage />
     </NuxtLayout>
+    <PwaInstallBanner />
   </UApp>
 </template>
