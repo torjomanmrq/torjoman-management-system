@@ -26,11 +26,13 @@ export default defineNuxtConfig({
 
   css: ['~/assets/css/main.css'],
 
-  // الخطوط: في وضع التطوير نعطّل المزوّدات الشبكية ليعمل الخادم دون إنترنت
-  // (يتجنّب انهيار vite-node عند انقطاع الشبكة). الإنتاج يبقى كامل المزوّدات.
-  fonts: process.env.NODE_ENV !== 'production'
-    ? { providers: { google: false, bunny: false, fontshare: false, googleicons: false } }
-    : {},
+  // النطاق العامّ للموقع (canonical / og:url / sitemap / robots).
+  // اضبطه عند معرفة النطاق عبر متغيّر البيئة NUXT_PUBLIC_SITE_URL على Vercel.
+  runtimeConfig: {
+    public: {
+      siteUrl: process.env.NUXT_PUBLIC_SITE_URL || 'https://turjuman.vercel.app'
+    }
+  },
 
   routeRules: {
     '/': { prerender: true }
@@ -46,6 +48,12 @@ export default defineNuxtConfig({
       }
     }
   },
+
+  // الخطوط: في وضع التطوير نعطّل المزوّدات الشبكية ليعمل الخادم دون إنترنت
+  // (يتجنّب انهيار vite-node عند انقطاع الشبكة). الإنتاج يبقى كامل المزوّدات.
+  fonts: process.env.NODE_ENV !== 'production'
+    ? { providers: { google: false, bunny: false, fontshare: false, googleicons: false } }
+    : {},
 
   // PWA: التطبيق قابل للتثبيت (مانيفست + service worker لهيكل التطبيق فقط).
   // لا يخزّن استدعاءات Supabase — البيانات تبقى حيّة. النصوص عربية RTL.
