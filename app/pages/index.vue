@@ -164,10 +164,10 @@ const btnUi = { base: 'rounded-[14px] font-semibold' }
           alt="ترجمان"
         ></a>
         <nav class="nav-links">
+          <a href="#news">الأخبار</a>
           <a href="#about">عن المشروع</a>
           <a href="#pillars">حفظ وفهم وعمل</a>
           <a href="#offer">ماذا يقدّم</a>
-          <a href="#news">الأخبار</a>
           <a href="#contact">تواصل</a>
         </nav>
         <div class="nav-actions">
