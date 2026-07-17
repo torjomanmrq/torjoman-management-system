@@ -16,8 +16,8 @@ function toggleTheme() {
 }
 
 const site = useRuntimeConfig().public.siteUrl.replace(/\/$/, '')
-const seoTitle = 'ترجمان — منصّة إدارة حِلَق تحفيظ القرآن'
-const seoDesc = 'منظومة قرآنية تربوية متكاملة ترافق الطالب في رحلته: حفظ كتاب الله وفهمه وتدبّره والعمل به — إدارة الحلقات والطلاب والإشراف والتقارير في مكان واحد.'
+const seoTitle = 'ترجمان — حفظ وفهم وعمل'
+const seoDesc = 'برنامج قرآني من مؤسسة المرقاة للتعليم والتدريب يجمع بين حفظ كتاب الله وفهمه وتدبّره والعمل به، ويرافق الطالب في رحلته القرآنية عبر الحلقات والبرامج المصاحبة.'
 
 useSeoMeta({
   title: seoTitle,
@@ -46,13 +46,20 @@ useHead({
       '@context': 'https://schema.org',
       '@graph': [
         {
-          '@type': 'Organization',
+          '@type': 'EducationalOrganization',
           '@id': site + '/#org',
-          'name': 'ترجمان',
-          'alternateName': 'ترجمان القرآني',
+          'name': 'برنامج تُرجمان القرآني',
+          'alternateName': ['ترجمان', 'برنامج ترجمان', 'ترجمان القرآني'],
           'url': site + '/',
           'logo': site + '/icon-512.png',
-          'description': seoDesc
+          'description': seoDesc,
+          'parentOrganization': { '@type': 'Organization', 'name': 'مؤسسة المرقاة للتعليم والتدريب' },
+          'sameAs': [
+            'https://www.facebook.com/Torjomanmrq',
+            'https://www.instagram.com/torjomanmrq/',
+            'https://x.com/Torjomanmrq',
+            'https://t.me/Torjomanmrq'
+          ]
         },
         {
           '@type': 'WebSite',
@@ -199,7 +206,7 @@ const btnUi = { base: 'rounded-[14px] font-semibold' }
     >
       <div class="hero-in">
         <div class="badge">
-          <span class="dot" />مشروع ترجمان القرآني
+          <span class="dot" />برنامج قرآني · مؤسسة المرقاة
         </div>
         <img
           src="/brand/turjuman-mark.png"
@@ -317,9 +324,13 @@ const btnUi = { base: 'rounded-[14px] font-semibold' }
       </div>
       <div>
         <p class="about-text">
-          ترجمان مشروع قرآني واقعي يجمع بين حفظ القرآن وفهمه وتدبّره ضمن منظومة
-          تربوية متكاملة. يرافق الطالب عبر برامج مصاحبة طوال رحلته، فلا يكون
-          الحفظ غايةً مجرّدة، بل طريقاً إلى الفهم والعمل.
+          ترجمان مشروع قرآني واقعي يجمع بين حفظ القرآن وفهمه وتدبّره في وحدة
+          واحدة لا تنفصل. فالحفظ في الصدر يفتح الباب إلى الفهم في العقل،
+          والفهم يثمر تدبّراً يترجم إلى عملٍ وسلوكٍ في الحياة.
+        </p>
+        <p class="about-text">
+          لذلك يرافق ترجمان الطالب عبر برامج مصاحبة طوال رحلته، فلا يكون الحفظ
+          غايةً مجرّدة، بل بذرةً تُثمر فهماً وعملاً.
         </p>
         <div class="tags">
           <span class="tag">لقاءات تدبّرية</span><span class="tag">مراجعة أسبوعية</span>
@@ -372,13 +383,13 @@ const btnUi = { base: 'rounded-[14px] font-semibold' }
       class="wrap offer"
     >
       <div class="sec-head center">
-        <span class="eyebrow">ماذا يقدّم ترجمان</span>
+        <span class="eyebrow">في خدمة الرحلة</span>
         <h2 class="sec-title">
-          منظومة واحدة تدير الرحلة كاملة
+          كل أداة في خدمة الحفظ والفهم والعمل
         </h2>
         <p class="sec-lede">
-          من الحلقة اليومية إلى الإشراف الميداني والتقارير الشهرية — كل ذلك في
-          مكان واحد.
+          يرعى ترجمان رحلة الطالب من حفظه إلى فهمه إلى عمله، وكل ما فيه من أدوات
+          يصبّ في خدمة هذا المعنى.
         </p>
       </div>
       <div class="grid3 features">
@@ -457,8 +468,15 @@ const btnUi = { base: 'rounded-[14px] font-semibold' }
               ><span>ترجمان</span>
             </div>
             <p class="footer-about">
-              منظومة قرآنية تربوية متكاملة — حفظ وفهم وعمل.
+              برنامج قرآني من مؤسسة المرقاة للتعليم والتدريب — حفظ وفهم وعمل.
             </p>
+            <div class="footer-parent">
+              <span>برعاية</span>
+              <img
+                src="/brand/morqah-logo.png"
+                alt="مؤسسة المرقاة للتعليم والتدريب"
+              >
+            </div>
           </div>
           <div>
             <div class="footer-h">
@@ -475,13 +493,50 @@ const btnUi = { base: 'rounded-[14px] font-semibold' }
             </div>
             <div class="footer-links">
               <span>البريد: torjoman.official@gmail.com</span>
-              <span>الجوال: 0594646042</span>
+              <span>واتساب: <bdi dir="ltr">+970 594 646 042</bdi></span>
               <span>فلسطين — غزة</span>
+            </div>
+            <div class="footer-social">
+              <a
+                href="mailto:torjoman.official@gmail.com"
+                target="_blank"
+                aria-label="البريد الإلكتروني لترجمان"
+              ><UIcon name="i-lucide-mail" /></a>
+              <a
+                href="https://wa.me/970594646042"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="واتساب ترجمان"
+              ><UIcon name="i-simple-icons-whatsapp" /></a>
+              <a
+                href="https://www.facebook.com/Torjomanmrq"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="فيسبوك ترجمان"
+              ><UIcon name="i-lucide-facebook" /></a>
+              <a
+                href="https://www.instagram.com/torjomanmrq/"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="إنستغرام ترجمان"
+              ><UIcon name="i-lucide-instagram" /></a>
+              <a
+                href="https://x.com/Torjomanmrq"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="حساب ترجمان على إكس"
+              ><UIcon name="i-lucide-x" /></a>
+              <a
+                href="https://t.me/Torjomanmrq"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="قناة ترجمان على تيليجرام"
+              ><UIcon name="i-simple-icons-telegram" /></a>
             </div>
           </div>
         </div>
         <div class="footer-bottom">
-          <span>© 2026 ترجمان القرآني — جميع الحقوق محفوظة.</span>
+          <span>© 2026 ترجمان القرآني — مؤسسة المرقاة للتعليم والتدريب. جميع الحقوق محفوظة.</span>
           <span>حفظ وفهم وعمل</span>
         </div>
       </div>
@@ -753,6 +808,9 @@ const btnUi = { base: 'rounded-[14px] font-semibold' }
   color: var(--ink-2);
   font-weight: 300;
 }
+.about-text + .about-text {
+  margin-top: 18px;
+}
 .tags {
   margin-top: 30px;
   display: flex;
@@ -957,6 +1015,19 @@ const btnUi = { base: 'rounded-[14px] font-semibold' }
   color: var(--ink-2);
   font-weight: 300;
 }
+.footer-parent {
+  margin-top: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--ink-3);
+}
+.footer-parent img {
+  height: 34px;
+  width: auto;
+  filter: var(--logo-filter);
+}
 .footer-h {
   font-size: 14px;
   font-weight: 700;
@@ -972,6 +1043,29 @@ const btnUi = { base: 'rounded-[14px] font-semibold' }
 }
 .footer-links a:hover {
   color: var(--ink);
+}
+.footer-social {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 18px;
+}
+.footer-social a {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  color: var(--ink-2);
+  font-size: 18px;
+  transition: all 0.2s;
+}
+.footer-social a:hover {
+  color: var(--blue-ink);
+  border-color: var(--blue-soft);
 }
 .footer-bottom {
   margin-top: 48px;
