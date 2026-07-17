@@ -25,12 +25,22 @@ export function usePwaInstall() {
       || (window.navigator as unknown as { standalone?: boolean }).standalone === true
   }
 
-  const isIOS = () => {
-    if (import.meta.server) return false
+  /**
+   * Safari لا يدعم beforeinstallprompt (حصريّ لمتصفّحات Chromium)، فالتثبيت يدويّ.
+   * نميّز الجوّال (الشاشة الرئيسية) عن الماك (Dock) لاختلاف نصّ الإرشاد.
+   * ملاحظة: تثبيت PWA على الماك يتطلّب Safari 17+ (macOS Sonoma).
+   */
+  const safariKind = (): 'none' | 'mobile' | 'mac' => {
+    if (import.meta.server) return 'none'
     const ua = window.navigator.userAgent
+    // استبعد متصفّحات أخرى تعمل بمحرّك WebKit على iOS أو Chromium على الماك
+    const isSafari = /safari/i.test(ua) && !/crios|fxios|edgios|chrome|chromium|edg\//i.test(ua)
+    if (!isSafari) return 'none'
     const iOSDevice = /iphone|ipad|ipod/i.test(ua)
     const iPadOS = navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1
-    return (iOSDevice || iPadOS) && /safari/i.test(ua) && !/crios|fxios|edgios/i.test(ua)
+    if (iOSDevice || iPadOS) return 'mobile'
+    if (/macintosh|mac os x/i.test(ua)) return 'mac'
+    return 'none'
   }
 
   const dismissedRecently = () => {
@@ -42,16 +52,17 @@ export function usePwaInstall() {
     return (Date.now() - ts) < DISMISS_DAYS * 24 * 60 * 60 * 1000
   }
 
+  /** 'none' = لا إرشاد يدوي · 'mobile' = الشاشة الرئيسية · 'mac' = Dock */
+  const manual = ref<'none' | 'mobile' | 'mac'>('none')
+
   // يظهر البانر إذا: انقضت المهلة، وغير مثبّت، وغير مُغلَق مؤخّراً،
-  // و(قابل للتثبيت فعلاً عبر الحدث أو نظام iOS الذي يحتاج إرشاداً).
+  // و(قابل للتثبيت عبر الحدث [Chromium] أو Safari الذي يحتاج إرشاداً يدويّاً).
   const visible = computed(() =>
     ready.value
     && !installed.value
-    && (!!deferred.value || isIOS())
+    && (!!deferred.value || manual.value !== 'none')
     && !isStandalone()
     && !dismissedRecently())
-
-  const ios = ref(false)
 
   let onPrompt: ((e: Event) => void) | null = null
   let onInstalled: (() => void) | null = null
@@ -62,7 +73,7 @@ export function usePwaInstall() {
       installed.value = true
       return
     }
-    ios.value = isIOS()
+    manual.value = safariKind()
 
     onPrompt = (e: Event) => {
       e.preventDefault() // امنع تلميح Chrome الافتراضي؛ نعرض بانرنا بدلاً منه
@@ -102,5 +113,5 @@ export function usePwaInstall() {
     ready.value = false
   }
 
-  return { visible, ios, install, dismiss }
+  return { visible, manual, install, dismiss }
 }
