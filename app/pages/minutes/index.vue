@@ -29,7 +29,8 @@ type MinuteRow = {
 }
 type Staff = { id: string, full_name: string, role: string }
 
-const { data: minutes, refresh, pending } = await useAsyncData<MinuteRow[]>('minutes-list', async () => {
+// الاستعلامان مستقلّان — يُطلَقان معاً بالتوازي بدل التتابع
+const minutesAsync = useAsyncData<MinuteRow[]>('minutes-list', async () => {
   const { data } = await supabase
     .from('meeting_minutes')
     .select('id, title, meeting_date, agenda, decisions, tasks, attendee_ids, status')
@@ -38,13 +39,16 @@ const { data: minutes, refresh, pending } = await useAsyncData<MinuteRow[]>('min
   return data ?? []
 }, { server: false, default: () => [] })
 
-const { data: staff } = await useAsyncData<Staff[]>('minutes-staff', async () => {
+const staffAsync = useAsyncData<Staff[]>('minutes-staff', async () => {
   if (!isManager.value) return []
   const { data } = await supabase
     .from('profiles').select('id, full_name, role')
     .in('role', ['manager', 'quality', 'supervisor']).eq('status', 'active').order('full_name')
   return data ?? []
 }, { server: false, default: () => [], watch: [isManager] })
+await Promise.all([minutesAsync, staffAsync])
+const { data: minutes, refresh, pending } = minutesAsync
+const { data: staff } = staffAsync
 const staffMap = computed(() => Object.fromEntries((staff.value ?? []).map(s => [s.id, s])))
 const attendeeNames = (ids: string[]) => ids.map(id => staffMap.value[id]?.full_name).filter(Boolean)
 

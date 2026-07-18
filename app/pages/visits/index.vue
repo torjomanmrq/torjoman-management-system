@@ -25,7 +25,8 @@ const toast = useToast()
 const isManager = computed(() => myRole.value === 'manager')
 const canSchedule = computed(() => myRole.value === 'manager' || myRole.value === 'supervisor')
 
-const { data: visits, refresh, pending } = await useAsyncData<VisitRow[]>(
+// الاستعلامات الثلاثة مستقلّة — تُطلَق معاً بالتوازي (Promise.all) بدل التتابع
+const visitsAsync = useAsyncData<VisitRow[]>(
   'visits-list',
   async () => {
     const { data, error } = await supabase
@@ -41,8 +42,7 @@ const { data: visits, refresh, pending } = await useAsyncData<VisitRow[]>(
   },
   { server: false, default: () => [] }
 )
-
-const { data: halqat } = await useAsyncData<HalqaOption[]>('visits-halqat', async () => {
+const halqatAsync = useAsyncData<HalqaOption[]>('visits-halqat', async () => {
   const { data } = await supabase
     .from('halaqat')
     .select('id, name, daily_time, teacher:teacher_id(full_name)')
@@ -51,10 +51,14 @@ const { data: halqat } = await useAsyncData<HalqaOption[]>('visits-halqat', asyn
   return data ?? []
 }, { server: false, default: () => [] })
 // الزائر: مدير أو مشرف ميداني (المدير يزور بصفته مديراً أيضاً)
-const { data: visitors } = await useAsyncData<VisitorRow[]>('visits-visitors', async () => {
+const visitorsAsync = useAsyncData<VisitorRow[]>('visits-visitors', async () => {
   const { data } = await supabase.from('profiles').select('id, full_name, role').in('role', ['manager', 'supervisor']).eq('status', 'active').order('full_name')
   return (data ?? []) as VisitorRow[]
 }, { server: false, default: () => [] })
+await Promise.all([visitsAsync, halqatAsync, visitorsAsync])
+const { data: visits, refresh, pending } = visitsAsync
+const { data: halqat } = halqatAsync
+const { data: visitors } = visitorsAsync
 const halqaItems = computed(() => (halqat.value ?? []).map(h => ({
   label: h.teacher?.full_name ? `${h.name} — ${h.teacher.full_name}` : h.name,
   value: h.id

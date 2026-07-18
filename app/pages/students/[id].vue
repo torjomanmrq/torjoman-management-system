@@ -22,7 +22,8 @@ const toast = useToast()
 const id = computed(() => String(route.params.id))
 const canManage = computed(() => role.value === 'manager' || role.value === 'teacher')
 
-const { data: student, pending, refresh } = await useAsyncData<StudentRow | null>(
+// الاستعلامات الأربعة مستقلّة (تعتمد فقط على id.value الجاهز فوراً) — تُطلَق معاً بالتوازي
+const studentAsync = useAsyncData<StudentRow | null>(
   () => `student-${id.value}`,
   async () => {
     const { data, error } = await supabase
@@ -40,13 +41,13 @@ const { data: student, pending, refresh } = await useAsyncData<StudentRow | null
 )
 
 // خطة الاختبارات + نتائج الطالب لرسم رحلة الطالب (حسب الحفظ + النتائج)
-const { data: plan } = await useAsyncData('journey-exam-plan', async () => {
+const planAsync = useAsyncData('journey-exam-plan', async () => {
   const { data } = await supabase.from('exam_plan').select('id, parts_from, parts_to, stage_type').order('parts_to')
   return data ?? []
 }, { server: false, default: () => [] })
 
 type ResultRow = { passed: boolean | null, total_score: number | null, exam_list_item: { exam_plan_id: number | null } | null }
-const { data: examResults } = await useAsyncData(() => `journey-results-${id.value}`, async () => {
+const examResultsAsync = useAsyncData(() => `journey-results-${id.value}`, async () => {
   const { data } = await supabase
     .from('exam_results')
     .select('passed, total_score, exam_list_item:exam_list_item_id(exam_plan_id)')
@@ -57,7 +58,7 @@ const { data: examResults } = await useAsyncData(() => `journey-results-${id.val
 
 // إجمالي صفحات الحفظ من التقارير الشهرية المعتمدة
 type PagesRow = { memorization_pages: number | null, report: { status: string } | null }
-const { data: memorizationPages } = await useAsyncData(() => `journey-pages-${id.value}`, async () => {
+const memorizationPagesAsync = useAsyncData(() => `journey-pages-${id.value}`, async () => {
   const { data } = await supabase
     .from('monthly_report_students')
     .select('memorization_pages, report:report_id(status)')
@@ -65,6 +66,12 @@ const { data: memorizationPages } = await useAsyncData(() => `journey-pages-${id
     .returns<PagesRow[]>()
   return (data ?? []).filter(r => r.report?.status === 'approved').reduce((sum, r) => sum + (r.memorization_pages ?? 0), 0)
 }, { server: false, default: () => 0 })
+
+await Promise.all([studentAsync, planAsync, examResultsAsync, memorizationPagesAsync])
+const { data: student, pending, refresh } = studentAsync
+const { data: plan } = planAsync
+const { data: examResults } = examResultsAsync
+const { data: memorizationPages } = memorizationPagesAsync
 
 useSeoMeta({ title: () => student.value ? `${student.value.full_name} — ترجمان` : 'ملف الطالب — ترجمان' })
 

@@ -25,7 +25,8 @@ const canManage = computed(() => myRole.value === 'manager' || myRole.value === 
 const canDelete = computed(() => myRole.value === 'manager')
 const HALQA_NONE = 'none'
 
-const { data: students, refresh, pending } = await useAsyncData<StudentRow[]>(
+// الاستعلامان مستقلّان — يُطلَقان معاً بالتوازي بدل التتابع
+const studentsAsync = useAsyncData<StudentRow[]>(
   'students-list',
   async () => {
     const { data, error } = await supabase
@@ -42,7 +43,7 @@ const { data: students, refresh, pending } = await useAsyncData<StudentRow[]>(
   { server: false, default: () => [] }
 )
 
-const { data: halqat } = await useAsyncData<HalqaOpt[]>('students-halqat', async () => {
+const halqatAsync = useAsyncData<HalqaOpt[]>('students-halqat', async () => {
   const { data } = await supabase
     .from('halaqat')
     .select('id, name, daily_time, teacher:teacher_id(full_name)')
@@ -50,6 +51,9 @@ const { data: halqat } = await useAsyncData<HalqaOpt[]>('students-halqat', async
     .returns<HalqaOpt[]>()
   return data ?? []
 }, { server: false, default: () => [] })
+await Promise.all([studentsAsync, halqatAsync])
+const { data: students, refresh, pending } = studentsAsync
+const { data: halqat } = halqatAsync
 function halqaLabel(h: HalqaOpt) {
   return h.teacher?.full_name ? `${h.name} — ${h.teacher.full_name}` : h.name
 }
