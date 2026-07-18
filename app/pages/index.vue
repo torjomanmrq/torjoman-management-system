@@ -3,7 +3,8 @@
  * صفحة Landing العامّة (§4.0) — الواجهة التعريفية للزوّار قبل الدخول.
  * تعريفية فقط: لا تسجيل ذاتي. مبنيّة بمكوّنات Nuxt UI (UButton/UBadge) حيث يطابق
  * التصميم، وبتخطيط مخصّص للأقسام البصرية الفريدة (Hero/البطاقات) بالتوكنز + RTL.
- * قسم الأخبار يجلب أحدث ٣ أخبار منشورة من وحدة الأخبار (§4.26).
+ * قسم الأخبار يجلب أحدث ٦ أخبار منشورة من وحدة الأخبار (§4.26)؛ السلايدر يعرض
+ * ٣ بطاقات في الشاشة الواحدة والباقي بالتمرير (`components/landing/NewsSlider.vue`).
  */
 import type { Database } from '~/types/database.types'
 
@@ -144,8 +145,9 @@ const { data: news } = await useAsyncData('landing-news', async () => {
     .select('id, title, body, category, image_url, news_date')
     .eq('published', true)
     .order('news_date', { ascending: false })
-    .limit(3)
+    .limit(6)
   return (data ?? []).map(n => ({
+    id: n.id,
     cat: n.category || 'عام',
     date: new Date(n.news_date).toLocaleDateString('ar', { day: 'numeric', month: 'long', year: 'numeric' }),
     title: n.title,
@@ -264,50 +266,10 @@ const btnUi = { base: 'rounded-[14px] font-semibold' }
         >
           لا أخبار منشورة حالياً.
         </p>
-        <div
+        <LandingNewsSlider
           v-else
-          class="news-grid"
-        >
-          <article
-            v-for="n in news"
-            :key="n.title"
-            class="news-card"
-          >
-            <div class="news-img">
-              <img
-                v-if="n.image"
-                :src="n.image"
-                :alt="n.title"
-              >
-              <UIcon
-                v-else
-                name="i-lucide-newspaper"
-                class="size-10 opacity-40"
-              />
-            </div>
-            <div class="news-body">
-              <div class="news-meta">
-                <UBadge
-                  :label="n.cat"
-                  color="info"
-                  variant="soft"
-                  size="sm"
-                />
-                <span class="news-date">{{ n.date }}</span>
-              </div>
-              <h3 class="news-title">
-                {{ n.title }}
-              </h3>
-              <p class="news-excerpt">
-                {{ n.excerpt }}
-              </p>
-              <span class="read-more">اقرأ المزيد<UIcon
-                name="i-lucide-chevron-left"
-                class="size-[15px]"
-              /></span>
-            </div>
-          </article>
-        </div>
+          :news="news"
+        />
       </div>
     </section>
 
@@ -722,76 +684,7 @@ const btnUi = { base: 'rounded-[14px] font-semibold' }
 }
 
 /* NEWS */
-.news-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 22px;
-}
-.news-card {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 16px;
-  overflow: hidden;
-  box-shadow: var(--shadow);
-  display: flex;
-  flex-direction: column;
-  transition: all 0.2s;
-}
-.news-card:hover {
-  transform: translateY(-3px);
-  box-shadow: var(--shadow-lg);
-  border-color: var(--blue-soft);
-}
-.news-img {
-  height: 150px;
-  background: var(--surface-3);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--ink-3);
-  overflow: hidden;
-}
-.news-img img { width: 100%; height: 100%; object-fit: cover; }
 .news-empty { text-align: center; color: var(--ink-3); font-size: 15px; padding: 20px 0; }
-.news-body {
-  padding: 18px 18px 20px;
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-}
-.news-meta {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  margin-bottom: 10px;
-}
-.news-date {
-  font-size: 12.5px;
-  color: var(--ink-3);
-}
-.news-title {
-  margin: 0 0 8px;
-  font-size: 17px;
-  font-weight: 700;
-  line-height: 1.45;
-  color: var(--ink);
-}
-.news-excerpt {
-  margin: 0 0 14px;
-  font-size: 14px;
-  line-height: 1.8;
-  color: var(--ink-2);
-  font-weight: 300;
-}
-.read-more {
-  margin-top: auto;
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--blue-ink);
-}
 
 /* ABOUT */
 .about {
@@ -1082,7 +975,6 @@ const btnUi = { base: 'rounded-[14px] font-semibold' }
 
 /* RESPONSIVE */
 @media (max-width: 1024px) {
-  .news-grid,
   .features {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -1093,9 +985,6 @@ const btnUi = { base: 'rounded-[14px] font-semibold' }
     gap: 30px;
   }
   .grid3 {
-    grid-template-columns: 1fr;
-  }
-  .news-grid {
     grid-template-columns: 1fr;
   }
 }

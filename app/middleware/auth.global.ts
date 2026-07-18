@@ -9,8 +9,8 @@ const PUBLIC_PATHS = ['/', '/login']
 
 export default defineNuxtRouteMiddleware((to) => {
   const user = useSupabaseUser()
-  // /s/<token> صفحة اطّلاع الطالب العامّة (بلا حساب)
-  const isPublic = PUBLIC_PATHS.includes(to.path) || to.path.startsWith('/auth') || to.path.startsWith('/s/')
+  // /s/<token> صفحة اطّلاع الطالب العامّة (بلا حساب) — /news/<id> شاشة قراءة الخبر العامّة (§4.26)
+  const isPublic = PUBLIC_PATHS.includes(to.path) || to.path.startsWith('/auth') || to.path.startsWith('/s/') || to.path.startsWith('/news/')
 
   if (!user.value && !isPublic) {
     return navigateTo('/login')

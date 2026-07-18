@@ -13,7 +13,8 @@
 
 | الشاشة | المسار | الحالة | البريف |
 |---|---|---|---|
-| Landing (+ أحدث الأخبار) | `pages/index.vue` | ✅ | §4.0 |
+| Landing (+ سلايدر أحدث الأخبار) | `pages/index.vue` + `components/landing/NewsSlider.vue` | ✅ | §4.0 |
+| قراءة الخبر (شاشة عامّة كاملة، رابط قابل للمشاركة) | `pages/news/[id].vue` | ✅ | §4.0, §4.26 |
 | تسجيل الدخول (+ نافذة استعادة) | `pages/login.vue` | ✅ | §4.1 |
 | ضبط كلمة المرور بعد الاستعادة | `pages/auth/confirm.vue` | ✅ | §4.1 |
 | الهيكل العام Shell (+ جرس إشعارات) | `layouts/dashboard.vue` | ✅ | §4.2 |
