@@ -38,15 +38,13 @@ const year = ref(now.getFullYear())
 
 type NameRow = { id: string, name: string }
 
-// حلقة المعلّم تلقائيّاً (لا يختارها)
-const { data: myHalqa } = await useAsyncData<NameRow | null>('reports-my-halqa', async () => {
+// حلقة المعلّم تلقائيّاً (لا يختارها) — الاستعلامان (هنا وأسفل reports-list) مستقلّان،
+// يُطلَقان معاً بالتوازي بدل التتابع (Promise.all بعد تعريف reportsList)
+const myHalqaAsync = useAsyncData<NameRow | null>('reports-my-halqa', async () => {
   if (role.value !== 'teacher') return null
   const { data } = await supabase.from('halaqat').select('id, name').eq('teacher_id', profile.value?.id ?? '').limit(1).maybeSingle()
   return data
 }, { server: false, default: () => null, watch: [role] })
-watchEffect(() => {
-  if (isTeacher.value && myHalqa.value && !halqaId.value) halqaId.value = myHalqa.value.id
-})
 const curMonth = now.getMonth() + 1
 const curYear = now.getFullYear()
 // لا تُتاح الأشهر التي لم تبدأ بعد (المُحفِّز يرفضها) — تُقصَر للسنة الحالية على ≤ الشهر الحالي
@@ -174,7 +172,7 @@ type ListRow = {
   students: { memorization_pages: number | null, review_pages: number | null, absence_unexcused: number, monthly_points: number | null }[]
   activities: { done: boolean }[]
 }
-const { data: reportsList, refresh: refreshList } = await useAsyncData<ListRow[]>('reports-list', async () => {
+const reportsListAsync = useAsyncData<ListRow[]>('reports-list', async () => {
   const { data } = await supabase
     .from('monthly_reports')
     .select('id, halaqa_id, report_month, report_year, status, halaqa:halaqa_id(name, teacher:teacher_id(full_name)), students:monthly_report_students(memorization_pages, review_pages, absence_unexcused, monthly_points), activities:monthly_report_activities(done)')
@@ -183,6 +181,13 @@ const { data: reportsList, refresh: refreshList } = await useAsyncData<ListRow[]
     .returns<ListRow[]>()
   return data ?? []
 }, { server: false, default: () => [] })
+
+await Promise.all([myHalqaAsync, reportsListAsync])
+const { data: myHalqa } = myHalqaAsync
+const { data: reportsList, refresh: refreshList } = reportsListAsync
+watchEffect(() => {
+  if (isTeacher.value && myHalqa.value && !halqaId.value) halqaId.value = myHalqa.value.id
+})
 
 // إثراء كل تقرير بإنجاز الحلقة المحسوب (§4.17د)
 function cardOf(r: ListRow) {

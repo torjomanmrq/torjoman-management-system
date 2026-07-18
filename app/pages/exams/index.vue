@@ -23,7 +23,8 @@ const canGrade = computed(() => role.value === 'manager' || role.value === 'supe
 const stageLabel = (s: string) => s === 'partial' ? 'مرحلي' : 'تجميعي'
 
 // خطة الاختبارات (محطات الاستحقاق)
-const { data: plan } = await useAsyncData<PlanRow[]>('exams-plan', async () => {
+// الاستعلامات الأربعة أدناه مستقلّة — تُطلَق معاً بالتوازي بدل التتابع (Promise.all بعد آخرها)
+const planAsync = useAsyncData<PlanRow[]>('exams-plan', async () => {
   const { data } = await supabase.from('exam_plan').select('id, parts_from, parts_to, stage_type').order('parts_to')
   return (data ?? []) as PlanRow[]
 }, { server: false, default: () => [] })
@@ -34,7 +35,7 @@ function eligibleStations(parts: number | null) {
 
 // ═══ المعلّم: الترشيح ═══
 type RosterStudent = { id: string, full_name: string, quran_parts: number | null, halaqa_id: string | null }
-const { data: roster, refresh: refreshRoster } = await useAsyncData<RosterStudent[]>('exams-roster', async () => {
+const rosterAsync = useAsyncData<RosterStudent[]>('exams-roster', async () => {
   if (role.value !== 'teacher') return []
   const { data } = await supabase.from('students').select('id, full_name, quran_parts, halaqa_id').eq('status', 'active').order('full_name')
   return data ?? []
@@ -43,7 +44,7 @@ const { data: roster, refresh: refreshRoster } = await useAsyncData<RosterStuden
 // حالة اختبارات الطلاب: المُجتاز (لا يُرشَّح ثانيةً) والمعلّق (بانتظار الرصد)
 type ResRow = { student_id: string, exam_list_item: { exam_plan_id: number | null } | null }
 type ItemRow = { student_id: string, exam_plan_id: number | null, exam_results: { id: string }[] }
-const { data: examState, refresh: refreshState } = await useAsyncData<{ passed: Record<string, number[]>, pending: Record<string, number[]> }>('exams-state', async () => {
+const examStateAsync = useAsyncData<{ passed: Record<string, number[]>, pending: Record<string, number[]> }>('exams-state', async () => {
   if (role.value !== 'teacher') return { passed: {} as Record<string, number[]>, pending: {} as Record<string, number[]> }
   const [{ data: res }, { data: items }] = await Promise.all([
     supabase.from('exam_results').select('student_id, exam_list_item:exam_list_item_id(exam_plan_id)').eq('passed', true).returns<ResRow[]>(),
@@ -71,18 +72,6 @@ function availableStations(s: RosterStudent) {
 }
 
 const nominees = reactive<Record<string, { checked: boolean, planId: string }>>({})
-watchEffect(() => {
-  for (const s of roster.value ?? []) {
-    const avail = availableStations(s)
-    const cur = nominees[s.id]
-    if (!cur) {
-      nominees[s.id] = { checked: false, planId: avail.length ? String(avail[0]!.id) : '' }
-    } else if (cur.planId && !avail.some(p => String(p.id) === cur.planId)) {
-      cur.planId = avail.length ? String(avail[0]!.id) : ''
-      if (!cur.planId) cur.checked = false
-    }
-  }
-})
 const nomineeCount = computed(() => Object.values(nominees).filter(n => n.checked).length)
 
 const rosterRows = computed(() => (roster.value ?? []).map((s) => {
@@ -155,7 +144,7 @@ type QueueItem = {
   exam_list: { halaqa: { name: string } | null, teacher: { full_name: string } | null } | null
   exam_results: { id: string }[]
 }
-const { data: queueRaw, refresh: refreshQueue } = await useAsyncData<QueueItem[]>('exams-queue', async () => {
+const queueAsync = useAsyncData<QueueItem[]>('exams-queue', async () => {
   if (role.value !== 'manager' && role.value !== 'supervisor') return []
   const { data, error } = await supabase
     .from('exam_list_items')
@@ -168,6 +157,27 @@ const { data: queueRaw, refresh: refreshQueue } = await useAsyncData<QueueItem[]
   }
   return data ?? []
 }, { server: false, default: () => [], watch: [role] })
+
+await Promise.all([planAsync, rosterAsync, examStateAsync, queueAsync])
+const { data: plan } = planAsync
+const { data: roster, refresh: refreshRoster } = rosterAsync
+const { data: examState, refresh: refreshState } = examStateAsync
+const { data: queueRaw, refresh: refreshQueue } = queueAsync
+
+// تهيئة اختيارات الترشيح لكل طالب (بعد توفّر roster والحالة)
+watchEffect(() => {
+  for (const s of roster.value ?? []) {
+    const avail = availableStations(s)
+    const cur = nominees[s.id]
+    if (!cur) {
+      nominees[s.id] = { checked: false, planId: avail.length ? String(avail[0]!.id) : '' }
+    } else if (cur.planId && !avail.some(p => String(p.id) === cur.planId)) {
+      cur.planId = avail.length ? String(avail[0]!.id) : ''
+      if (!cur.planId) cur.checked = false
+    }
+  }
+})
+
 const queue = computed(() => (queueRaw.value ?? []).filter(i => !i.exam_results?.length))
 
 // نافذة الرصد (ExamsGradeModal) + تحديث القائمة والنتائج بعد الحفظ

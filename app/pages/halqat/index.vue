@@ -24,7 +24,8 @@ const { handle } = useErrorHandler()
 const toast = useToast()
 const isManager = computed(() => myRole.value === 'manager')
 
-const { data: halqat, refresh, pending } = await useAsyncData<HalaqaRow[]>(
+// الاستعلامات الثلاثة مستقلّة — تُطلَق معاً بالتوازي بدل التتابع
+const halqatAsync = useAsyncData<HalaqaRow[]>(
   'halqat-list',
   async () => {
     const { data, error } = await supabase
@@ -40,15 +41,18 @@ const { data: halqat, refresh, pending } = await useAsyncData<HalaqaRow[]>(
   },
   { server: false, default: () => [] }
 )
-
-const { data: teachers } = await useAsyncData<NameRow[]>('teachers-options', async () => {
+const teachersAsync = useAsyncData<NameRow[]>('teachers-options', async () => {
   const { data } = await supabase.from('profiles').select('id, full_name').eq('role', 'teacher').eq('status', 'active').order('full_name')
   return data ?? []
 }, { server: false, default: () => [] })
-const { data: supervisors } = await useAsyncData<NameRow[]>('supervisors-options', async () => {
+const supervisorsAsync = useAsyncData<NameRow[]>('supervisors-options', async () => {
   const { data } = await supabase.from('profiles').select('id, full_name').eq('role', 'supervisor').eq('status', 'active').order('full_name')
   return data ?? []
 }, { server: false, default: () => [] })
+await Promise.all([halqatAsync, teachersAsync, supervisorsAsync])
+const { data: halqat, refresh, pending } = halqatAsync
+const { data: teachers } = teachersAsync
+const { data: supervisors } = supervisorsAsync
 
 const NO_SUP = 'none'
 const teacherItems = computed(() => (teachers.value ?? []).map(t => ({ label: t.full_name, value: t.id })))

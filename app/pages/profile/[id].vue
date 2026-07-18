@@ -27,7 +27,8 @@ const canSeeId = computed(() => myRole.value === 'manager' || isSelf.value)
 type Profile = Database['public']['Tables']['profiles']['Row']
 type Scope = { label: string, value: string | number }
 
-const { data, pending, refresh } = await useAsyncData(() => `profile-${targetId.value}`, async () => {
+// الاستعلامان مستقلّان — يُطلَقان معاً بالتوازي بدل التتابع
+const profileAsync = useAsyncData(() => `profile-${targetId.value}`, async () => {
   if (!targetId.value) return null
   const { data: p } = await supabase.from('profiles').select('*').eq('id', targetId.value).maybeSingle<Profile>()
   if (!p) return null
@@ -55,11 +56,15 @@ const { data, pending, refresh } = await useAsyncData(() => `profile-${targetId.
 
 // قائمة مشرفي الجودة (لإسناد المشرف — للمدير)
 const QUALITY_NONE = 'none'
-const { data: qualityList } = await useAsyncData('quality-options', async () => {
+const qualityListAsync = useAsyncData('quality-options', async () => {
   if (myRole.value !== 'manager') return []
   const { data } = await supabase.from('profiles').select('id, full_name').eq('role', 'quality').eq('status', 'active').order('full_name')
   return data ?? []
 }, { server: false, default: () => [], watch: [myRole] })
+
+await Promise.all([profileAsync, qualityListAsync])
+const { data, pending, refresh } = profileAsync
+const { data: qualityList } = qualityListAsync
 const qualityItems = computed(() => [{ label: 'بلا مشرف جودة', value: QUALITY_NONE }, ...(qualityList.value ?? []).map(q => ({ label: q.full_name, value: q.id }))])
 
 useSeoMeta({ title: () => data.value?.p ? `${data.value.p.full_name} — ترجمان` : 'الملف الشخصي — ترجمان' })
