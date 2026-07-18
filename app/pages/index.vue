@@ -18,7 +18,7 @@ function toggleTheme() {
 
 const site = useRuntimeConfig().public.siteUrl.replace(/\/$/, '')
 const seoTitle = 'ترجمان — حفظ وفهم وعمل'
-const seoDesc = 'برنامج قرآني من مؤسسة المرقاة للتعليم والتدريب يجمع بين حفظ كتاب الله وفهمه وتدبّره والعمل به، ويرافق الطالب في رحلته القرآنية عبر الحلقات والبرامج المصاحبة.'
+const seoDesc = 'برنامج قرآني من مؤسسة المرقاة للتعليم والتدريب يجمع بين حفظ كتاب الله وفهمه وتدبّره والعمل به، ويرافق الطالب في رحلته القرآنية عبر حلقات تحفيظ القرآن والبرامج المصاحبة.'
 
 useSeoMeta({
   title: seoTitle,
@@ -50,7 +50,7 @@ useHead({
           '@type': 'EducationalOrganization',
           '@id': site + '/#org',
           'name': 'برنامج تُرجمان القرآني',
-          'alternateName': ['ترجمان', 'برنامج ترجمان', 'ترجمان القرآني'],
+          'alternateName': ['ترجمان', 'برنامج ترجمان', 'ترجمان القرآني', 'مشروع ترجمان', 'مشروع ترجمان القرآني'],
           'url': site + '/',
           'logo': site + '/icon-512.png',
           'description': seoDesc,
@@ -224,8 +224,8 @@ const btnUi = { base: 'rounded-[14px] font-semibold' }
           <span class="green">عَمَل</span>
         </div>
         <p class="hero-sub">
-          منظومة تربوية متكاملة ترافق الطالب في رحلته القرآنية — من حفظ كتاب
-          الله إلى فهمه وتدبّره والعمل به.
+          منظومة تربوية متكاملة تدير حلقات تحفيظ القرآن وترافق الطالب في
+          رحلته القرآنية — من حفظ كتاب الله إلى فهمه وتدبّره والعمل به.
         </p>
         <div class="hero-cta">
           <UButton
@@ -297,6 +297,7 @@ const btnUi = { base: 'rounded-[14px] font-semibold' }
         <div class="tags">
           <span class="tag">لقاءات تدبّرية</span><span class="tag">مراجعة أسبوعية</span>
           <span class="tag">مقرر تربوي</span><span class="tag">متابعة القيم</span>
+          <span class="tag">مخيمات قرآنية</span>
         </div>
       </div>
     </section>
