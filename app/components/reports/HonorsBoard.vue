@@ -18,7 +18,7 @@ type Row = {
   report: { status: string } | null
 }
 
-const { data: top, pending } = await useAsyncData('honors-board', async () => {
+const { data: top, pending } = useLazyAsyncData('honors-board', async () => {
   await loadSettings()
   const { data } = await supabase
     .from('monthly_report_students')
