@@ -25,7 +25,7 @@ const ROLE_LABEL: Record<Role, string> = {
 const ROLE_COLOR: Record<Role, 'primary' | 'secondary' | 'info' | 'success'> = {
   manager: 'primary', quality: 'secondary', supervisor: 'info', teacher: 'success'
 }
-const { data: users, refresh, pending } = await useAsyncData<UserRow[]>(
+const { data: users, refresh, pending } = useLazyAsyncData<UserRow[]>(
   'users-list',
   async () => {
     const { data, error } = await supabase
@@ -176,9 +176,9 @@ async function confirmReset() {
       />
 
       <ClientOnly>
-        <UiEmptyState
+        <UiSkeletonTable
           v-if="pending"
-          title="جارٍ التحميل…"
+          :columns="columns"
         />
         <UiEmptyState
           v-else-if="filteredUsers.length === 0"

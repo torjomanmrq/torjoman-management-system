@@ -17,7 +17,7 @@ const canView = computed(() => isManager.value || isQuality.value)
 
 type Row = { id: string, name: string, email: string | null, halqat: number, commitment: number | null }
 
-const { data: rows, pending } = await useAsyncData<Row[]>('supervisors-dir', async () => {
+const { data: rows, pending } = useLazyAsyncData<Row[]>('supervisors-dir', async () => {
   if (!canView.value) return []
   let q = supabase.from('profiles').select('id, full_name, email').eq('role', 'supervisor').eq('status', 'active')
   if (isQuality.value) q = q.eq('quality_supervisor_id', profile.value?.id ?? '')
@@ -68,10 +68,16 @@ const commitColor = (c: number | null) => c == null ? 'neutral' : c >= 85 ? 'suc
     />
 
     <ClientOnly v-else>
-      <UiEmptyState
+      <div
         v-if="pending"
-        title="جارٍ التحميل…"
-      />
+        class="grid"
+      >
+        <UiSkeletonCard
+          v-for="i in 6"
+          :key="i"
+          :lines="1"
+        />
+      </div>
       <UiEmptyState
         v-else-if="!rows || !rows.length"
         icon="i-lucide-users-round"

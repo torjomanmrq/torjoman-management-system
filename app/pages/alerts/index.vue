@@ -37,8 +37,8 @@ type AlertRow = {
   issuer: { full_name: string } | null
 }
 
-// الاستعلامان مستقلّان — يُطلَقان معاً بالتوازي بدل التتابع
-const alertsAsync = useAsyncData<AlertRow[]>('alerts-list', async () => {
+// جلب غير حاجز (useLazyAsyncData): الاستعلامان مستقلّان ويعملان بالتوازي تلقائياً
+const { data: alerts, refresh, pending } = useLazyAsyncData<AlertRow[]>('alerts-list', async () => {
   const { data } = await supabase
     .from('admin_alerts')
     .select('id, alert_date, violation_type, description, severity, status, acknowledged_at, teacher:teacher_id(full_name), issuer:issuer_id(full_name)')
@@ -47,14 +47,11 @@ const alertsAsync = useAsyncData<AlertRow[]>('alerts-list', async () => {
   return data ?? []
 }, { server: false, default: () => [] })
 
-const teachersAsync = useAsyncData('alert-teachers', async () => {
+const { data: teachers } = useLazyAsyncData('alert-teachers', async () => {
   if (!canIssue.value) return []
   const { data } = await supabase.from('profiles').select('id, full_name').eq('role', 'teacher').eq('status', 'active').order('full_name')
   return data ?? []
 }, { server: false, default: () => [], watch: [canIssue] })
-await Promise.all([alertsAsync, teachersAsync])
-const { data: alerts, refresh, pending } = alertsAsync
-const { data: teachers } = teachersAsync
 const teacherItems = computed(() => (teachers.value ?? []).map(t => ({ label: t.full_name, value: t.id })))
 
 // ── إصدار تنبيه ──
@@ -140,10 +137,15 @@ const newCount = computed(() => (alerts.value ?? []).filter(a => a.status === 'n
     </UiPageHeader>
 
     <ClientOnly>
-      <UiEmptyState
+      <div
         v-if="pending"
-        title="جارٍ التحميل…"
-      />
+        class="list"
+      >
+        <UiSkeletonRow
+          v-for="i in 4"
+          :key="i"
+        />
+      </div>
       <UiEmptyState
         v-else-if="!alerts || !alerts.length"
         icon="i-lucide-bell-off"

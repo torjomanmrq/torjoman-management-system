@@ -22,9 +22,8 @@ const canGrade = computed(() => role.value === 'manager' || role.value === 'supe
 
 const stageLabel = (s: string) => s === 'partial' ? 'مرحلي' : 'تجميعي'
 
-// خطة الاختبارات (محطات الاستحقاق)
-// الاستعلامات الأربعة أدناه مستقلّة — تُطلَق معاً بالتوازي بدل التتابع (Promise.all بعد آخرها)
-const planAsync = useAsyncData<PlanRow[]>('exams-plan', async () => {
+// جلب غير حاجز (useLazyAsyncData): الاستعلامات الأربعة أدناه مستقلّة وتعمل بالتوازي تلقائياً
+const { data: plan } = useLazyAsyncData<PlanRow[]>('exams-plan', async () => {
   const { data } = await supabase.from('exam_plan').select('id, parts_from, parts_to, stage_type').order('parts_to')
   return (data ?? []) as PlanRow[]
 }, { server: false, default: () => [] })
@@ -35,7 +34,7 @@ function eligibleStations(parts: number | null) {
 
 // ═══ المعلّم: الترشيح ═══
 type RosterStudent = { id: string, full_name: string, quran_parts: number | null, halaqa_id: string | null }
-const rosterAsync = useAsyncData<RosterStudent[]>('exams-roster', async () => {
+const { data: roster, refresh: refreshRoster, pending: rosterPending } = useLazyAsyncData<RosterStudent[]>('exams-roster', async () => {
   if (role.value !== 'teacher') return []
   const { data } = await supabase.from('students').select('id, full_name, quran_parts, halaqa_id').eq('status', 'active').order('full_name')
   return data ?? []
@@ -44,7 +43,7 @@ const rosterAsync = useAsyncData<RosterStudent[]>('exams-roster', async () => {
 // حالة اختبارات الطلاب: المُجتاز (لا يُرشَّح ثانيةً) والمعلّق (بانتظار الرصد)
 type ResRow = { student_id: string, exam_list_item: { exam_plan_id: number | null } | null }
 type ItemRow = { student_id: string, exam_plan_id: number | null, exam_results: { id: string }[] }
-const examStateAsync = useAsyncData<{ passed: Record<string, number[]>, pending: Record<string, number[]> }>('exams-state', async () => {
+const { data: examState, refresh: refreshState } = useLazyAsyncData<{ passed: Record<string, number[]>, pending: Record<string, number[]> }>('exams-state', async () => {
   if (role.value !== 'teacher') return { passed: {} as Record<string, number[]>, pending: {} as Record<string, number[]> }
   const [{ data: res }, { data: items }] = await Promise.all([
     supabase.from('exam_results').select('student_id, exam_list_item:exam_list_item_id(exam_plan_id)').eq('passed', true).returns<ResRow[]>(),
@@ -144,7 +143,7 @@ type QueueItem = {
   exam_list: { halaqa: { name: string } | null, teacher: { full_name: string } | null } | null
   exam_results: { id: string }[]
 }
-const queueAsync = useAsyncData<QueueItem[]>('exams-queue', async () => {
+const { data: queueRaw, refresh: refreshQueue, pending: queuePending } = useLazyAsyncData<QueueItem[]>('exams-queue', async () => {
   if (role.value !== 'manager' && role.value !== 'supervisor') return []
   const { data, error } = await supabase
     .from('exam_list_items')
@@ -157,12 +156,6 @@ const queueAsync = useAsyncData<QueueItem[]>('exams-queue', async () => {
   }
   return data ?? []
 }, { server: false, default: () => [], watch: [role] })
-
-await Promise.all([planAsync, rosterAsync, examStateAsync, queueAsync])
-const { data: plan } = planAsync
-const { data: roster, refresh: refreshRoster } = rosterAsync
-const { data: examState, refresh: refreshState } = examStateAsync
-const { data: queueRaw, refresh: refreshQueue } = queueAsync
 
 // تهيئة اختيارات الترشيح لكل طالب (بعد توفّر roster والحالة)
 watchEffect(() => {
@@ -203,8 +196,12 @@ async function onGraded() {
     <ClientOnly>
       <!-- ═══ المعلّم: الترشيح ═══ -->
       <template v-if="isTeacher">
+        <UiSkeletonTable
+          v-if="rosterPending"
+          :columns="[{ key: 'nom', label: 'ترشيح' }, { key: 'name', label: 'الطالب' }, { key: 'parts', label: 'المحفوظ' }, { key: 'exam', label: 'الاختبار المستحقّ' }]"
+        />
         <UiEmptyState
-          v-if="!(roster || []).length"
+          v-else-if="!(roster || []).length"
           icon="i-lucide-users"
           title="لا طلاب في حلقتك"
           description="أضِف طلاباً لحلقتك أولاً من شاشة الطلاب."
@@ -287,8 +284,12 @@ async function onGraded() {
         <h3 class="sec-title">
           الاختبارات الواردة <span class="count">{{ queue.length }}</span>
         </h3>
+        <UiSkeletonTable
+          v-if="queuePending"
+          :columns="[{ key: 'student', label: 'الطالب' }, { key: 'halqa', label: 'الحلقة' }, { key: 'teacher', label: 'المعلّم' }, { key: 'range', label: 'النطاق' }, { key: 'actions', label: 'إجراء', align: 'end' }]"
+        />
         <UiEmptyState
-          v-if="!queue.length"
+          v-else-if="!queue.length"
           icon="i-lucide-clipboard-check"
           title="لا اختبارات واردة"
           description="ستظهر هنا ترشيحات المعلّمين فور إرسالها."

@@ -22,8 +22,8 @@ const toast = useToast()
 const id = computed(() => String(route.params.id))
 const canManage = computed(() => role.value === 'manager' || role.value === 'teacher')
 
-// الاستعلامات الأربعة مستقلّة (تعتمد فقط على id.value الجاهز فوراً) — تُطلَق معاً بالتوازي
-const studentAsync = useAsyncData<StudentRow | null>(
+// جلب غير حاجز (useLazyAsyncData): الاستعلامات الأربعة مستقلّة وتعمل بالتوازي تلقائياً
+const { data: student, pending, refresh } = useLazyAsyncData<StudentRow | null>(
   () => `student-${id.value}`,
   async () => {
     const { data, error } = await supabase
@@ -41,13 +41,13 @@ const studentAsync = useAsyncData<StudentRow | null>(
 )
 
 // خطة الاختبارات + نتائج الطالب لرسم رحلة الطالب (حسب الحفظ + النتائج)
-const planAsync = useAsyncData('journey-exam-plan', async () => {
+const { data: plan } = useLazyAsyncData('journey-exam-plan', async () => {
   const { data } = await supabase.from('exam_plan').select('id, parts_from, parts_to, stage_type').order('parts_to')
   return data ?? []
 }, { server: false, default: () => [] })
 
 type ResultRow = { passed: boolean | null, total_score: number | null, exam_list_item: { exam_plan_id: number | null } | null }
-const examResultsAsync = useAsyncData(() => `journey-results-${id.value}`, async () => {
+const { data: examResults } = useLazyAsyncData(() => `journey-results-${id.value}`, async () => {
   const { data } = await supabase
     .from('exam_results')
     .select('passed, total_score, exam_list_item:exam_list_item_id(exam_plan_id)')
@@ -58,7 +58,7 @@ const examResultsAsync = useAsyncData(() => `journey-results-${id.value}`, async
 
 // إجمالي صفحات الحفظ من التقارير الشهرية المعتمدة
 type PagesRow = { memorization_pages: number | null, report: { status: string } | null }
-const memorizationPagesAsync = useAsyncData(() => `journey-pages-${id.value}`, async () => {
+const { data: memorizationPages } = useLazyAsyncData(() => `journey-pages-${id.value}`, async () => {
   const { data } = await supabase
     .from('monthly_report_students')
     .select('memorization_pages, report:report_id(status)')
@@ -66,12 +66,6 @@ const memorizationPagesAsync = useAsyncData(() => `journey-pages-${id.value}`, a
     .returns<PagesRow[]>()
   return (data ?? []).filter(r => r.report?.status === 'approved').reduce((sum, r) => sum + (r.memorization_pages ?? 0), 0)
 }, { server: false, default: () => 0 })
-
-await Promise.all([studentAsync, planAsync, examResultsAsync, memorizationPagesAsync])
-const { data: student, pending, refresh } = studentAsync
-const { data: plan } = planAsync
-const { data: examResults } = examResultsAsync
-const { data: memorizationPages } = memorizationPagesAsync
 
 useSeoMeta({ title: () => student.value ? `${student.value.full_name} — ترجمان` : 'ملف الطالب — ترجمان' })
 
@@ -173,10 +167,15 @@ const sections = computed<{ title: string, icon: string, tone: string, fields: F
     </NuxtLink>
 
     <ClientOnly>
-      <UiEmptyState
-        v-if="pending"
-        title="جارٍ التحميل…"
-      />
+      <template v-if="pending">
+        <UiSkeletonBand :actions="2" />
+        <div class="grid">
+          <UiSkeletonLines :fields="6" />
+          <UiSkeletonLines :fields="2" />
+          <UiSkeletonLines :fields="2" />
+          <UiSkeletonLines :fields="5" />
+        </div>
+      </template>
       <UiEmptyState
         v-else-if="!student"
         icon="i-lucide-user-x"

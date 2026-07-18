@@ -38,9 +38,9 @@ const year = ref(now.getFullYear())
 
 type NameRow = { id: string, name: string }
 
-// حلقة المعلّم تلقائيّاً (لا يختارها) — الاستعلامان (هنا وأسفل reports-list) مستقلّان،
-// يُطلَقان معاً بالتوازي بدل التتابع (Promise.all بعد تعريف reportsList)
-const myHalqaAsync = useAsyncData<NameRow | null>('reports-my-halqa', async () => {
+// حلقة المعلّم تلقائيّاً (لا يختارها) — جلب غير حاجز (useLazyAsyncData): الاستعلامان
+// (هنا وأسفل reports-list) مستقلّان ويعملان بالتوازي تلقائياً
+const { data: myHalqa } = useLazyAsyncData<NameRow | null>('reports-my-halqa', async () => {
   if (role.value !== 'teacher') return null
   const { data } = await supabase.from('halaqat').select('id, name').eq('teacher_id', profile.value?.id ?? '').limit(1).maybeSingle()
   return data
@@ -172,7 +172,7 @@ type ListRow = {
   students: { memorization_pages: number | null, review_pages: number | null, absence_unexcused: number, monthly_points: number | null }[]
   activities: { done: boolean }[]
 }
-const reportsListAsync = useAsyncData<ListRow[]>('reports-list', async () => {
+const { data: reportsList, refresh: refreshList, pending: listPending } = useLazyAsyncData<ListRow[]>('reports-list', async () => {
   const { data } = await supabase
     .from('monthly_reports')
     .select('id, halaqa_id, report_month, report_year, status, halaqa:halaqa_id(name, teacher:teacher_id(full_name)), students:monthly_report_students(memorization_pages, review_pages, absence_unexcused, monthly_points), activities:monthly_report_activities(done)')
@@ -181,10 +181,6 @@ const reportsListAsync = useAsyncData<ListRow[]>('reports-list', async () => {
     .returns<ListRow[]>()
   return data ?? []
 }, { server: false, default: () => [] })
-
-await Promise.all([myHalqaAsync, reportsListAsync])
-const { data: myHalqa } = myHalqaAsync
-const { data: reportsList, refresh: refreshList } = reportsListAsync
 watchEffect(() => {
   if (isTeacher.value && myHalqa.value && !halqaId.value) halqaId.value = myHalqa.value.id
 })
@@ -344,8 +340,19 @@ async function setStatus(status: ReportStatus) {
             :options="listChips"
           />
         </div>
+        <div
+          v-if="listPending"
+          class="rcards"
+        >
+          <UiSkeletonCard
+            v-for="i in 6"
+            :key="i"
+            :icon="false"
+            :lines="3"
+          />
+        </div>
         <UiEmptyState
-          v-if="!listFiltered.length"
+          v-else-if="!listFiltered.length"
           icon="i-lucide-folder"
           title="لا تقارير في هذا التصنيف"
           description="أنشئ تقريراً جديداً من الأسفل (اختر حلقة وشهراً)."

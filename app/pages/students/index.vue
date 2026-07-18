@@ -25,8 +25,8 @@ const canManage = computed(() => myRole.value === 'manager' || myRole.value === 
 const canDelete = computed(() => myRole.value === 'manager')
 const HALQA_NONE = 'none'
 
-// الاستعلامان مستقلّان — يُطلَقان معاً بالتوازي بدل التتابع
-const studentsAsync = useAsyncData<StudentRow[]>(
+// جلب غير حاجز (useLazyAsyncData): الاستعلامان مستقلّان ويعملان بالتوازي تلقائياً
+const { data: students, refresh, pending } = useLazyAsyncData<StudentRow[]>(
   'students-list',
   async () => {
     const { data, error } = await supabase
@@ -43,7 +43,7 @@ const studentsAsync = useAsyncData<StudentRow[]>(
   { server: false, default: () => [] }
 )
 
-const halqatAsync = useAsyncData<HalqaOpt[]>('students-halqat', async () => {
+const { data: halqat } = useLazyAsyncData<HalqaOpt[]>('students-halqat', async () => {
   const { data } = await supabase
     .from('halaqat')
     .select('id, name, daily_time, teacher:teacher_id(full_name)')
@@ -51,9 +51,6 @@ const halqatAsync = useAsyncData<HalqaOpt[]>('students-halqat', async () => {
     .returns<HalqaOpt[]>()
   return data ?? []
 }, { server: false, default: () => [] })
-await Promise.all([studentsAsync, halqatAsync])
-const { data: students, refresh, pending } = studentsAsync
-const { data: halqat } = halqatAsync
 function halqaLabel(h: HalqaOpt) {
   return h.teacher?.full_name ? `${h.name} — ${h.teacher.full_name}` : h.name
 }
@@ -247,9 +244,9 @@ async function confirmDelete() {
     </div>
 
     <ClientOnly>
-      <UiEmptyState
+      <UiSkeletonTable
         v-if="pending"
-        title="جارٍ التحميل…"
+        :columns="columns"
       />
       <UiEmptyState
         v-else-if="filtered.length === 0"
