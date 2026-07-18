@@ -50,7 +50,7 @@ useHead({
           '@type': 'EducationalOrganization',
           '@id': site + '/#org',
           'name': 'برنامج تُرجمان القرآني',
-          'alternateName': ['ترجمان', 'برنامج ترجمان', 'ترجمان القرآني'],
+          'alternateName': ['ترجمان', 'برنامج ترجمان', 'ترجمان القرآني', 'مشروع ترجمان', 'مشروع ترجمان القرآني'],
           'url': site + '/',
           'logo': site + '/icon-512.png',
           'description': seoDesc,
@@ -297,6 +297,7 @@ const btnUi = { base: 'rounded-[14px] font-semibold' }
         <div class="tags">
           <span class="tag">لقاءات تدبّرية</span><span class="tag">مراجعة أسبوعية</span>
           <span class="tag">مقرر تربوي</span><span class="tag">متابعة القيم</span>
+          <span class="tag">مخيمات قرآنية</span>
         </div>
       </div>
     </section>
