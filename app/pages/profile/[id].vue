@@ -27,8 +27,8 @@ const canSeeId = computed(() => myRole.value === 'manager' || isSelf.value)
 type Profile = Database['public']['Tables']['profiles']['Row']
 type Scope = { label: string, value: string | number }
 
-// الاستعلامان مستقلّان — يُطلَقان معاً بالتوازي بدل التتابع
-const profileAsync = useAsyncData(() => `profile-${targetId.value}`, async () => {
+// جلب غير حاجز (useLazyAsyncData): الاستعلامان مستقلّان ويعملان بالتوازي تلقائياً
+const { data, pending, refresh } = useLazyAsyncData(() => `profile-${targetId.value}`, async () => {
   if (!targetId.value) return null
   const { data: p } = await supabase.from('profiles').select('*').eq('id', targetId.value).maybeSingle<Profile>()
   if (!p) return null
@@ -56,15 +56,11 @@ const profileAsync = useAsyncData(() => `profile-${targetId.value}`, async () =>
 
 // قائمة مشرفي الجودة (لإسناد المشرف — للمدير)
 const QUALITY_NONE = 'none'
-const qualityListAsync = useAsyncData('quality-options', async () => {
+const { data: qualityList } = useLazyAsyncData('quality-options', async () => {
   if (myRole.value !== 'manager') return []
   const { data } = await supabase.from('profiles').select('id, full_name').eq('role', 'quality').eq('status', 'active').order('full_name')
   return data ?? []
 }, { server: false, default: () => [], watch: [myRole] })
-
-await Promise.all([profileAsync, qualityListAsync])
-const { data, pending, refresh } = profileAsync
-const { data: qualityList } = qualityListAsync
 const qualityItems = computed(() => [{ label: 'بلا مشرف جودة', value: QUALITY_NONE }, ...(qualityList.value ?? []).map(q => ({ label: q.full_name, value: q.id }))])
 
 useSeoMeta({ title: () => data.value?.p ? `${data.value.p.full_name} — ترجمان` : 'الملف الشخصي — ترجمان' })
@@ -244,10 +240,16 @@ async function changePassword() {
 <template>
   <div class="profile">
     <ClientOnly>
-      <UiEmptyState
-        v-if="pending"
-        title="جارٍ التحميل…"
-      />
+      <template v-if="pending">
+        <UiSkeletonBand :actions="2" />
+        <div class="sections">
+          <UiSkeletonLines
+            v-for="i in 4"
+            :key="i"
+            :fields="i === 1 ? 6 : i === 4 ? 5 : i === 2 ? 2 : 2"
+          />
+        </div>
+      </template>
       <UiEmptyState
         v-else-if="!data?.p"
         icon="i-lucide-user-x"

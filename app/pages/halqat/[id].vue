@@ -30,7 +30,7 @@ type StudentRow = { id: string, full_name: string, quran_parts: number | null, n
 type ReportRow = { id: string, report_month: number, report_year: number, status: string } | null
 type VisitRow = { id: string, scheduled_at: string, executed_at: string | null, status: string }
 
-const { data, pending } = await useAsyncData(() => `halqa-detail-${id.value}`, async () => {
+const { data, pending } = useLazyAsyncData(() => `halqa-detail-${id.value}`, async () => {
   const { data: halqa } = await supabase
     .from('halaqat')
     .select('id, name, daily_time, gender, classification, status, teacher:teacher_id(full_name), supervisor:supervisor_id(full_name)')
@@ -78,10 +78,26 @@ const fmtDate = (iso: string) => new Date(iso).toLocaleDateString('ar', { day: '
     />
 
     <ClientOnly>
-      <UiEmptyState
-        v-if="pending"
-        title="جارٍ التحميل…"
-      />
+      <template v-if="pending">
+        <UiSkeletonBand />
+        <div class="cols">
+          <UiSkeletonTable
+            class="main-col"
+            :columns="[{ key: 's', label: 'الطالب' }, { key: 'p', label: 'الأجزاء' }, { key: 'n', label: 'المحطة القادمة' }, { key: 'a', label: '—', align: 'end' }]"
+            :rows="5"
+          />
+          <div class="side-col">
+            <UiSkeletonRow
+              :desc="false"
+              :action="false"
+            />
+            <UiSkeletonRow
+              :desc="false"
+              :action="false"
+            />
+          </div>
+        </div>
+      </template>
       <UiEmptyState
         v-else-if="!data?.halqa"
         icon="i-lucide-book-x"

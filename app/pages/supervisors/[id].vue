@@ -15,7 +15,7 @@ type Sup = { id: string, full_name: string, email: string | null, role: string }
 type Halqa = { id: string, name: string, teacher: { full_name: string } | null }
 type Visit = { id: string, scheduled_at: string, executed_at: string | null, status: string, halaqa: { name: string } | null }
 
-const { data, pending } = await useAsyncData(() => `supervisor-${id.value}`, async () => {
+const { data, pending } = useLazyAsyncData(() => `supervisor-${id.value}`, async () => {
   const { data: sup } = await supabase.from('profiles').select('id, full_name, email, role').eq('id', id.value).maybeSingle<Sup>()
   if (!sup) return null
 
@@ -51,10 +51,23 @@ const commitColor = (c: number | null) => c == null ? 'neutral' : c >= 85 ? 'suc
     />
 
     <ClientOnly>
-      <UiEmptyState
-        v-if="pending"
-        title="جارٍ التحميل…"
-      />
+      <template v-if="pending">
+        <UiSkeletonBand :actions="1" />
+        <div class="stats">
+          <UiSkeletonLines :fields="1" />
+          <UiSkeletonLines :fields="1" />
+        </div>
+        <div class="cols">
+          <UiSkeletonRow
+            :desc="false"
+            :action="false"
+          />
+          <UiSkeletonRow
+            :desc="false"
+            :action="false"
+          />
+        </div>
+      </template>
       <UiEmptyState
         v-else-if="!data?.sup"
         icon="i-lucide-user-x"

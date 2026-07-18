@@ -1,12 +1,44 @@
 <script setup lang="ts">
-/** بطاقة إحصائية: أيقونة ملوّنة + رقم + تسمية. stacked = الأيقونة فوق الرقم. */
-defineProps<{
+/**
+ * بطاقة إحصائية: أيقونة ملوّنة + رقم + تسمية. stacked = الأيقونة فوق الرقم.
+ * الرقم يُعدّ تصاعدياً عند تغيّره (وصول العدد الحقيقي بعد الجلب غير الحاجز)
+ * بدل الظهور دفعة واحدة — عبر requestAnimationFrame، عميل فقط.
+ */
+const props = defineProps<{
   icon: string
   value: string | number
   label: string
   tone?: 'blue' | 'green' | 'neutral' | 'err'
   stacked?: boolean
 }>()
+
+const displayValue = ref(props.value)
+let rafId: number | null = null
+
+function animateTo(target: number, from: number) {
+  if (rafId) cancelAnimationFrame(rafId)
+  const duration = 700
+  const start = performance.now()
+  function tick(now: number) {
+    const t = Math.min(1, (now - start) / duration)
+    const eased = 1 - (1 - t) ** 3
+    displayValue.value = Math.round(from + (target - from) * eased)
+    rafId = t < 1 ? requestAnimationFrame(tick) : null
+  }
+  rafId = requestAnimationFrame(tick)
+}
+
+watch(() => props.value, (newVal, oldVal) => {
+  if (import.meta.client && typeof newVal === 'number' && typeof oldVal === 'number') {
+    animateTo(newVal, oldVal)
+  } else {
+    displayValue.value = newVal
+  }
+})
+
+onUnmounted(() => {
+  if (rafId) cancelAnimationFrame(rafId)
+})
 </script>
 
 <template>
@@ -25,7 +57,7 @@ defineProps<{
     </div>
     <div>
       <div class="num">
-        {{ value }}
+        {{ displayValue }}
       </div>
       <div class="lbl">
         {{ label }}

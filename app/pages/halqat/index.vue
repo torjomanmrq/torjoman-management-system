@@ -24,8 +24,10 @@ const { handle } = useErrorHandler()
 const toast = useToast()
 const isManager = computed(() => myRole.value === 'manager')
 
-// الاستعلامات الثلاثة مستقلّة — تُطلَق معاً بالتوازي بدل التتابع
-const halqatAsync = useAsyncData<HalaqaRow[]>(
+// جلب غير حاجز (useLazyAsyncData): لا يوقف عرض الصفحة — تظهر فوراً
+// بحالة pending، والسكيلتون يغطّي الانتظار ريثما تصل البيانات. الاستعلامات
+// الثلاثة مستقلّة، تعمل بالتوازي تلقائياً (لا حاجة لـ Promise.all هنا).
+const { data: halqat, refresh, pending } = useLazyAsyncData<HalaqaRow[]>(
   'halqat-list',
   async () => {
     const { data, error } = await supabase
@@ -41,18 +43,14 @@ const halqatAsync = useAsyncData<HalaqaRow[]>(
   },
   { server: false, default: () => [] }
 )
-const teachersAsync = useAsyncData<NameRow[]>('teachers-options', async () => {
+const { data: teachers } = useLazyAsyncData<NameRow[]>('teachers-options', async () => {
   const { data } = await supabase.from('profiles').select('id, full_name').eq('role', 'teacher').eq('status', 'active').order('full_name')
   return data ?? []
 }, { server: false, default: () => [] })
-const supervisorsAsync = useAsyncData<NameRow[]>('supervisors-options', async () => {
+const { data: supervisors } = useLazyAsyncData<NameRow[]>('supervisors-options', async () => {
   const { data } = await supabase.from('profiles').select('id, full_name').eq('role', 'supervisor').eq('status', 'active').order('full_name')
   return data ?? []
 }, { server: false, default: () => [] })
-await Promise.all([halqatAsync, teachersAsync, supervisorsAsync])
-const { data: halqat, refresh, pending } = halqatAsync
-const { data: teachers } = teachersAsync
-const { data: supervisors } = supervisorsAsync
 
 const NO_SUP = 'none'
 const teacherItems = computed(() => (teachers.value ?? []).map(t => ({ label: t.full_name, value: t.id })))
@@ -194,10 +192,15 @@ async function confirmDelete() {
     </div>
 
     <ClientOnly>
-      <UiEmptyState
+      <div
         v-if="pending"
-        title="جارٍ التحميل…"
-      />
+        class="grid"
+      >
+        <UiSkeletonCard
+          v-for="i in 6"
+          :key="i"
+        />
+      </div>
       <UiEmptyState
         v-else-if="filtered.length === 0"
         icon="i-lucide-book-open"

@@ -29,8 +29,8 @@ type MinuteRow = {
 }
 type Staff = { id: string, full_name: string, role: string }
 
-// الاستعلامان مستقلّان — يُطلَقان معاً بالتوازي بدل التتابع
-const minutesAsync = useAsyncData<MinuteRow[]>('minutes-list', async () => {
+// جلب غير حاجز (useLazyAsyncData): الاستعلامان مستقلّان ويعملان بالتوازي تلقائياً
+const { data: minutes, refresh, pending } = useLazyAsyncData<MinuteRow[]>('minutes-list', async () => {
   const { data } = await supabase
     .from('meeting_minutes')
     .select('id, title, meeting_date, agenda, decisions, tasks, attendee_ids, status')
@@ -39,16 +39,13 @@ const minutesAsync = useAsyncData<MinuteRow[]>('minutes-list', async () => {
   return data ?? []
 }, { server: false, default: () => [] })
 
-const staffAsync = useAsyncData<Staff[]>('minutes-staff', async () => {
+const { data: staff } = useLazyAsyncData<Staff[]>('minutes-staff', async () => {
   if (!isManager.value) return []
   const { data } = await supabase
     .from('profiles').select('id, full_name, role')
     .in('role', ['manager', 'quality', 'supervisor']).eq('status', 'active').order('full_name')
   return data ?? []
 }, { server: false, default: () => [], watch: [isManager] })
-await Promise.all([minutesAsync, staffAsync])
-const { data: minutes, refresh, pending } = minutesAsync
-const { data: staff } = staffAsync
 const staffMap = computed(() => Object.fromEntries((staff.value ?? []).map(s => [s.id, s])))
 const attendeeNames = (ids: string[]) => ids.map(id => staffMap.value[id]?.full_name).filter(Boolean)
 
@@ -164,10 +161,16 @@ const fmtDate = (iso: string) => new Date(iso).toLocaleDateString('ar', { day: '
     />
 
     <ClientOnly v-else>
-      <UiEmptyState
+      <div
         v-if="pending"
-        title="جارٍ التحميل…"
-      />
+        class="list"
+      >
+        <UiSkeletonRow
+          v-for="i in 4"
+          :key="i"
+          :action="false"
+        />
+      </div>
       <UiEmptyState
         v-else-if="!minutes || !minutes.length"
         icon="i-lucide-notebook-pen"

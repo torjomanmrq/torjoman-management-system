@@ -16,7 +16,7 @@ const { profile } = useProfile()
 const { handle } = useErrorHandler()
 const toast = useToast()
 
-const { data: passMark } = await useAsyncData<number>('exams-passmark', async () => {
+const { data: passMark } = useLazyAsyncData<number>('exams-passmark', async () => {
   const { data } = await supabase.from('app_settings').select('pass_mark').eq('id', 1).single()
   return data?.pass_mark ?? 80
 }, { server: false, default: () => 80 })
