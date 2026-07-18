@@ -2,6 +2,8 @@
  * robots.txt — يسمح بفهرسة الصفحات العامّة ويشير إلى الـsitemap.
  * المسارات الخاصّة (اللوحة/المصادقة/الروابط العامّة للطلاب) لا تُفهرَس:
  * محميّة بالدور، وصفحاتها تحمل robots: noindex أصلاً.
+ * ملاحظة: `/news$` (بعلامة $) يحجب صفحة إدارة الأخبار فقط دون `/news/[id]`
+ * العامّة القابلة للفهرسة (شاشة قراءة الخبر، §4.26).
  */
 export default defineEventHandler((event) => {
   const site = useRuntimeConfig().public.siteUrl.replace(/\/$/, '')
@@ -20,7 +22,7 @@ export default defineEventHandler((event) => {
     'Disallow: /incentives',
     'Disallow: /minutes',
     'Disallow: /alerts',
-    'Disallow: /news',
+    'Disallow: /news$',
     'Disallow: /metrics',
     'Disallow: /supervisors',
     'Disallow: /profile',
