@@ -15,6 +15,8 @@ export default defineNuxtConfig({
       },
       link: [
         { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' },
+        // أيقونة PNG مربّعة 192×192 (مضاعف لـ 48px) — شرط جوجل لعرض الأيقونة في نتائج البحث
+        { rel: 'icon', type: 'image/png', sizes: '192x192', href: '/icon-192.png' },
         // رابط المانيفست: @vite-pwa/nuxt يولّده لكنه لا يحقن الرابط، فنضيفه هنا ليكتشفه Chrome
         { rel: 'manifest', href: '/manifest.webmanifest' }
       ],
