@@ -23,7 +23,7 @@ const yearItems = [now.getFullYear() - 1, now.getFullYear()].map(y => ({ label: 
 
 // حلقة المعلّم تلقائيّاً
 type NameRow = { id: string, name: string }
-const { data: myHalqa } = await useAsyncData<NameRow | null>('inc-my-halqa', async () => {
+const { data: myHalqa } = useLazyAsyncData<NameRow | null>('inc-my-halqa', async () => {
   if (role.value !== 'teacher') return null
   const { data } = await supabase.from('halaqat').select('id, name').eq('teacher_id', profile.value?.id ?? '').limit(1).maybeSingle()
   return data

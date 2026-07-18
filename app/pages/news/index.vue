@@ -43,7 +43,7 @@ type NewsRow = {
   published: boolean
 }
 
-const { data: news, refresh, pending } = await useAsyncData<NewsRow[]>('news-admin', async () => {
+const { data: news, refresh, pending } = useLazyAsyncData<NewsRow[]>('news-admin', async () => {
   const { data } = await supabase
     .from('news')
     .select('id, title, body, category, image_url, news_date, published')
@@ -176,10 +176,16 @@ const fmtDate = (iso: string) => new Date(iso).toLocaleDateString('ar', { day: '
     />
 
     <ClientOnly v-else>
-      <UiEmptyState
+      <div
         v-if="pending"
-        title="جارٍ التحميل…"
-      />
+        class="grid"
+      >
+        <UiSkeletonCard
+          v-for="i in 6"
+          :key="i"
+          image
+        />
+      </div>
       <UiEmptyState
         v-else-if="!news || !news.length"
         icon="i-lucide-newspaper"

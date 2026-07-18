@@ -18,7 +18,8 @@ const { handle } = useErrorHandler()
 const toast = useToast()
 const isManager = computed(() => myRole.value === 'manager')
 
-const { data: rows, refresh, pending } = await useAsyncData<PlanRow[]>(
+// جلب غير حاجز: لا يوقف عرض الصفحة، والسكيلتون يغطّي انتظار البيانات
+const { data: rows, refresh, pending } = useLazyAsyncData<PlanRow[]>(
   'exam-plan',
   async () => {
     const { data, error } = await supabase.from('exam_plan').select('*').order('group_number')
@@ -157,9 +158,9 @@ async function confirmDelete() {
     </UiPageHeader>
 
     <ClientOnly>
-      <UiEmptyState
+      <UiSkeletonTable
         v-if="pending"
-        title="جارٍ التحميل…"
+        :columns="columns"
       />
       <UiEmptyState
         v-else-if="groups.length === 0"

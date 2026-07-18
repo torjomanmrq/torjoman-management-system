@@ -11,7 +11,8 @@ useSeoMeta({ title: 'دليل المؤشرات — ترجمان' })
 
 const supabase = useSupabaseClient<Database>()
 
-const { data: settings } = await useAsyncData('metrics-settings', async () => {
+// جلب غير حاجز: الصفحة تعرض قيماً افتراضية معقولة فوراً وتُحدَّث عند وصول الإعدادات
+const { data: settings } = useLazyAsyncData('metrics-settings', async () => {
   const { data } = await supabase.from('app_settings').select('pass_mark, target_memorization_pages, default_points, default_attendance_days').eq('id', 1).single()
   return data
 }, { server: false, default: () => null })
