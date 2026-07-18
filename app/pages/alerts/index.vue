@@ -37,7 +37,8 @@ type AlertRow = {
   issuer: { full_name: string } | null
 }
 
-const { data: alerts, refresh, pending } = await useAsyncData<AlertRow[]>('alerts-list', async () => {
+// الاستعلامان مستقلّان — يُطلَقان معاً بالتوازي بدل التتابع
+const alertsAsync = useAsyncData<AlertRow[]>('alerts-list', async () => {
   const { data } = await supabase
     .from('admin_alerts')
     .select('id, alert_date, violation_type, description, severity, status, acknowledged_at, teacher:teacher_id(full_name), issuer:issuer_id(full_name)')
@@ -46,11 +47,14 @@ const { data: alerts, refresh, pending } = await useAsyncData<AlertRow[]>('alert
   return data ?? []
 }, { server: false, default: () => [] })
 
-const { data: teachers } = await useAsyncData('alert-teachers', async () => {
+const teachersAsync = useAsyncData('alert-teachers', async () => {
   if (!canIssue.value) return []
   const { data } = await supabase.from('profiles').select('id, full_name').eq('role', 'teacher').eq('status', 'active').order('full_name')
   return data ?? []
 }, { server: false, default: () => [], watch: [canIssue] })
+await Promise.all([alertsAsync, teachersAsync])
+const { data: alerts, refresh, pending } = alertsAsync
+const { data: teachers } = teachersAsync
 const teacherItems = computed(() => (teachers.value ?? []).map(t => ({ label: t.full_name, value: t.id })))
 
 // ── إصدار تنبيه ──
