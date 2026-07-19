@@ -4,31 +4,51 @@ type Profile = Database['public']['Tables']['profiles']['Row']
 type Role = Database['public']['Enums']['user_role']
 
 /**
+ * دالة الجلب معرَّفة بمستوى الملف (مرجع ثابت) لا داخل useProfile — عشرات
+ * المكوّنات تستدعي useProfile()، ولو كانت الدالة تُعرَّف من جديد بكل استدعاء
+ * يرى useAsyncData «مُعالجاً مختلفاً» لنفس المفتاح current-profile ويُعيد
+ * الجلب من الصفر (يُبطل الكاش) — وهذا كان يُظهر سكيلتون البروفايل عند كل
+ * تنقّل بين الصفحات بدل الجلب مرّة واحدة فقط. استدعاء useSupabaseClient()
+ * داخل الدالة نفسها آمن — Nuxt يحافظ على سياق التطبيق عبر الجلب غير المتزامن.
+ */
+async function fetchCurrentProfile(): Promise<Profile | null> {
+  const supabase = useSupabaseClient<Database>()
+  const { data: auth } = await supabase.auth.getUser()
+  if (!auth.user) return null
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', auth.user.id)
+    .single()
+  if (error) console.error('[useProfile] فشل جلب الملف:', error.message)
+  return data
+}
+
+/**
  * ملف المستخدم الحالي ودوره.
  * يُجلب على العميل (server:false) حيث الجلسة مضمونة. نقرأ المستخدم من
  * supabase.auth.getUser() داخل الجلب لتفادي سباق توقيت الـ ref التفاعلي.
- * watch على user يعيد الجلب عند تغيّر حالة المصادقة.
  * مصدر الدور لإظهار قوائم التنقّل وصلاحيات الواجهة (RLS يفرضها الخادم).
+ *
+ * المراقبة على هويّة المستخدم (user.value?.id) لا على مرجع user كاملاً:
+ * موديول Supabase يُحدّث مرجع user عند كل تنقّل (إعادة التحقّق من الجلسة)،
+ * فمراقبة المرجع كلّه كانت تُعيد جلب الملف عند كل تنقّل → pending يرجع true
+ * → يومض سكيلتون الدور (الشريط الجانبي/البوّابات) ويتأخّر المحتوى. مراقبة
+ * الـ id تُعيد الجلب فقط عند تسجيل دخول/خروج فعلي (تغيّر الهويّة).
  */
 export function useProfile() {
-  const supabase = useSupabaseClient<Database>()
   const user = useSupabaseUser()
 
   const { data: profile, refresh, pending } = useAsyncData<Profile | null>(
     'current-profile',
-    async () => {
-      const { data: auth } = await supabase.auth.getUser()
-      if (!auth.user) return null
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', auth.user.id)
-        .single()
-      if (error) console.error('[useProfile] فشل جلب الملف:', error.message)
-      return data
-    },
-    { server: false, watch: [user], default: () => null }
+    fetchCurrentProfile,
+    { server: false, default: () => null }
   )
+
+  // إعادة الجلب عند تغيّر هويّة المستخدم فقط (دخول/خروج)، لا عند تنقّل الصفحات
+  watch(() => user.value?.id, (id, prev) => {
+    if (id !== prev) refresh()
+  })
 
   const role = computed<Role | null>(() => profile.value?.role ?? null)
   const status = computed(() => profile.value?.status ?? null)
