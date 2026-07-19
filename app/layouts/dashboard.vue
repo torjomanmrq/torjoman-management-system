@@ -4,7 +4,7 @@
  * مشترك بين كل الأدوار العاملة. القوائم تظهر حسب دور المستخدم.
  * المسارات غير المبنيّة بعد تُظهر تنبيه «قيد الإنشاء» (تُربط عند بناء كل شاشة).
  */
-const { role, status, fullName, initial } = useProfile()
+const { role, status, fullName, initial, pending: profilePending } = useProfile()
 const { signOut } = useAuth()
 const toast = useToast()
 const route = useRoute()
@@ -101,67 +101,78 @@ const isActive = (item: Item) => item.to === route.path
       </div>
 
       <nav class="side-nav">
-        <div class="nav-group">
-          القائمة الرئيسية
-        </div>
-        <button
-          v-for="item in mainItems"
-          :key="item.key"
-          class="nav-item"
-          :class="{ active: isActive(item) }"
-          @click="go(item)"
-        >
-          <UIcon
-            :name="item.icon"
-            class="size-5"
-          />
-          <span>{{ item.label }}</span>
-        </button>
-
-        <template v-if="managerItems.length">
-          <div class="nav-group">
-            إدارة المشروع
-          </div>
-          <button
-            v-for="item in managerItems"
-            :key="item.key"
-            class="nav-item"
-            @click="go(item)"
-          >
-            <UIcon
-              :name="item.icon"
-              class="size-5"
+        <ClientOnly>
+          <template v-if="profilePending">
+            <USkeleton
+              v-for="i in 7"
+              :key="i"
+              class="nav-skel bg-white/10"
             />
-            <span>{{ item.label }}</span>
-          </button>
-        </template>
+          </template>
+          <template v-else>
+            <div class="nav-group">
+              القائمة الرئيسية
+            </div>
+            <button
+              v-for="item in mainItems"
+              :key="item.key"
+              class="nav-item"
+              :class="{ active: isActive(item) }"
+              @click="go(item)"
+            >
+              <UIcon
+                :name="item.icon"
+                class="size-5"
+              />
+              <span>{{ item.label }}</span>
+            </button>
 
-        <template v-if="showMetrics">
-          <button
-            class="nav-item"
-            @click="go(metricsItem)"
-          >
-            <UIcon
-              :name="metricsItem.icon"
-              class="size-5"
-            />
-            <span>{{ metricsItem.label }}</span>
-          </button>
-        </template>
+            <template v-if="managerItems.length">
+              <div class="nav-group">
+                إدارة المشروع
+              </div>
+              <button
+                v-for="item in managerItems"
+                :key="item.key"
+                class="nav-item"
+                @click="go(item)"
+              >
+                <UIcon
+                  :name="item.icon"
+                  class="size-5"
+                />
+                <span>{{ item.label }}</span>
+              </button>
+            </template>
 
-        <div class="nav-group">
-          الحساب
-        </div>
-        <button
-          class="nav-item"
-          @click="go(profileItem)"
-        >
-          <UIcon
-            :name="profileItem.icon"
-            class="size-5"
-          />
-          <span>{{ profileItem.label }}</span>
-        </button>
+            <template v-if="showMetrics">
+              <button
+                class="nav-item"
+                @click="go(metricsItem)"
+              >
+                <UIcon
+                  :name="metricsItem.icon"
+                  class="size-5"
+                />
+                <span>{{ metricsItem.label }}</span>
+              </button>
+            </template>
+
+            <div class="nav-group">
+              الحساب
+            </div>
+            <button
+              class="nav-item"
+              @click="go(profileItem)"
+            >
+              <UIcon
+                :name="profileItem.icon"
+                class="size-5"
+              />
+              <span>{{ profileItem.label }}</span>
+            </button>
+          </template>
+        </ClientOnly>
       </nav>
 
       <div class="side-foot">
@@ -311,6 +322,7 @@ const isActive = (item: Item) => item.to === route.path
 .nav-item { display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 14px; border-radius: 11px; background: transparent; border: none; color: var(--side-ink); font-size: 15px; font-weight: 500; font-family: inherit; cursor: pointer; width: 100%; text-align: start; transition: background .15s, color .15s; }
 .nav-item:hover { background: var(--side-hover); color: var(--side-strong); }
 .nav-item.active { background: var(--side-active); color: var(--side-strong); }
+.nav-skel { height: 44px; border-radius: 11px; margin: 1.5px 0; }
 .side-foot { padding: 14px; border-top: 1px solid var(--side-line); display: flex; flex-direction: column; gap: 8px; }
 .user-card { display: flex; align-items: center; gap: 11px; padding: 8px 10px; border-radius: 12px; background: rgba(255, 255, 255, .06); }
 .user-av { width: 38px; height: 38px; border-radius: 11px; background: #fff; color: var(--navy); display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 700; flex-shrink: 0; }

@@ -146,8 +146,10 @@ async function confirmReset() {
 
 <template>
   <div class="users">
+    <!-- المنع للدور المحسوم غير المدير فقط (لا يُحجب المحتوى أثناء تحميل الدور:
+         سكيلتون بيانات الصفحة يظهر مباشرةً بدل انتظار جلب الملف الشخصي) -->
     <UiEmptyState
-      v-if="!isManager"
+      v-if="myRole && !isManager"
       icon="i-lucide-lock"
       title="هذه الصفحة للمدير فقط."
     />

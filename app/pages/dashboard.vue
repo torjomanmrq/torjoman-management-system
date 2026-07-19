@@ -11,7 +11,7 @@ definePageMeta({ layout: 'dashboard' })
 useSeoMeta({ title: 'لوحة التحكم — ترجمان' })
 
 const supabase = useSupabaseClient<Database>()
-const { role, fullName, profile } = useProfile()
+const { role, fullName, profile, pending: profilePending } = useProfile()
 const { handle } = useErrorHandler()
 const toast = useToast()
 
@@ -251,420 +251,432 @@ const settingCards = [
       <p>إليك نظرة عامة على المشروع.</p>
     </div>
 
-    <template v-if="isManager">
-      <!-- بطاقات إحصائية -->
-      <div class="stats">
-        <UiStatCard
-          v-for="c in statCards"
-          :key="c.label"
-          :icon="c.icon"
-          :tone="c.tone"
-          :value="c.value"
-          :label="c.label"
-          stacked
-        />
-      </div>
-
-      <!-- بطاقات الإعدادات -->
-      <div class="settings">
-        <div
-          v-for="s in settingCards"
-          :key="s.key"
-          class="card setting"
-        >
-          <div class="setting-head">
-            <div
-              class="ico"
-              :class="`ico-${s.tone}`"
-            >
-              <UIcon
-                :name="s.icon"
-                class="size-6"
-              />
-            </div>
-            <div class="setting-text">
-              <h3>{{ s.title }}</h3>
-              <p>{{ s.desc }} <span class="cur">المعتمد: {{ settings[s.key] }} {{ s.unit }}</span></p>
-            </div>
-          </div>
-          <div class="setting-edit">
-            <UInput
-              v-model="drafts[s.key]"
-              inputmode="numeric"
-              size="lg"
-              :ui="{ base: 'rounded-[13px] text-center font-bold w-24' }"
-            />
-            <span class="unit">{{ s.unit }}</span>
-            <UButton
-              label="اعتماد"
-              color="primary"
-              size="lg"
-              icon="i-lucide-check"
-              :loading="saving === s.key"
-              :ui="{ base: 'rounded-[13px] font-semibold' }"
-              @click="saveSetting(s.key, s.unit)"
-            />
-          </div>
+    <ClientOnly>
+      <template v-if="profilePending">
+        <div class="stats">
+          <UiSkeletonCard
+            v-for="i in 4"
+            :key="i"
+            :icon="false"
+            :lines="1"
+          />
         </div>
-      </div>
-    </template>
+      </template>
+      <template v-else-if="isManager">
+        <!-- بطاقات إحصائية -->
+        <div class="stats">
+          <UiStatCard
+            v-for="c in statCards"
+            :key="c.label"
+            :icon="c.icon"
+            :tone="c.tone"
+            :value="c.value"
+            :label="c.label"
+            stacked
+          />
+        </div>
 
-    <template v-else-if="isTeacher">
-      <ClientOnly>
-        <template v-if="teacherLoaded && !myHalqa">
-          <div class="card placeholder">
-            <p>لا توجد حلقة معيّنة لك بعد. تواصل مع الإدارة لإسناد حلقتك.</p>
-          </div>
-        </template>
-        <template v-else-if="myHalqa">
-          <!-- ترويسة الحلقة + إجراءات سريعة -->
-          <div class="card thead">
-            <div class="thead-info">
-              <div class="ico ico-blue">
+        <!-- بطاقات الإعدادات -->
+        <div class="settings">
+          <div
+            v-for="s in settingCards"
+            :key="s.key"
+            class="card setting"
+          >
+            <div class="setting-head">
+              <div
+                class="ico"
+                :class="`ico-${s.tone}`"
+              >
                 <UIcon
-                  name="i-lucide-book-open"
+                  :name="s.icon"
                   class="size-6"
                 />
               </div>
-              <div>
-                <h3>{{ myHalqa.name }}</h3>
-                <p>{{ teacherRows.length }} طالب · الوقت اليومي {{ fmtTime(myHalqa.daily_time) }}</p>
+              <div class="setting-text">
+                <h3>{{ s.title }}</h3>
+                <p>{{ s.desc }} <span class="cur">المعتمد: {{ settings[s.key] }} {{ s.unit }}</span></p>
               </div>
             </div>
-            <div class="thead-actions">
+            <div class="setting-edit">
+              <UInput
+                v-model="drafts[s.key]"
+                inputmode="numeric"
+                size="lg"
+                :ui="{ base: 'rounded-[13px] text-center font-bold w-24' }"
+              />
+              <span class="unit">{{ s.unit }}</span>
               <UButton
-                to="/exams"
-                label="ترشيح للاختبار"
+                label="اعتماد"
                 color="primary"
                 size="lg"
-                icon="i-lucide-clipboard-check"
+                icon="i-lucide-check"
+                :loading="saving === s.key"
                 :ui="{ base: 'rounded-[13px] font-semibold' }"
-              />
-              <UButton
-                to="/reports"
-                label="تقرير الشهر"
-                color="neutral"
-                variant="outline"
-                size="lg"
-                icon="i-lucide-file-text"
-                :ui="{ base: 'rounded-[13px] font-semibold' }"
+                @click="saveSetting(s.key, s.unit)"
               />
             </div>
           </div>
+        </div>
+      </template>
 
-          <!-- طلاب الحلقة -->
-          <UiEmptyState
-            v-if="!teacherRows.length"
-            icon="i-lucide-users"
-            title="لا طلاب نشطون في حلقتك"
-          />
-          <div
-            v-else
-            class="card table-wrap"
-          >
-            <table>
-              <thead>
-                <tr>
-                  <th class="ta-start">
-                    الطالب
-                  </th>
-                  <th>الأجزاء المثبتة</th>
-                  <th class="ta-start">
-                    المحطة المستحقّة القادمة
-                  </th>
-                  <th class="ta-end">
-                    —
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr
-                  v-for="r in teacherRows"
-                  :key="r.id"
-                >
-                  <td class="ta-start strong">
-                    {{ r.full_name }}
-                  </td>
-                  <td>{{ r.quran_parts != null ? `${r.quran_parts} / 30` : '—' }}</td>
-                  <td
-                    class="ta-start"
-                    :class="{ done: r.done }"
+      <template v-else-if="isTeacher">
+        <ClientOnly>
+          <template v-if="teacherLoaded && !myHalqa">
+            <div class="card placeholder">
+              <p>لا توجد حلقة معيّنة لك بعد. تواصل مع الإدارة لإسناد حلقتك.</p>
+            </div>
+          </template>
+          <template v-else-if="myHalqa">
+            <!-- ترويسة الحلقة + إجراءات سريعة -->
+            <div class="card thead">
+              <div class="thead-info">
+                <div class="ico ico-blue">
+                  <UIcon
+                    name="i-lucide-book-open"
+                    class="size-6"
+                  />
+                </div>
+                <div>
+                  <h3>{{ myHalqa.name }}</h3>
+                  <p>{{ teacherRows.length }} طالب · الوقت اليومي {{ fmtTime(myHalqa.daily_time) }}</p>
+                </div>
+              </div>
+              <div class="thead-actions">
+                <UButton
+                  to="/exams"
+                  label="ترشيح للاختبار"
+                  color="primary"
+                  size="lg"
+                  icon="i-lucide-clipboard-check"
+                  :ui="{ base: 'rounded-[13px] font-semibold' }"
+                />
+                <UButton
+                  to="/reports"
+                  label="تقرير الشهر"
+                  color="neutral"
+                  variant="outline"
+                  size="lg"
+                  icon="i-lucide-file-text"
+                  :ui="{ base: 'rounded-[13px] font-semibold' }"
+                />
+              </div>
+            </div>
+
+            <!-- طلاب الحلقة -->
+            <UiEmptyState
+              v-if="!teacherRows.length"
+              icon="i-lucide-users"
+              title="لا طلاب نشطون في حلقتك"
+            />
+            <div
+              v-else
+              class="card table-wrap"
+            >
+              <table>
+                <thead>
+                  <tr>
+                    <th class="ta-start">
+                      الطالب
+                    </th>
+                    <th>الأجزاء المثبتة</th>
+                    <th class="ta-start">
+                      المحطة المستحقّة القادمة
+                    </th>
+                    <th class="ta-end">
+                      —
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr
+                    v-for="r in teacherRows"
+                    :key="r.id"
                   >
-                    {{ r.next }}
-                  </td>
-                  <td>
-                    <div class="ta-end">
-                      <UButton
-                        :to="`/students/${r.id}`"
-                        label="الملف"
-                        color="neutral"
-                        variant="outline"
-                        size="sm"
-                        icon="i-lucide-user"
-                        :ui="{ base: 'rounded-[10px]' }"
-                      />
-                    </div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </template>
-      </ClientOnly>
-    </template>
-
-    <template v-else-if="isSupervisor">
-      <ClientOnly>
-        <!-- بطاقات إحصائية -->
-        <div class="stats stats-3">
-          <UiStatCard
-            icon="i-lucide-book-open"
-            tone="blue"
-            :value="supHalqat.length"
-            label="حلقاتي"
-            stacked
-          />
-          <UiStatCard
-            icon="i-lucide-calendar-clock"
-            tone="green"
-            :value="supVisits.length"
-            label="زيارات قادمة"
-            stacked
-          />
-          <UiStatCard
-            icon="i-lucide-clipboard-check"
-            tone="neutral"
-            :value="supPendingExams"
-            label="اختبارات تنتظر الرصد"
-            stacked
-          />
-        </div>
-
-        <div class="sup-grid">
-          <!-- حلقاتي -->
-          <div class="card sec">
-            <div class="sec-head">
-              <h3>حلقاتي</h3>
-              <UButton
-                to="/visits"
-                label="الزيارات"
-                color="neutral"
-                variant="ghost"
-                size="sm"
-                trailing-icon="i-lucide-arrow-left"
-              />
+                    <td class="ta-start strong">
+                      {{ r.full_name }}
+                    </td>
+                    <td>{{ r.quran_parts != null ? `${r.quran_parts} / 30` : '—' }}</td>
+                    <td
+                      class="ta-start"
+                      :class="{ done: r.done }"
+                    >
+                      {{ r.next }}
+                    </td>
+                    <td>
+                      <div class="ta-end">
+                        <UButton
+                          :to="`/students/${r.id}`"
+                          label="الملف"
+                          color="neutral"
+                          variant="outline"
+                          size="sm"
+                          icon="i-lucide-user"
+                          :ui="{ base: 'rounded-[10px]' }"
+                        />
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
-            <UiEmptyState
-              v-if="!supHalqat.length"
+          </template>
+        </ClientOnly>
+      </template>
+
+      <template v-else-if="isSupervisor">
+        <ClientOnly>
+          <!-- بطاقات إحصائية -->
+          <div class="stats stats-3">
+            <UiStatCard
               icon="i-lucide-book-open"
-              title="لا حلقات مُسندة إليك"
+              tone="blue"
+              :value="supHalqat.length"
+              label="حلقاتي"
+              stacked
             />
-            <ul
-              v-else
-              class="rows"
-            >
-              <li
-                v-for="h in supHalqat"
-                :key="h.id"
-                class="row"
-              >
-                <div class="row-main">
-                  <span class="row-title">{{ h.name }}</span>
-                  <span class="row-sub">المعلّم: {{ h.teacher }}</span>
-                </div>
-                <UBadge
-                  :label="`${h.students} طالب`"
+            <UiStatCard
+              icon="i-lucide-calendar-clock"
+              tone="green"
+              :value="supVisits.length"
+              label="زيارات قادمة"
+              stacked
+            />
+            <UiStatCard
+              icon="i-lucide-clipboard-check"
+              tone="neutral"
+              :value="supPendingExams"
+              label="اختبارات تنتظر الرصد"
+              stacked
+            />
+          </div>
+
+          <div class="sup-grid">
+            <!-- حلقاتي -->
+            <div class="card sec">
+              <div class="sec-head">
+                <h3>حلقاتي</h3>
+                <UButton
+                  to="/visits"
+                  label="الزيارات"
                   color="neutral"
-                  variant="soft"
+                  variant="ghost"
+                  size="sm"
+                  trailing-icon="i-lucide-arrow-left"
                 />
-              </li>
-            </ul>
-          </div>
-
-          <!-- زياراتي القادمة -->
-          <div class="card sec">
-            <div class="sec-head">
-              <h3>زياراتي القادمة</h3>
-              <UButton
-                to="/visits"
-                label="الكل"
-                color="neutral"
-                variant="ghost"
-                size="sm"
-                trailing-icon="i-lucide-arrow-left"
+              </div>
+              <UiEmptyState
+                v-if="!supHalqat.length"
+                icon="i-lucide-book-open"
+                title="لا حلقات مُسندة إليك"
               />
-            </div>
-            <UiEmptyState
-              v-if="!supVisits.length"
-              icon="i-lucide-calendar-check"
-              title="لا زيارات مجدولة قادمة"
-            />
-            <ul
-              v-else
-              class="rows"
-            >
-              <li
-                v-for="v in supVisits"
-                :key="v.id"
-                class="row"
+              <ul
+                v-else
+                class="rows"
               >
-                <div class="row-main">
-                  <span class="row-title">{{ v.halqa }}</span>
-                  <span class="row-sub">{{ fmtDateTime(v.scheduled_at) }}</span>
-                </div>
-                <UBadge
-                  label="مجدولة"
-                  color="warning"
-                  variant="soft"
-                />
-              </li>
-            </ul>
-          </div>
-        </div>
-
-        <!-- تنبيه الرصد -->
-        <div
-          v-if="supPendingExams"
-          class="card cta"
-        >
-          <div class="cta-text">
-            <UIcon
-              name="i-lucide-clipboard-check"
-              class="size-5"
-            />
-            لديك <strong>{{ supPendingExams }}</strong> بند اختبار بانتظار الرصد.
-          </div>
-          <UButton
-            to="/exams"
-            label="رصد الاختبارات"
-            color="primary"
-            size="lg"
-            icon="i-lucide-pencil"
-            :ui="{ base: 'rounded-[13px] font-semibold' }"
-          />
-        </div>
-      </ClientOnly>
-    </template>
-
-    <template v-else-if="isQuality">
-      <ClientOnly>
-        <div class="stats stats-4">
-          <UiStatCard
-            icon="i-lucide-shield-check"
-            tone="blue"
-            :value="qSupervisors.length"
-            label="مشرفوني"
-            stacked
-          />
-          <UiStatCard
-            icon="i-lucide-book-open"
-            tone="green"
-            :value="qHalqatCount"
-            label="الحلقات في نطاقي"
-            stacked
-          />
-          <UiStatCard
-            icon="i-lucide-calendar-clock"
-            tone="neutral"
-            :value="qVisitsCount"
-            label="زيارات قادمة"
-            stacked
-          />
-          <UiStatCard
-            icon="i-lucide-file-text"
-            tone="blue"
-            :value="qReports.length"
-            label="تقارير بانتظار الاعتماد"
-            stacked
-          />
-        </div>
-
-        <div class="sup-grid">
-          <!-- مشرفوني -->
-          <div class="card sec">
-            <div class="sec-head">
-              <h3>مشرفوني</h3>
-              <UButton
-                to="/supervisors"
-                label="المشرفون"
-                color="neutral"
-                variant="ghost"
-                size="sm"
-                trailing-icon="i-lucide-arrow-left"
-              />
+                <li
+                  v-for="h in supHalqat"
+                  :key="h.id"
+                  class="row"
+                >
+                  <div class="row-main">
+                    <span class="row-title">{{ h.name }}</span>
+                    <span class="row-sub">المعلّم: {{ h.teacher }}</span>
+                  </div>
+                  <UBadge
+                    :label="`${h.students} طالب`"
+                    color="neutral"
+                    variant="soft"
+                  />
+                </li>
+              </ul>
             </div>
-            <UiEmptyState
-              v-if="!qSupervisors.length"
-              icon="i-lucide-shield"
-              title="لا مشرفين في نطاقك"
-            />
-            <ul
-              v-else
-              class="rows"
-            >
-              <li
-                v-for="s in qSupervisors"
-                :key="s.id"
-                class="row"
-              >
-                <span class="row-title">{{ s.name }}</span>
-                <UBadge
-                  :label="`${s.halqat} حلقة`"
+
+            <!-- زياراتي القادمة -->
+            <div class="card sec">
+              <div class="sec-head">
+                <h3>زياراتي القادمة</h3>
+                <UButton
+                  to="/visits"
+                  label="الكل"
                   color="neutral"
-                  variant="soft"
+                  variant="ghost"
+                  size="sm"
+                  trailing-icon="i-lucide-arrow-left"
                 />
-              </li>
-            </ul>
-          </div>
-
-          <!-- تقارير بانتظار الاعتماد -->
-          <div class="card sec">
-            <div class="sec-head">
-              <h3>تقارير بانتظار الاعتماد</h3>
-              <UButton
-                to="/reports"
-                label="التقارير"
-                color="neutral"
-                variant="ghost"
-                size="sm"
-                trailing-icon="i-lucide-arrow-left"
+              </div>
+              <UiEmptyState
+                v-if="!supVisits.length"
+                icon="i-lucide-calendar-check"
+                title="لا زيارات مجدولة قادمة"
               />
-            </div>
-            <UiEmptyState
-              v-if="!qReports.length"
-              icon="i-lucide-file-check"
-              title="لا تقارير مُرسلة"
-            />
-            <ul
-              v-else
-              class="rows"
-            >
-              <li
-                v-for="r in qReports"
-                :key="r.id"
-                class="row"
+              <ul
+                v-else
+                class="rows"
               >
-                <div class="row-main">
-                  <span class="row-title">{{ r.halqa }}</span>
-                  <span class="row-sub">{{ r.label }}</span>
-                </div>
-                <UBadge
-                  label="مُرسل"
-                  color="warning"
-                  variant="soft"
-                />
-              </li>
-            </ul>
+                <li
+                  v-for="v in supVisits"
+                  :key="v.id"
+                  class="row"
+                >
+                  <div class="row-main">
+                    <span class="row-title">{{ v.halqa }}</span>
+                    <span class="row-sub">{{ fmtDateTime(v.scheduled_at) }}</span>
+                  </div>
+                  <UBadge
+                    label="مجدولة"
+                    color="warning"
+                    variant="soft"
+                  />
+                </li>
+              </ul>
+            </div>
           </div>
-        </div>
-      </ClientOnly>
-    </template>
 
-    <template v-else>
-      <div class="card placeholder">
-        <p>لوحة دورك ({{ role }}) قيد البناء — تُضاف في الخطوات التالية.</p>
-      </div>
-    </template>
+          <!-- تنبيه الرصد -->
+          <div
+            v-if="supPendingExams"
+            class="card cta"
+          >
+            <div class="cta-text">
+              <UIcon
+                name="i-lucide-clipboard-check"
+                class="size-5"
+              />
+              لديك <strong>{{ supPendingExams }}</strong> بند اختبار بانتظار الرصد.
+            </div>
+            <UButton
+              to="/exams"
+              label="رصد الاختبارات"
+              color="primary"
+              size="lg"
+              icon="i-lucide-pencil"
+              :ui="{ base: 'rounded-[13px] font-semibold' }"
+            />
+          </div>
+        </ClientOnly>
+      </template>
+
+      <template v-else-if="isQuality">
+        <ClientOnly>
+          <div class="stats stats-4">
+            <UiStatCard
+              icon="i-lucide-shield-check"
+              tone="blue"
+              :value="qSupervisors.length"
+              label="مشرفوني"
+              stacked
+            />
+            <UiStatCard
+              icon="i-lucide-book-open"
+              tone="green"
+              :value="qHalqatCount"
+              label="الحلقات في نطاقي"
+              stacked
+            />
+            <UiStatCard
+              icon="i-lucide-calendar-clock"
+              tone="neutral"
+              :value="qVisitsCount"
+              label="زيارات قادمة"
+              stacked
+            />
+            <UiStatCard
+              icon="i-lucide-file-text"
+              tone="blue"
+              :value="qReports.length"
+              label="تقارير بانتظار الاعتماد"
+              stacked
+            />
+          </div>
+
+          <div class="sup-grid">
+            <!-- مشرفوني -->
+            <div class="card sec">
+              <div class="sec-head">
+                <h3>مشرفوني</h3>
+                <UButton
+                  to="/supervisors"
+                  label="المشرفون"
+                  color="neutral"
+                  variant="ghost"
+                  size="sm"
+                  trailing-icon="i-lucide-arrow-left"
+                />
+              </div>
+              <UiEmptyState
+                v-if="!qSupervisors.length"
+                icon="i-lucide-shield"
+                title="لا مشرفين في نطاقك"
+              />
+              <ul
+                v-else
+                class="rows"
+              >
+                <li
+                  v-for="s in qSupervisors"
+                  :key="s.id"
+                  class="row"
+                >
+                  <span class="row-title">{{ s.name }}</span>
+                  <UBadge
+                    :label="`${s.halqat} حلقة`"
+                    color="neutral"
+                    variant="soft"
+                  />
+                </li>
+              </ul>
+            </div>
+
+            <!-- تقارير بانتظار الاعتماد -->
+            <div class="card sec">
+              <div class="sec-head">
+                <h3>تقارير بانتظار الاعتماد</h3>
+                <UButton
+                  to="/reports"
+                  label="التقارير"
+                  color="neutral"
+                  variant="ghost"
+                  size="sm"
+                  trailing-icon="i-lucide-arrow-left"
+                />
+              </div>
+              <UiEmptyState
+                v-if="!qReports.length"
+                icon="i-lucide-file-check"
+                title="لا تقارير مُرسلة"
+              />
+              <ul
+                v-else
+                class="rows"
+              >
+                <li
+                  v-for="r in qReports"
+                  :key="r.id"
+                  class="row"
+                >
+                  <div class="row-main">
+                    <span class="row-title">{{ r.halqa }}</span>
+                    <span class="row-sub">{{ r.label }}</span>
+                  </div>
+                  <UBadge
+                    label="مُرسل"
+                    color="warning"
+                    variant="soft"
+                  />
+                </li>
+              </ul>
+            </div>
+          </div>
+        </ClientOnly>
+      </template>
+
+      <template v-else>
+        <div class="card placeholder">
+          <p>لوحة دورك ({{ role }}) قيد البناء — تُضاف في الخطوات التالية.</p>
+        </div>
+      </template>
+    </ClientOnly>
   </div>
 </template>
 
