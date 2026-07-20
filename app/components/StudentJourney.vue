@@ -41,17 +41,6 @@ const pct = computed(() => Math.min(100, Math.round((j.value.parts / 30) * 100))
         </div>
       </div>
       <div
-        v-if="memorizationPages != null"
-        class="metric"
-      >
-        <div class="num">
-          {{ memorizationPages }}<span class="unit"> صفحة</span>
-        </div>
-        <div class="lbl">
-          إجمالي صفحات الحفظ
-        </div>
-      </div>
-      <div
         v-if="enrollmentDate"
         class="metric"
       >
