@@ -308,8 +308,8 @@ const sections = computed<{ title: string, icon: string, tone: string, fields: F
 .band-sub { font-size: 15px; color: var(--band-sub); margin-top: 6px; }
 .band-actions { display: flex; align-items: center; gap: 8px; flex: none; }
 
-.grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 22px; align-items: start; }
-.card { background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 24px; box-shadow: var(--shadow); }
+.grid { columns: 2; column-gap: 22px; margin-bottom: -22px; }
+.card { break-inside: avoid; margin-bottom: 22px; background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 24px; box-shadow: var(--shadow); }
 .card h3 { margin: 0 0 18px; font-size: 17px; font-weight: 700; color: var(--ink); display: flex; align-items: center; gap: 10px; }
 .ico { width: 36px; height: 36px; border-radius: 11px; display: inline-flex; align-items: center; justify-content: center; flex: none; }
 .ico-blue { background: var(--blue-soft); color: var(--blue-ink); }
@@ -323,5 +323,5 @@ const sections = computed<{ title: string, icon: string, tone: string, fields: F
 .journey { margin-top: 22px; }
 .soon { margin: 0; font-size: 14.5px; line-height: 1.8; color: var(--ink-2); font-weight: 300; }
 
-@media (max-width: 768px) { .grid { grid-template-columns: 1fr; } }
+@media (max-width: 768px) { .grid { columns: 1; } }
 </style>
