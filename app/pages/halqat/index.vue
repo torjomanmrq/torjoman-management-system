@@ -67,13 +67,27 @@ const filtered = computed(() => (halqat.value ?? []).filter(h =>
   (genderF.value === 'all' || h.gender === genderF.value)
   && (statusF.value === 'all' || h.status === statusF.value)
 ))
-const { page, pageCount, total, pageSize, paged, resetPage } = usePagination(filtered, 9)
+const { page, pageCount, total, pageSize, paged, resetPage } = usePagination(filtered, 12)
 watch([genderF, statusF], resetPage)
 function studentsOf(h: HalaqaRow) {
   return h.student_count?.[0]?.count ?? 0
 }
 const GENDER_LABEL: Record<Gender, string> = { male: 'بنين', female: 'بنات' }
 const CLASS_LABEL: Record<Classification, string> = { a: 'الفئة أ', b: 'الفئة ب' }
+
+const columns = computed(() => {
+  const base = [
+    { key: 'num', label: '#' },
+    { key: 'name', label: 'الحلقة' },
+    { key: 'teacher', label: 'المعلّم' },
+    { key: 'supervisor', label: 'المشرف' },
+    { key: 'gender', label: 'الجنس' },
+    { key: 'students', label: 'الطلاب' },
+    { key: 'time', label: 'الوقت اليومي' },
+    { key: 'status', label: 'الحالة' }
+  ]
+  return isManager.value ? [...base, { key: 'actions', label: 'إجراءات', align: 'end' as const }] : base
+})
 
 // ── إنشاء/تعديل ──
 const modalOpen = ref(false)
@@ -192,100 +206,92 @@ async function confirmDelete() {
     </div>
 
     <ClientOnly>
-      <div
+      <UiSkeletonTable
         v-if="pending"
-        class="grid"
-      >
-        <UiSkeletonCard
-          v-for="i in 6"
-          :key="i"
-        />
-      </div>
+        :columns="columns"
+      />
       <UiEmptyState
         v-else-if="filtered.length === 0"
         icon="i-lucide-book-open"
         title="لا حلقات بعد"
         :description="isManager ? 'أنشئ أول حلقة وعيّن لها معلّماً لتظهر هنا.' : 'لا حلقات ضمن نطاقك بعد.'"
       />
-      <div
+      <UiDataTable
         v-else
-        class="grid"
+        :columns="columns"
+        :rows="paged"
+        row-key="id"
       >
-        <div
-          v-for="h in paged"
-          :key="h.id"
-          class="hcard"
-        >
-          <div class="hcard-top">
-            <div class="hcard-id">
-              <div class="hicon">
-                <UIcon
-                  name="i-lucide-book-open"
-                  class="size-6"
-                />
-              </div>
-              <div>
-                <h3>{{ h.name }}</h3>
-                <div class="teacher">
-                  {{ h.teacher?.full_name || '—' }}
-                </div>
-                <div
-                  class="sup"
-                  :class="{ orphan: !h.supervisor }"
-                >
-                  <UIcon
-                    name="i-lucide-shield"
-                    class="size-[13px]"
-                  />
-                  {{ h.supervisor?.full_name || 'بلا مشرف' }}
-                </div>
-              </div>
-            </div>
-            <div class="badges">
-              <UBadge
-                v-if="h.gender"
-                :label="GENDER_LABEL[h.gender]"
-                :color="h.gender === 'male' ? 'info' : 'secondary'"
-                variant="soft"
-                size="sm"
-              />
-              <UBadge
-                v-if="h.classification"
-                :label="CLASS_LABEL[h.classification]"
-                color="neutral"
-                variant="soft"
-                size="sm"
+        <template #num="{ index }">
+          <span class="muted">{{ index + 1 }}</span>
+        </template>
+        <template #name="{ row }">
+          <div class="h-cell">
+            <div class="hicon">
+              <UIcon
+                name="i-lucide-book-open"
+                class="size-5"
               />
             </div>
+            <div>
+              <div class="h-name">
+                {{ row.name }}
+              </div>
+              <div
+                v-if="row.classification"
+                class="h-sub"
+              >
+                {{ CLASS_LABEL[row.classification] }}
+              </div>
+            </div>
           </div>
-
-          <div class="meta">
-            <span><UIcon
-              name="i-lucide-users"
-              class="size-4"
-            />{{ studentsOf(h) }} طالب</span>
-            <span v-if="h.daily_time"><UIcon
-              name="i-lucide-clock"
-              class="size-4"
-            />{{ h.daily_time.slice(0, 5) }}</span>
-            <UBadge
-              :label="h.status === 'active' ? 'نشطة' : 'متوقفة'"
-              :color="h.status === 'active' ? 'success' : 'neutral'"
-              variant="soft"
-              size="sm"
-            />
-          </div>
-
-          <div class="hcard-actions">
+        </template>
+        <template #teacher="{ row }">
+          <span class="muted">{{ row.teacher?.full_name || '—' }}</span>
+        </template>
+        <template #supervisor="{ row }">
+          <span
+            class="muted"
+            :class="{ orphan: !row.supervisor }"
+          >{{ row.supervisor?.full_name || 'بلا مشرف' }}</span>
+        </template>
+        <template #gender="{ row }">
+          <UBadge
+            v-if="row.gender"
+            :label="GENDER_LABEL[row.gender]"
+            :color="row.gender === 'male' ? 'info' : 'secondary'"
+            variant="soft"
+            size="sm"
+          />
+          <span
+            v-else
+            class="muted"
+          >—</span>
+        </template>
+        <template #students="{ row }">
+          <span class="muted">{{ studentsOf(row) }}</span>
+        </template>
+        <template #time="{ row }">
+          <span class="muted">{{ row.daily_time ? row.daily_time.slice(0, 5) : '—' }}</span>
+        </template>
+        <template #status="{ row }">
+          <UBadge
+            :label="row.status === 'active' ? 'نشطة' : 'متوقفة'"
+            :color="row.status === 'active' ? 'success' : 'neutral'"
+            variant="soft"
+            size="sm"
+          />
+        </template>
+        <template #actions="{ row }">
+          <div class="actions">
             <UButton
-              :to="`/halqat/${h.id}`"
-              label="تفاصيل"
+              :to="`/halqat/${row.id}`"
               color="neutral"
               variant="outline"
               size="sm"
               icon="i-lucide-eye"
-              block
-              :ui="{ base: 'rounded-[11px]' }"
+              :ui="{ base: 'rounded-[10px]' }"
+              aria-label="تفاصيل"
             />
             <UButton
               v-if="isManager"
@@ -293,9 +299,9 @@ async function confirmDelete() {
               variant="outline"
               size="sm"
               icon="i-lucide-pencil"
-              :ui="{ base: 'rounded-[11px]' }"
+              :ui="{ base: 'rounded-[10px]' }"
               aria-label="تعديل"
-              @click="openEdit(h)"
+              @click="openEdit(row)"
             />
             <UButton
               v-if="isManager"
@@ -303,13 +309,13 @@ async function confirmDelete() {
               variant="outline"
               size="sm"
               icon="i-lucide-trash-2"
-              :ui="{ base: 'rounded-[11px]' }"
+              :ui="{ base: 'rounded-[10px]' }"
               aria-label="حذف"
-              @click="deleteTarget = h"
+              @click="deleteTarget = row"
             />
           </div>
-        </div>
-      </div>
+        </template>
+      </UiDataTable>
       <UiPaginator
         v-if="filtered.length"
         :page="page"
@@ -465,27 +471,16 @@ async function confirmDelete() {
 .filters { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; margin-bottom: 20px; }
 .status-sel { min-width: 150px; }
 
-.grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
-.hcard { background: var(--surface); border: 1px solid var(--line); border-radius: 22px; padding: 24px; box-shadow: var(--shadow); transition: transform .2s, box-shadow .2s, border-color .2s; }
-.hcard:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); border-color: var(--blue-soft); }
-.hcard-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
-.hcard-id { display: flex; align-items: center; gap: 13px; min-width: 0; }
-.hicon { width: 50px; height: 50px; border-radius: 14px; background: var(--surface-3); color: var(--ink); display: flex; align-items: center; justify-content: center; flex: none; }
-.hcard-id h3 { margin: 0; font-size: 19px; font-weight: 700; color: var(--ink); }
-.teacher { font-size: 14px; color: var(--ink-2); margin-top: 3px; }
-.sup { font-size: 12.5px; margin-top: 5px; display: inline-flex; align-items: center; gap: 5px; color: var(--green-ink); }
-.sup.orphan { color: var(--ink-3); }
-.badges { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; flex: none; }
-.meta { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; padding-top: 16px; border-top: 1px solid var(--line); margin-bottom: 16px; }
-.meta span { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; color: var(--ink-2); }
-.hcard-actions { display: flex; gap: 8px; }
-.hcard-actions > :first-child { flex: 1; }
+.h-cell { display: flex; align-items: center; gap: 11px; }
+.hicon { width: 40px; height: 40px; border-radius: 11px; background: var(--surface-3); color: var(--ink); display: flex; align-items: center; justify-content: center; flex: none; }
+.h-name { font-weight: 600; color: var(--ink); white-space: nowrap; }
+.h-sub { font-size: 12.5px; color: var(--ink-3); }
+.muted { color: var(--ink-2); white-space: nowrap; }
+.muted.orphan { color: var(--ink-3); }
+.actions { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
 
 .form { display: flex; flex-direction: column; gap: 14px; }
 .row { display: flex; gap: 14px; flex-wrap: wrap; }
 .row .f { flex: 1; min-width: 150px; }
 .form-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px; }
-
-@media (max-width: 1024px) { .grid { grid-template-columns: repeat(2, 1fr); } }
-@media (max-width: 640px) { .grid { grid-template-columns: 1fr; } }
 </style>

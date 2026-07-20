@@ -1,8 +1,10 @@
 <script setup lang="ts">
 /**
  * الاختبارات (§4.16) — موجّهة بالدور:
- * - المعلّم: يرشّح طلابه المستحقّين (بلغوا محطتهم في الخطة) ويرسل القائمة.
- * - المشرف/المدير: يرصد نتيجة كل اختبار وارد (ExamsGradeModal).
+ * - المعلّم: يختار محطة الاختبار لكل طالب بحكم معرفته الفعلية بمستواه (بلا شرط
+ *   على الأجزاء المثبتة)، ويرسل القائمة. الخيارات تستبعد المُجتاز والمعلّق فقط.
+ * - المشرف/المدير: يرصد نتيجة كل اختبار وارد (ExamsGradeModal) — الاجتياز
+ *   يحدّث الأجزاء المثبتة تلقائياً (GradeModal.vue).
  * - الجميع: متابعة النتائج حسب النطاق (ExamsResultsBrowser بفلاتر هرمية).
  */
 import type { Database } from '~/types/database.types'
@@ -27,10 +29,6 @@ const { data: plan } = useLazyAsyncData<PlanRow[]>('exams-plan', async () => {
   const { data } = await supabase.from('exam_plan').select('id, parts_from, parts_to, stage_type').order('parts_to')
   return (data ?? []) as PlanRow[]
 }, { server: false, default: () => [] })
-
-function eligibleStations(parts: number | null) {
-  return (plan.value ?? []).filter(p => (parts ?? 0) >= p.parts_to)
-}
 
 // ═══ المعلّم: الترشيح ═══
 type RosterStudent = { id: string, full_name: string, quran_parts: number | null, halaqa_id: string | null }
@@ -63,22 +61,23 @@ const { data: examState, refresh: refreshState } = useLazyAsyncData<{ passed: Re
 
 const passedOf = (id: string) => new Set(examState.value?.passed[id] ?? [])
 const pendingOf = (id: string) => new Set(examState.value?.pending[id] ?? [])
-// المحطات المتاحة للترشيح: بلغها حفظاً + غير مُجتازة + غير معلّقة
+// المحطات المتاحة للترشيح: كل محطات الخطة، ناقص المُجتازة والمعلّقة (بانتظار الرصد)
+// للطالب — بلا شرط على الأجزاء المثبتة؛ المعلّم يختار حسب معرفته الفعلية
+// بمستوى الطالب. القائمة مرتّبة أصلاً (parts_to تصاعدياً)، فأول خيار متبقٍّ
+// يكون تلقائياً المحطة التالية بعد آخر ما اجتازه.
 function availableStations(s: RosterStudent) {
   const passed = passedOf(s.id)
   const pending = pendingOf(s.id)
-  return eligibleStations(s.quran_parts).filter(p => !passed.has(p.id) && !pending.has(p.id))
+  return (plan.value ?? []).filter(p => !passed.has(p.id) && !pending.has(p.id))
 }
 
 const nominees = reactive<Record<string, { checked: boolean, planId: string }>>({})
 const nomineeCount = computed(() => Object.values(nominees).filter(n => n.checked).length)
 
 const rosterRows = computed(() => (roster.value ?? []).map((s) => {
-  const elig = eligibleStations(s.quran_parts)
   const avail = availableStations(s)
   let blockReason = ''
-  if (!elig.length) blockReason = 'لم يبلغ محطة بعد'
-  else if (!avail.length) blockReason = pendingOf(s.id).size ? 'بانتظار رصد المشرف' : 'اجتاز كل المتاح'
+  if (!avail.length) blockReason = pendingOf(s.id).size ? 'بانتظار رصد المشرف' : 'اجتاز كل الخطة'
   return {
     ...s,
     nom: nominees[s.id] ?? { checked: false, planId: '' },
@@ -190,7 +189,7 @@ async function onGraded() {
   <div class="exams">
     <UiPageHeader
       title="الاختبارات"
-      :subtitle="isTeacher ? 'رشّح طلابك الذين بلغوا محطتهم في الخطة وأرسل القائمة للمشرف.' : canGrade ? 'الاختبارات الواردة من المعلّمين — افتح كلّ اختبار وارصد نتيجته من 100، وتابع النتائج في نطاقك.' : 'تابع نتائج اختبارات الطلاب في نطاقك.'"
+      :subtitle="isTeacher ? 'رشّح طلابك للمحطة المناسبة حسب مستواهم الفعلي وأرسل القائمة للمشرف.' : canGrade ? 'الاختبارات الواردة من المعلّمين — افتح كلّ اختبار وارصد نتيجته من 100، وتابع النتائج في نطاقك.' : 'تابع نتائج اختبارات الطلاب في نطاقك.'"
     />
 
     <ClientOnly>
@@ -198,7 +197,7 @@ async function onGraded() {
       <template v-if="isTeacher">
         <UiSkeletonTable
           v-if="rosterPending"
-          :columns="[{ key: 'nom', label: 'ترشيح' }, { key: 'name', label: 'الطالب' }, { key: 'parts', label: 'المحفوظ' }, { key: 'exam', label: 'الاختبار المستحقّ' }]"
+          :columns="[{ key: 'num', label: '#' }, { key: 'nom', label: 'ترشيح' }, { key: 'name', label: 'الطالب' }, { key: 'parts', label: 'المحفوظ' }, { key: 'exam', label: 'الاختبار المستحقّ' }]"
         />
         <UiEmptyState
           v-else-if="!(roster || []).length"
@@ -213,6 +212,9 @@ async function onGraded() {
           <table>
             <thead>
               <tr>
+                <th class="ta-start">
+                  #
+                </th>
                 <th class="ta-start">
                   ترشيح
                 </th>
@@ -229,9 +231,12 @@ async function onGraded() {
             </thead>
             <tbody>
               <tr
-                v-for="row in rosterRows"
+                v-for="(row, i) in rosterRows"
                 :key="row.id"
               >
+                <td class="muted">
+                  {{ i + 1 }}
+                </td>
                 <td>
                   <UCheckbox
                     v-if="row.options.length"
@@ -286,7 +291,7 @@ async function onGraded() {
         </h3>
         <UiSkeletonTable
           v-if="queuePending"
-          :columns="[{ key: 'student', label: 'الطالب' }, { key: 'halqa', label: 'الحلقة' }, { key: 'teacher', label: 'المعلّم' }, { key: 'range', label: 'النطاق' }, { key: 'actions', label: 'إجراء', align: 'end' }]"
+          :columns="[{ key: 'num', label: '#' }, { key: 'student', label: 'الطالب' }, { key: 'halqa', label: 'الحلقة' }, { key: 'teacher', label: 'المعلّم' }, { key: 'range', label: 'النطاق' }, { key: 'actions', label: 'إجراء', align: 'end' }]"
         />
         <UiEmptyState
           v-else-if="!queue.length"
@@ -301,6 +306,9 @@ async function onGraded() {
           <table>
             <thead>
               <tr>
+                <th class="ta-start">
+                  #
+                </th>
                 <th class="ta-start">
                   الطالب
                 </th>
@@ -320,9 +328,12 @@ async function onGraded() {
             </thead>
             <tbody>
               <tr
-                v-for="it in queue"
+                v-for="(it, i) in queue"
                 :key="it.id"
               >
+                <td class="muted">
+                  {{ i + 1 }}
+                </td>
                 <td class="strong">
                   {{ it.student?.full_name || '—' }}
                 </td>

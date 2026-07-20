@@ -171,6 +171,9 @@ async function postAsTransaction() {
             <thead>
               <tr>
                 <th class="ta-start">
+                  #
+                </th>
+                <th class="ta-start">
                   العامل
                 </th>
                 <th>الدور</th>
@@ -179,9 +182,12 @@ async function postAsTransaction() {
             </thead>
             <tbody>
               <tr
-                v-for="r in rows"
+                v-for="(r, i) in rows"
                 :key="r.profile_id"
               >
+                <td class="ta-start muted">
+                  {{ i + 1 }}
+                </td>
                 <td class="ta-start strong">
                   {{ r.name }}
                 </td>
@@ -207,7 +213,7 @@ async function postAsTransaction() {
             <tfoot>
               <tr>
                 <td
-                  colspan="2"
+                  colspan="3"
                   class="ta-start strong"
                 >
                   إجمالي الرواتب
@@ -280,6 +286,7 @@ th.ta-start { text-align: start; }
 td { padding: 9px 12px; vertical-align: middle; text-align: center; border-top: 1px solid var(--line); }
 .ta-start { text-align: start; }
 .strong { font-weight: 700; color: var(--ink); }
+.muted { color: var(--ink-3); }
 .num { font-variant-numeric: tabular-nums; }
 .cell { width: 130px; height: 38px; padding: 0 10px; border-radius: 9px; border: 1px solid var(--line-2); background: var(--surface-2); color: var(--ink); font-size: 14px; text-align: center; outline: none; }
 .cell:focus { border-color: var(--blue); box-shadow: 0 0 0 3px var(--ring); }

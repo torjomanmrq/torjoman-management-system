@@ -610,7 +610,10 @@ async function setStatus(status: ReportStatus) {
           <table>
             <thead>
               <tr>
-                <th class="ta-start sticky">
+                <th class="ta-start sticky num-col">
+                  #
+                </th>
+                <th class="ta-start sticky-name">
                   الطالب
                 </th>
                 <th>من صفحة</th>
@@ -626,10 +629,13 @@ async function setStatus(status: ReportStatus) {
             </thead>
             <tbody>
               <tr
-                v-for="r in rows"
+                v-for="(r, i) in rows"
                 :key="r.student_id"
               >
-                <td class="ta-start sticky strong">
+                <td class="ta-start sticky num-col muted">
+                  {{ i + 1 }}
+                </td>
+                <td class="ta-start sticky-name strong">
                   {{ r.full_name }}
                 </td>
                 <td>
@@ -827,8 +833,11 @@ async function setStatus(status: ReportStatus) {
 .table-wrap td { padding: 8px 10px; vertical-align: middle; text-align: center; border-top: 1px solid var(--line); white-space: nowrap; }
 .ta-start { text-align: start; }
 .strong { font-weight: 600; color: var(--ink); }
+.muted { color: var(--ink-2); }
+.num-col { width: 40px; }
 .sticky { position: sticky; inset-inline-start: 0; background: var(--surface); z-index: 1; }
-thead .sticky { background: var(--surface-2); }
+.sticky-name { position: sticky; inset-inline-start: 40px; background: var(--surface); z-index: 1; }
+thead .sticky, thead .sticky-name { background: var(--surface-2); }
 .calc { font-weight: 700; color: var(--green-ink); background: var(--green-soft); }
 .grade { display: inline-flex; align-items: center; justify-content: center; min-width: 42px; height: 30px; padding: 0 10px; border-radius: 999px; font-weight: 700; font-size: 13.5px; font-variant-numeric: tabular-nums; }
 .g-success { background: var(--green-soft); color: var(--green-ink); }

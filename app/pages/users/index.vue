@@ -61,6 +61,7 @@ const filteredUsers = computed(() => {
 const { page, pageCount, total, pageSize, paged, resetPage } = usePagination(filteredUsers, 12)
 watch(filter, resetPage)
 const columns = [
+  { key: 'num', label: '#' },
   { key: 'user', label: 'المستخدم' },
   { key: 'role', label: 'الدور' },
   { key: 'assigner', label: 'عيّنه' },
@@ -194,6 +195,9 @@ async function confirmReset() {
           :rows="paged"
           row-key="id"
         >
+          <template #num="{ index }">
+            <span class="muted">{{ index + 1 }}</span>
+          </template>
           <template #user="{ row }">
             <div class="user-cell">
               <div class="av">

@@ -172,6 +172,8 @@ async function markReviewed(s: StmtRow) {
             <thead>
               <tr>
                 <th class="ta-start">
+                  #
+                </th><th class="ta-start">
                   الحلقة
                 </th><th class="ta-start">
                   المعلّم
@@ -180,9 +182,12 @@ async function markReviewed(s: StmtRow) {
             </thead>
             <tbody>
               <tr
-                v-for="r in rows"
+                v-for="(r, i) in rows"
                 :key="r.halaqa_id"
               >
+                <td class="ta-start muted">
+                  {{ i + 1 }}
+                </td>
                 <td class="ta-start strong">
                   {{ r.name }}
                 </td>
@@ -203,7 +208,7 @@ async function markReviewed(s: StmtRow) {
             <tfoot>
               <tr>
                 <td
-                  colspan="2"
+                  colspan="3"
                   class="ta-start strong"
                 >
                   إجمالي المخصّص
@@ -265,15 +270,20 @@ async function markReviewed(s: StmtRow) {
             <thead>
               <tr>
                 <th class="ta-start">
+                  #
+                </th><th class="ta-start">
                   الحلقة
                 </th><th>المستلَم</th><th>المصروف</th><th>المتبقّي</th><th>الحالة</th><th />
               </tr>
             </thead>
             <tbody>
               <tr
-                v-for="s in statements"
+                v-for="(s, i) in statements"
                 :key="s.id"
               >
+                <td class="ta-start muted">
+                  {{ i + 1 }}
+                </td>
                 <td class="ta-start strong">
                   {{ s.halaqa }}
                 </td>
