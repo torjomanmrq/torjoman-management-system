@@ -83,6 +83,7 @@ const stats = computed(() => {
   }
 })
 const columns = [
+  { key: 'num', label: '#' },
   { key: 'halqa', label: 'الحلقة' },
   { key: 'teacher', label: 'المعلّم' },
   { key: 'supervisor', label: 'الزائر' },
@@ -274,6 +275,9 @@ async function confirmDelete() {
         :rows="filtered"
         row-key="id"
       >
+        <template #num="{ index }">
+          <span class="muted">{{ index + 1 }}</span>
+        </template>
         <template #halqa="{ row }">
           <span class="strong">{{ row.halaqa?.name || '—' }}</span>
         </template>

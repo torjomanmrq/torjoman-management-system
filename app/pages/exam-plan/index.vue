@@ -46,6 +46,7 @@ const range = (r: PlanRow | null) => r ? `${r.parts_from} – ${r.parts_to}` : '
 
 const columns = computed(() => {
   const base = [
+    { key: 'num', label: '#' },
     { key: 'group_number', label: 'المجموعة' },
     { key: 'partial', label: 'مرحلي (3 أجزاء)' },
     { key: 'cumulative', label: 'تجميعي (5 أجزاء)' }
@@ -174,6 +175,9 @@ async function confirmDelete() {
         :rows="groups"
         row-key="group_number"
       >
+        <template #num="{ index }">
+          <span class="muted">{{ index + 1 }}</span>
+        </template>
         <template #group_number="{ row }">
           <span class="g-num">المجموعة {{ row.group_number }}</span>
         </template>
@@ -358,6 +362,7 @@ async function confirmDelete() {
 
 <style scoped>
 .plan { max-width: 1000px; margin: 0 auto; }
+.muted { color: var(--ink-2); }
 .g-num { font-weight: 600; color: var(--ink); white-space: nowrap; }
 .pill { display: inline-flex; align-items: center; height: 30px; padding: 0 14px; border-radius: 999px; font-size: 14.5px; font-weight: 700; }
 .pill-blue { background: var(--blue-soft); color: var(--blue-ink); }

@@ -37,6 +37,7 @@ defineProps<{
             <slot
               :name="c.key"
               :row="row"
+              :index="i"
             >
               {{ row[c.key] }}
             </slot>

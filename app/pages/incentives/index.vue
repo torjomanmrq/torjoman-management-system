@@ -279,6 +279,9 @@ const fmt = (n: number) => n.toLocaleString('ar')
                 <thead>
                   <tr>
                     <th class="ta-start">
+                      #
+                    </th>
+                    <th class="ta-start">
                       البيان
                     </th>
                     <th>التصنيف</th>
@@ -292,6 +295,9 @@ const fmt = (n: number) => n.toLocaleString('ar')
                     v-for="(r, i) in rows"
                     :key="i"
                   >
+                    <td class="ta-start muted">
+                      {{ i + 1 }}
+                    </td>
                     <td class="ta-start">
                       <input
                         v-model="r.description"
@@ -401,6 +407,7 @@ const fmt = (n: number) => n.toLocaleString('ar')
 .table-wrap th.ta-start { text-align: start; }
 .table-wrap td { padding: 7px 10px; vertical-align: middle; text-align: center; border-top: 1px solid var(--line); }
 .ta-start { text-align: start; }
+.muted { color: var(--ink-2); }
 .cell { width: 110px; height: 38px; padding: 0 10px; border-radius: 9px; border: 1px solid var(--line-2); background: var(--surface-2); color: var(--ink); font-size: 14px; outline: none; }
 .cell.wide { width: 100%; min-width: 160px; text-align: start; }
 .cell:focus { border-color: var(--blue); box-shadow: 0 0 0 3px var(--ring); }
