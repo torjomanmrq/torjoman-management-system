@@ -119,30 +119,42 @@ function clearResFilters() {
     </h3>
 
     <div class="res-filters">
-      <UiSelect
+      <UFormField
         v-if="isManager"
-        v-model="fQuality"
-        :items="qualityOpts"
-        placeholder="مشرف الجودة"
-        size="md"
-        class="rf"
-      />
-      <UiSelect
+        label="مشرف الجودة"
+        size="sm"
+      >
+        <UiSelect
+          v-model="fQuality"
+          :items="qualityOpts"
+          size="md"
+          class="rf"
+        />
+      </UFormField>
+      <UFormField
         v-if="isManager || isQuality"
-        v-model="fSupervisor"
-        :items="supervisorOpts"
-        placeholder="المشرف"
-        size="md"
-        class="rf"
-      />
-      <UiSelect
+        label="المشرف"
+        size="sm"
+      >
+        <UiSelect
+          v-model="fSupervisor"
+          :items="supervisorOpts"
+          size="md"
+          class="rf"
+        />
+      </UFormField>
+      <UFormField
         v-if="!isTeacher"
-        v-model="fHalqa"
-        :items="halqaOpts"
-        placeholder="الحلقة"
-        size="md"
-        class="rf"
-      />
+        label="الحلقة"
+        size="sm"
+      >
+        <UiSelect
+          v-model="fHalqa"
+          :items="halqaOpts"
+          size="md"
+          class="rf"
+        />
+      </UFormField>
       <UButton
         v-if="fQuality !== 'all' || fSupervisor !== 'all' || fHalqa !== 'all'"
         label="مسح الفلاتر"
@@ -247,7 +259,7 @@ function clearResFilters() {
 <style scoped>
 .sec-title { font-size: 18px; font-weight: 700; color: var(--ink); margin: 0 0 14px; display: flex; align-items: center; gap: 9px; }
 .count { display: inline-flex; align-items: center; height: 24px; padding: 0 10px; border-radius: 999px; background: var(--blue-soft); color: var(--blue-ink); font-size: 13px; }
-.res-filters { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
+.res-filters { display: flex; gap: 10px; flex-wrap: wrap; align-items: end; margin-bottom: 14px; }
 .rf { width: 200px; max-width: 100%; }
 
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: 20px; box-shadow: var(--shadow); }
