@@ -72,15 +72,15 @@ const pct = computed(() => Math.min(100, Math.round((j.value.parts / 30) * 100))
     </div>
 
     <div
-      v-if="j.nextStation"
+      v-if="j.upcomingStation"
       class="next"
     >
       <UIcon
         name="i-lucide-target"
         class="size-4"
       />
-      المحطة المستحقّة القادمة: <strong>الأجزاء {{ j.nextStation.from }}–{{ j.nextStation.to }}</strong>
-      <span class="muted">({{ stageLabel(j.nextStation.stage) }})</span>
+      {{ j.upcomingStation.reached ? 'المحطة المستحقّة القادمة' : 'المحطة القادمة' }}: <strong>الأجزاء {{ j.upcomingStation.from }}–{{ j.upcomingStation.to }}</strong>
+      <span class="muted">({{ stageLabel(j.upcomingStation.stage) }})</span>
     </div>
     <div
       v-else-if="j.totalStations"

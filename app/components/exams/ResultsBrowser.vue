@@ -167,6 +167,9 @@ function clearResFilters() {
         <thead>
           <tr>
             <th class="ta-start">
+              #
+            </th>
+            <th class="ta-start">
               الطالب
             </th>
             <th class="ta-start">
@@ -194,9 +197,12 @@ function clearResFilters() {
         </thead>
         <tbody>
           <tr
-            v-for="r in resPaged"
+            v-for="(r, i) in resPaged"
             :key="r.id"
           >
+            <td class="muted">
+              {{ i + 1 }}
+            </td>
             <td class="strong">
               {{ r.student }}
             </td>

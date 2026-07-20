@@ -79,6 +79,7 @@ const { page, pageCount, total, pageSize, paged, resetPage } = usePagination(fil
 watch([statusF, halqaF], resetPage)
 const columns = computed(() => {
   const base = [
+    { key: 'num', label: '#' },
     { key: 'student', label: 'الطالب' },
     { key: 'halqa', label: 'الحلقة' },
     { key: 'teacher', label: 'المعلّم' },
@@ -260,6 +261,9 @@ async function confirmDelete() {
         :rows="paged"
         row-key="id"
       >
+        <template #num="{ index }">
+          <span class="muted">{{ index + 1 }}</span>
+        </template>
         <template #student="{ row }">
           <div class="user-cell">
             <div class="av">

@@ -184,6 +184,9 @@ async function doExport() {
           <thead>
             <tr>
               <th class="ta-start">
+                #
+              </th>
+              <th class="ta-start">
                 التاريخ
               </th>
               <th class="ta-start">
@@ -198,9 +201,12 @@ async function doExport() {
           </thead>
           <tbody>
             <tr
-              v-for="t in filtered"
+              v-for="(t, i) in filtered"
               :key="t.id"
             >
+              <td class="ta-start muted">
+                {{ i + 1 }}
+              </td>
               <td class="ta-start nowrap">
                 {{ fmtDate(t.transaction_date) }}
               </td>
@@ -252,7 +258,7 @@ async function doExport() {
           <tfoot>
             <tr>
               <td
-                colspan="4"
+                colspan="5"
                 class="ta-start strong"
               >
                 الإجمالي
@@ -379,6 +385,7 @@ th.ta-start { text-align: start; }
 td { padding: 11px 12px; vertical-align: middle; text-align: center; border-top: 1px solid var(--line); }
 .ta-start { text-align: start; }
 .nowrap { white-space: nowrap; }
+.muted { color: var(--ink-2); }
 .num { font-variant-numeric: tabular-nums; white-space: nowrap; }
 .strong { font-weight: 700; color: var(--ink); }
 .in { color: var(--green-ink); font-weight: 600; }

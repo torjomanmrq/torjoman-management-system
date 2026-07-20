@@ -45,9 +45,13 @@ export function buildJourney(
     }))
     .sort((a, b) => (a.to - b.to) || (a.stage === 'partial' ? -1 : 1))
 
-  // المستحقّة القادمة: أوّل محطة بلغها ولم يجتزها بعد
+  // المستحقّة القادمة (للاختبار الآن): أوّل محطة بلغها ولم يجتزها بعد
   const nextIdx = stations.findIndex(s => s.reached && s.result !== 'passed')
   if (nextIdx >= 0) stations[nextIdx]!.isNext = true
+
+  // القادمة بترتيب الخطة (بصرف النظر عن البلوغ) — لعرض "المحطة القادمة" حتى
+  // قبل بلوغها؛ لا تُخلَط بـ nextStation (خاصّة بأهلية الاختبار الآن فقط)
+  const upcomingIdx = stations.findIndex(s => s.result !== 'passed')
 
   return {
     parts,
@@ -55,7 +59,8 @@ export function buildJourney(
     reachedCount: stations.filter(s => s.reached).length,
     passedCount: stations.filter(s => s.result === 'passed').length,
     totalStations: stations.length,
-    nextStation: nextIdx >= 0 ? stations[nextIdx]! : null
+    nextStation: nextIdx >= 0 ? stations[nextIdx]! : null,
+    upcomingStation: upcomingIdx >= 0 ? stations[upcomingIdx]! : null
   }
 }
 
