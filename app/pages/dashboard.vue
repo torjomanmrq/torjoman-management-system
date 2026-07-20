@@ -5,7 +5,7 @@
  * بقية الأدوار: ترحيب أساسي يُوسَّع لاحقاً بلوحاتها الخاصة.
  */
 import type { Database } from '~/types/database.types'
-import { buildJourney, type PlanInput } from '~/utils/journey'
+import { buildJourney, type PlanInput, type ResultInput } from '~/utils/journey'
 
 definePageMeta({ layout: 'dashboard' })
 useSeoMeta({ title: 'لوحة التحكم — ترجمان' })
@@ -92,6 +92,7 @@ watch(isManager, (v) => {
 
 // ── لوحة المعلّم «حلقتي» ──
 type TeacherRow = { id: string, full_name: string, quran_parts: number | null, next: string, done: boolean }
+type TeacherExamResult = { student_id: string, passed: boolean | null, total_score: number | null, exam_list_item: { exam_plan_id: number | null } | null }
 const myHalqa = ref<{ id: string, name: string, daily_time: string | null } | null>(null)
 const teacherRows = ref<TeacherRow[]>([])
 const teacherLoaded = ref(false)
@@ -105,19 +106,27 @@ async function loadTeacherData() {
       teacherLoaded.value = true
       return
     }
-    const [{ data: studs }, { data: plan }] = await Promise.all([
+    const [{ data: studs }, { data: plan }, { data: examResults }] = await Promise.all([
       supabase.from('students').select('id, full_name, quran_parts').eq('halaqa_id', h.id).eq('status', 'active').order('full_name'),
-      supabase.from('exam_plan').select('id, parts_from, parts_to, stage_type').order('parts_to')
+      supabase.from('exam_plan').select('id, parts_from, parts_to, stage_type').order('parts_to'),
+      supabase.from('exam_results').select('student_id, passed, total_score, exam_list_item:exam_list_item_id(exam_plan_id), student:student_id!inner(halaqa_id)').eq('student.halaqa_id', h.id).returns<TeacherExamResult[]>()
     ])
     const planArr = (plan ?? []) as PlanInput[]
+    // نتائج اختبارات طلاب الحلقة مجمّعة حسب الطالب — لتعكس «المحطة القادمة» المُجتاز فعلياً
+    const resultsByStudent = new Map<string, ResultInput[]>()
+    for (const r of examResults ?? []) {
+      const arr = resultsByStudent.get(r.student_id) ?? []
+      arr.push({ exam_plan_id: r.exam_list_item?.exam_plan_id ?? null, passed: r.passed, total_score: r.total_score })
+      resultsByStudent.set(r.student_id, arr)
+    }
     teacherRows.value = (studs ?? []).map((s) => {
-      const j = buildJourney(s.quran_parts, planArr, [])
+      const j = buildJourney(s.quran_parts, planArr, resultsByStudent.get(s.id) ?? [])
       return {
         id: s.id,
         full_name: s.full_name,
         quran_parts: s.quran_parts,
-        next: j.nextStation ? `الأجزاء ${j.nextStation.from}–${j.nextStation.to}` : (j.totalStations ? 'أكمل الخطة 🎉' : '—'),
-        done: !j.nextStation && j.totalStations > 0
+        next: j.upcomingStation ? `الأجزاء ${j.upcomingStation.from}–${j.upcomingStation.to}` : (j.totalStations ? 'أكمل الخطة 🎉' : '—'),
+        done: !j.upcomingStation && j.totalStations > 0
       }
     })
     teacherLoaded.value = true
@@ -377,6 +386,9 @@ const settingCards = [
                 <thead>
                   <tr>
                     <th class="ta-start">
+                      #
+                    </th>
+                    <th class="ta-start">
                       الطالب
                     </th>
                     <th>الأجزاء المثبتة</th>
@@ -390,9 +402,12 @@ const settingCards = [
                 </thead>
                 <tbody>
                   <tr
-                    v-for="r in teacherRows"
+                    v-for="(r, i) in teacherRows"
                     :key="r.id"
                   >
+                    <td class="ta-start muted">
+                      {{ i + 1 }}
+                    </td>
                     <td class="ta-start strong">
                       {{ r.full_name }}
                     </td>
@@ -723,6 +738,7 @@ const settingCards = [
 .ta-start { text-align: start; }
 .ta-end { display: flex; justify-content: flex-end; }
 .strong { font-weight: 600; color: var(--ink); }
+.muted { color: var(--ink-2); }
 .done { color: var(--green-ink); font-weight: 600; }
 
 /* لوحة المشرف */

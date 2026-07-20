@@ -5,7 +5,7 @@
  * متاح للمدير والمشرف/الجودة ضمن نطاقهم (RLS).
  */
 import type { Database } from '~/types/database.types'
-import { buildJourney, type PlanInput } from '~/utils/journey'
+import { buildJourney, type PlanInput, type ResultInput } from '~/utils/journey'
 
 definePageMeta({ layout: 'dashboard' })
 
@@ -29,6 +29,7 @@ type Halqa = {
 type StudentRow = { id: string, full_name: string, quran_parts: number | null, next: string, done: boolean }
 type ReportRow = { id: string, report_month: number, report_year: number, status: string } | null
 type VisitRow = { id: string, scheduled_at: string, executed_at: string | null, status: string }
+type ExamResultRow = { student_id: string, passed: boolean | null, total_score: number | null, exam_list_item: { exam_plan_id: number | null } | null }
 
 const { data, pending } = useLazyAsyncData(() => `halqa-detail-${id.value}`, async () => {
   const { data: halqa } = await supabase
@@ -38,22 +39,30 @@ const { data, pending } = useLazyAsyncData(() => `halqa-detail-${id.value}`, asy
     .maybeSingle<Halqa>()
   if (!halqa) return null
 
-  const [{ data: studs }, { data: plan }, { data: rep }, { data: visits }] = await Promise.all([
+  const [{ data: studs }, { data: plan }, { data: examResults }, { data: rep }, { data: visits }] = await Promise.all([
     supabase.from('students').select('id, full_name, quran_parts').eq('halaqa_id', id.value).eq('status', 'active').order('full_name'),
     supabase.from('exam_plan').select('id, parts_from, parts_to, stage_type').order('parts_to'),
+    supabase.from('exam_results').select('student_id, passed, total_score, exam_list_item:exam_list_item_id(exam_plan_id), student:student_id!inner(halaqa_id)').eq('student.halaqa_id', id.value).returns<ExamResultRow[]>(),
     supabase.from('monthly_reports').select('id, report_month, report_year, status').eq('halaqa_id', id.value).order('report_year', { ascending: false }).order('report_month', { ascending: false }).limit(1).maybeSingle(),
     supabase.from('supervision_visits').select('id, scheduled_at, executed_at, status').eq('halaqa_id', id.value).order('scheduled_at', { ascending: false }).limit(5).returns<VisitRow[]>()
   ])
 
   const planArr = (plan ?? []) as PlanInput[]
+  // نتائج اختبارات طلاب الحلقة مجمّعة حسب الطالب — لتُغذّي رحلة كل طالب (المحطة القادمة تعكس المُجتاز)
+  const resultsByStudent = new Map<string, ResultInput[]>()
+  for (const r of examResults ?? []) {
+    const arr = resultsByStudent.get(r.student_id) ?? []
+    arr.push({ exam_plan_id: r.exam_list_item?.exam_plan_id ?? null, passed: r.passed, total_score: r.total_score })
+    resultsByStudent.set(r.student_id, arr)
+  }
   const students: StudentRow[] = (studs ?? []).map((s) => {
-    const j = buildJourney(s.quran_parts, planArr, [])
+    const j = buildJourney(s.quran_parts, planArr, resultsByStudent.get(s.id) ?? [])
     return {
       id: s.id,
       full_name: s.full_name,
       quran_parts: s.quran_parts,
-      next: j.nextStation ? `الأجزاء ${j.nextStation.from}–${j.nextStation.to}` : (j.totalStations ? 'أكمل الخطة 🎉' : '—'),
-      done: !j.nextStation && j.totalStations > 0
+      next: j.upcomingStation ? `الأجزاء ${j.upcomingStation.from}–${j.upcomingStation.to}` : (j.totalStations ? 'أكمل الخطة 🎉' : '—'),
+      done: !j.upcomingStation && j.totalStations > 0
     }
   })
 
@@ -173,6 +182,9 @@ const fmtDate = (iso: string) => new Date(iso).toLocaleDateString('ar', { day: '
                 <thead>
                   <tr>
                     <th class="ta-start">
+                      #
+                    </th>
+                    <th class="ta-start">
                       الطالب
                     </th>
                     <th>الأجزاء</th>
@@ -186,9 +198,12 @@ const fmtDate = (iso: string) => new Date(iso).toLocaleDateString('ar', { day: '
                 </thead>
                 <tbody>
                   <tr
-                    v-for="s in data.students"
+                    v-for="(s, i) in data.students"
                     :key="s.id"
                   >
+                    <td class="ta-start muted">
+                      {{ i + 1 }}
+                    </td>
                     <td class="ta-start strong">
                       {{ s.full_name }}
                     </td>
@@ -324,6 +339,7 @@ const fmtDate = (iso: string) => new Date(iso).toLocaleDateString('ar', { day: '
 .ta-start { text-align: start; }
 .ta-end { display: flex; justify-content: flex-end; }
 .strong { font-weight: 600; color: var(--ink); }
+.muted { color: var(--ink-2); }
 .done { color: var(--green-ink); font-weight: 600; }
 
 .report-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
