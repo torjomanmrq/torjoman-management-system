@@ -101,7 +101,7 @@ async function regenerateLink() {
   }
 }
 
-type Field = { label: string, value: string, ltr?: boolean }
+type Field = { label: string, value: string, ltr?: boolean, wide?: boolean }
 const sections = computed<{ title: string, icon: string, tone: string, fields: Field[] }[]>(() => {
   const s = student.value
   if (!s) return []
@@ -111,7 +111,7 @@ const sections = computed<{ title: string, icon: string, tone: string, fields: F
       icon: 'i-lucide-id-card',
       tone: 'blue',
       fields: [
-        { label: 'الاسم رباعي', value: dash(s.full_name) },
+        { label: 'الاسم رباعي', value: dash(s.full_name), wide: true },
         { label: 'الجنس', value: (s.gender && GENDER[s.gender]) || '—' },
         { label: 'تاريخ الميلاد', value: dash(s.birth_date), ltr: true },
         { label: 'العمر', value: ageFrom(s.birth_date) },
@@ -257,6 +257,7 @@ const sections = computed<{ title: string, icon: string, tone: string, fields: F
                 v-for="f in sec.fields"
                 :key="f.label"
                 class="field"
+                :class="{ wide: f.wide }"
               >
                 <div class="f-label">
                   {{ f.label }}
@@ -317,6 +318,7 @@ const sections = computed<{ title: string, icon: string, tone: string, fields: F
 .ico-neutral { background: var(--surface-3); color: var(--ink); }
 .fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
 .field { background: var(--surface-2); border: 1px solid var(--line); border-radius: 14px; padding: 13px 15px; }
+.field.wide { grid-column: 1 / -1; }
 .f-label { font-size: 12px; color: var(--ink-3); margin-bottom: 7px; font-weight: 500; }
 .f-value { font-size: 15.5px; font-weight: 700; color: var(--ink); }
 
